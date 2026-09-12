@@ -56,29 +56,7 @@ const { label } = Astro.props;
        window edge instead of stopping short of it.
        `scroll-padding-inline` has to repeat the same figure or snapping would
        park a card flush against the window edge, undoing the alignment. */
-    margin-inline: calc(50% - 50vw);
-    /* The inset is on the FIRST AND LAST CARD, not on the scroller.
-       Padding on the scroller was tried and pre-scrolled the track: the snap
-       port starts inside the padding, so on load a snapping track settled at
-       scrollLeft = 146 and its first card sat flush against the window edge —
-       and only on the carousels long enough to scroll, which made it look
-       random. Margins on the end cards put the same gap in the CONTENT, where
-       scrollLeft 0 is genuinely the start.
-       Viewport arithmetic rather than a percentage, because a percentage on a
-       child resolves against the full-bleed track and would come out zero. */
-    --gutter: max(
-      var(--space-3),
-      calc((100vw - var(--page-max)) / 2 + var(--space-3))
-    );
-    /* Moves the SNAPPORT in by the same gutter, and without it the spacers are
-       pointless: `scroll-snap-align: start` aligns a card to the scrollport's
-       start edge, so the first card snapped flush to the window and every
-       scrollable carousel loaded already scrolled 146px. With the snapport
-       inset to match, the first card's snap position is scrollLeft 0 — where
-       it belongs. */
-    scroll-padding-inline: var(--gutter);
-    /* Vertical only — the horizontal inset is handled above. Keeps room for the
-       focus ring and the cards' shadows. */
+    /* Room for the focus ring and the cards' edges, vertically. */
     padding-block: var(--space-1);
     margin-block: calc(var(--space-1) * -1);
     /* Mobile. The swipe itself is free — `overflow-x` on a touch device IS a
@@ -94,18 +72,6 @@ const { label } = Astro.props;
        the PAGE with the finger on a card — `touch-action: none` here would trap
        the reader inside the carousel, which is the classic mobile carousel bug. */
     touch-action: pan-x pan-y;
-  }
-  /* Spacers, not margins on the cards. `.carousel__track > :first-child` was
-     tried and silently matched nothing: Astro scopes by a cid attribute, the
-     cards come through a <slot> from AthleteCard and carry ITS cid, so the
-     selector never applied. A pseudo-element belongs to the track, so it
-     carries the track's own cid and always matches.
-     `--gutter` minus the flex gap, because the gap sits between the spacer and
-     the first card and would otherwise be added on top. */
-  .carousel__track::before,
-  .carousel__track::after {
-    content: "";
-    flex: 0 0 calc(var(--gutter) - var(--space-2));
   }
 
   .carousel__track:focus-visible {
@@ -142,6 +108,36 @@ const { label } = Astro.props;
   .carousel__arrow:disabled { opacity: 0; pointer-events: none; }
   .carousel__arrow--prev { left: -14px; }
   .carousel__arrow--next { right: -14px; }
+
+  /* NARROW SCREENS ONLY: the track runs edge to edge.
+     On a phone the content gutter is a large share of the width, so stopping
+     the cards short of the edge wastes it and makes a swipe feel fenced in.
+     On a desktop the same treatment reads as cards escaping the layout, so
+     above this breakpoint the carousel stays inside the page container — which
+     is also where the arrows live, so the two halves agree: contained with
+     arrows above, edge-to-edge with a swipe below.
+
+     Three things have to move together or the gutter fights the snapping:
+       1. negative margins pull the track out to the window;
+       2. pseudo-element SPACERS put the inset back as content — margins on
+          `> :first-child` silently match nothing, because Astro scopes by a cid
+          and the cards arrive through a <slot> carrying AthleteCard's;
+       3. `scroll-padding-inline` moves the snapport in by the same amount,
+          without which `scroll-snap-align: start` snaps the first card flush to
+          the window and every scrollable carousel loads pre-scrolled. */
+  @media (max-width: 900px) {
+    .carousel__track {
+      --gutter: var(--space-3);
+      margin-inline: calc(50% - 50vw);
+      scroll-padding-inline: var(--gutter);
+    }
+    .carousel__track::before,
+    .carousel__track::after {
+      content: "";
+      /* Minus the flex gap, which already sits between spacer and first card. */
+      flex: 0 0 calc(var(--gutter) - var(--space-2));
+    }
+  }
 
   /* No room to hang arrows outside the track on a phone, and a swipe is the
      natural gesture there. The scrollbar comes back with them gone. */
