@@ -36,13 +36,19 @@ const initials = member.display_name
 
 <style>
   .card {
-    /* Fixed width AND fixed height. The width keeps the track scrolling in even
-       steps; the height is what makes a row of cards read as a row rather than
-       a ragged edge — a two-line name would otherwise make one card taller than
-       its neighbours. Both halves below are sized to add up to it exactly. */
+    /* Fixed WIDTH, so the track scrolls in even steps. The height is NOT fixed:
+       the track is a flex row and `align-items: stretch` is its default, so
+       every card in a carousel takes the height of the tallest one in that
+       carousel — which is exactly the rule wanted. A squad whose names all fit
+       on one line gets short cards; one name wrapping to two lines lifts every
+       card in THAT squad and no other.
+       A fixed height cannot express this: it has to be tall enough for the
+       worst case everywhere, which left a band of empty space under every
+       one-line name. */
+    display: flex;
+    flex-direction: column;
     flex: 0 0 auto;
     width: 156px;
-    height: 190px;
     scroll-snap-align: start;
     background: var(--color-bg-raised);
     border-radius: var(--radius);
@@ -59,6 +65,9 @@ const initials = member.display_name
        media inside them was not. A definite height fixes both the box and what
        the percentage resolves against. */
     height: 116px;
+    /* `flex: none` so the media keeps its definite height while the card
+       stretches: without it, stretching the card would stretch the picture. */
+    flex: 0 0 auto;
     /* Belt and braces: the box is definite now, so nothing should overflow —
        but if a future change makes one, it is clipped rather than shoving the
        name out of the card. */
@@ -84,9 +93,11 @@ const initials = member.display_name
     letter-spacing: 0.04em;
   }
   .card__body {
-    /* 74px, and the card's 190 is exactly 116 + 74. Fixed rather than fluid so
-       a card with no age categories does not come up short. */
-    height: 74px;
+    /* Sized by its CONTENT, then stretched to match the tallest card in the
+       row. This is what takes the empty band out from under a one-line name,
+       and it is also why the picture now reads as the card rather than as a
+       strip above a big grey box. */
+    flex: 1 1 auto;
     padding: 10px var(--space-2);
     overflow: hidden;
   }
