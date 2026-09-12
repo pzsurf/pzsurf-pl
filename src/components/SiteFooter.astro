@@ -1,0 +1,69 @@
+---
+import { primaryAddress, socialLinks, type Organisation } from "../lib/api";
+interface Props { org: Organisation }
+const { org } = Astro.props;
+const address = primaryAddress(org);
+const socials = socialLinks(org);
+---
+<footer class="foot on-dark" id="kontakt">
+  <div class="foot__inner">
+    <div>
+      <p class="foot__name">{org.name}</p>
+      {address && <p class="foot__line">{address}</p>}
+      {org.email && (
+        <p class="foot__line"><a href={`mailto:${org.email}`}>{org.email}</a></p>
+      )}
+      {org.phone && <p class="foot__line">{org.phone}</p>}
+    </div>
+
+    <div class="foot__right">
+      {socials.length > 0 && (
+        <p class="foot__socials">
+          {socials.map((s) => <a href={s.url} rel="noopener">{s.label}</a>)}
+        </p>
+      )}
+      {/* Said plainly rather than buried: this page is generated from the
+          federation's own record on the platform, so the two cannot disagree. */}
+      <p class="foot__line foot__credit">
+        Dane z platformy <a href="https://surfpoland.com">surfpoland.com</a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .foot { margin-top: var(--space-7); padding-block: var(--space-5); }
+  .foot__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    justify-content: space-between;
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--space-3);
+  }
+  .foot__name {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-subhead);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .foot__line { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+  .foot__right { text-align: right; }
+  .foot__socials { display: flex; gap: var(--space-3); justify-content: flex-end; margin: 0 0 var(--space-2); }
+  .foot a { color: inherit; }
+  .foot a:hover { color: var(--color-accent); }
+  .foot__socials a {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-subhead);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+  .foot__credit { margin-top: var(--space-2); color: var(--color-text-faint); font-size: var(--text-xs); }
+
+  @media (max-width: 560px) {
+    .foot__right, .foot__socials { text-align: left; justify-content: flex-start; }
+  }
+</style>

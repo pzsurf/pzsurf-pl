@@ -77,11 +77,31 @@ export async function getNationalTeams(): Promise<NationalTeam[]> {
   return data;
 }
 
+export interface OrgAddress {
+  address: string;
+  is_primary: boolean;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface OrgSocial {
+  platform: string;
+  url: string;
+}
+
 export interface Organisation {
   slug: string;
   name: string;
   description: string | null;
   types: string[];
+  city: string | null;
+  email: string | null;
+  phone: string | null;
+  website_url: string | null;
+  image_url: string | null;
+  addresses: OrgAddress[];
+  socials: OrgSocial[];
+  disciplines: string[];
 }
 
 export async function getOrganisation(): Promise<Organisation> {
@@ -107,3 +127,30 @@ const DISCIPLINE_PL: Record<string, string> = {
   LONGBOARD: "Longboard",
   SUP: "SUP",
 };
+
+/** The registered seat, or the first address on file. */
+export const primaryAddress = (org: Organisation): string | null =>
+  (org.addresses.find((a) => a.is_primary) ?? org.addresses[0])?.address ?? null;
+
+/** Socials, de-duplicated by URL and with the platform RE-DERIVED from the host.
+ *
+ *  The API's `platform` is whatever an admin picked in the console, and today
+ *  it is wrong: both of the federation's links are stored as "instagram",
+ *  including the Facebook one. The URL cannot lie, so the URL decides — and a
+ *  link we cannot place gets a neutral label rather than the wrong icon. */
+export function socialLinks(org: Organisation): { label: string; url: string }[] {
+  const seen = new Set<string>();
+  const out: { label: string; url: string }[] = [];
+  for (const s of org.socials) {
+    if (seen.has(s.url)) continue;
+    seen.add(s.url);
+    const host = (() => { try { return new URL(s.url).hostname; } catch { return ""; } })();
+    const label = host.includes("facebook") ? "Facebook"
+      : host.includes("instagram") ? "Instagram"
+      : host.includes("youtube") ? "YouTube"
+      : host.includes("linkedin") ? "LinkedIn"
+      : host.replace(/^www\./, "") || s.platform;
+    out.push({ label, url: s.url });
+  }
+  return out;
+}

@@ -1,0 +1,102 @@
+---
+interface Props { title: string; lede: string }
+const { title, lede } = Astro.props;
+---
+<section class="hero on-dark">
+  {/* autoplay needs muted AND playsInline or iOS refuses and shows the poster
+      — which is why the poster is worth having rather than a black rectangle.
+      The video is decorative, so it is aria-hidden and the page reads fine
+      without it: no control, no captions, nothing to miss. */}
+  <video
+    class="hero__video"
+    autoplay muted loop playsinline
+    preload="metadata"
+    poster="/hero-poster.jpg"
+    aria-hidden="true"
+    tabindex="-1"
+  >
+    <source src="/hero.mp4" type="video/mp4" />
+  </video>
+  <div class="hero__scrim" aria-hidden="true"></div>
+
+  <div class="hero__inner">
+    <h1 class="hero__title">{title}</h1>
+    <p class="hero__lede">{lede}</p>
+    <a class="btn btn--outline" href="#kadra">Zobacz kadrę</a>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    /* Tall enough to be a hero, never taller than the window — a full 100vh
+       hides the fact that there is anything below it. */
+    min-height: min(78vh, 680px);
+    overflow: hidden;
+  }
+  .hero__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* Carries the text contrast, so the wording stays legible over whatever
+     frame of the footage happens to be showing. */
+  .hero__scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.62) 0%,
+      rgba(0, 0, 0, 0.36) 42%,
+      rgba(0, 0, 0, 0.78) 100%
+    );
+  }
+  .hero__inner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--space-3);
+    padding-block: var(--space-6);
+  }
+  .hero__title {
+    max-width: 18ch;
+    font-size: var(--text-hero);
+    line-height: var(--leading-2xl);
+    font-weight: var(--weight-display);
+  }
+  .hero__lede {
+    max-width: 46ch;
+    margin: var(--space-3) 0 var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 var(--space-4);
+    border: 2px solid currentColor;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-button);
+    text-decoration: none;
+    color: var(--color-text);
+  }
+  .btn--outline:hover { color: var(--color-accent); }
+
+  /* The footage is motion nobody asked for. Honour the preference by showing
+     the poster instead — the scrim and the wording are unaffected. */
+  @media (prefers-reduced-motion: reduce) {
+    .hero__video { display: none; }
+    .hero { background: #000 url("/hero-poster.jpg") center / cover no-repeat; }
+  }
+</style>

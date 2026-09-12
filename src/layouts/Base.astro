@@ -2,17 +2,21 @@
 import "../styles/tokens.css";
 
 interface Props {
+  /** The browser tab, and the default for the share title. */
   title: string;
   description: string;
-  /** Absolute URL of the share image, when the page has its own. */
+  /** Absolute share image. Defaults to the hero poster, so a link shared from
+   *  anywhere on the site previews with the federation's own imagery rather
+   *  than a blank card. */
   image?: string;
 }
 const { title, description, image } = Astro.props;
 
-// Astro.site comes from astro.config.mjs, so these are absolute in the built
-// HTML — which is the whole point. A crawler fetching the raw file resolves
-// og:url and og:image without a base to work from.
+// Astro.site comes from astro.config.mjs, so these resolve absolute in the
+// built file — which is the point: a crawler reading the raw HTML has no base
+// to resolve a relative URL against.
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const shareImage = new URL(image ?? "/hero-poster.jpg", Astro.site);
 ---
 <!doctype html>
 <html lang="pl">
@@ -23,17 +27,25 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
 
-    {/* The reason this site is statically generated at all: none of the
-        messengers people actually share links in execute JavaScript, so these
-        tags have to be in the file as written, not added by a script. */}
+    {/* The federation's mark, copied into this repo rather than linked from
+        surfpoland.com: a site that cannot render without another site's assets
+        is not actually independent, and a hotlink breaks the day that path
+        changes. */}
+    <link rel="icon" type="image/png" href="/pzsurf-mark.png" />
+    <link rel="apple-touch-icon" href="/pzsurf-mark.png" />
+    <meta name="theme-color" content="#000000" />
+
+    {/* The reason this site is generated at all: the messengers people share
+        links in do not run JavaScript, so these have to be in the file as
+        written rather than added by a script. */}
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Polski Związek Surfingu" />
     <meta property="og:locale" content="pl_PL" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    {image && <meta property="og:image" content={image} />}
-    <meta name="twitter:card" content={image ? "summary_large_image" : "summary"} />
+    <meta property="og:image" content={shareImage} />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <slot />

@@ -1,14 +1,17 @@
 ---
 import Base from "../layouts/Base.astro";
-import { getNationalTeams, latestYear, teamTitle } from "../lib/api";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import Hero from "../components/Hero.astro";
+import { getNationalTeams, getOrganisation, latestYear, teamTitle } from "../lib/api";
 
-// Runs at BUILD time — `astro build` calls the API once and the result is
-// baked into dist/. No visitor ever waits on Cloud Run for this page.
-const teams = await getNationalTeams();
+// Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
+// single always-on container serves nobody's page views.
+const [teams, org] = await Promise.all([getNationalTeams(), getOrganisation()]);
 const year = latestYear(teams);
 
-// Only the current season. Older squads are a page of their own once there is
-// more than one season in the data; today the API returns 2026 only.
+// Current season only. Older squads become their own page once the API returns
+// more than one year; today it returns 2026.
 const season = teams
   .filter((t) => t.year === year)
   .sort((a, b) => teamTitle(a).localeCompare(teamTitle(b), "pl"));
@@ -16,27 +19,29 @@ const season = teams
 const athletes = season.reduce((n, t) => n + t.member_count, 0);
 ---
 <Base
-  title={`Kadra Narodowa ${year ?? ""} — Polski Związek Surfingu`}
-  description={`${athletes} zawodniczek i zawodników w ${season.length} kadrach narodowych w sezonie ${year ?? ""}.`}
+  title="Polski Związek Surfingu"
+  description={`Oficjalna strona Polskiego Związku Surfingu. Kadra narodowa ${year ?? ""}: ${athletes} zawodniczek i zawodników w ${season.length} kadrach.`}
 >
-  <header class="band on-dark">
-    <div class="band__inner">
-      <p class="masthead__eyebrow">Polski Związek Surfingu</p>
-      <h1>Kadra Narodowa {year}</h1>
-      <p class="masthead__lede">
-        {athletes} zawodniczek i zawodników w {season.length} kadrach.
-      </p>
-    </div>
-  </header>
+  <div class="hero-wrap">
+    <SiteHeader />
+    <Hero
+      title="Polski Związek Surfingu"
+      lede="Krajowa federacja surfingu — kadra narodowa, zawody i kluby zrzeszone w całej Polsce."
+    />
+  </div>
 
-  <main class="page">
+  <main class="page" id="kadra">
+    <h2 class="section__title">Kadra Narodowa {year}</h2>
+    <p class="section__lede">
+      {athletes} zawodniczek i zawodników w {season.length} kadrach.
+    </p>
 
     {season.map((team) => (
       <section class="squad">
-        <h2 class="squad__name">
+        <h3 class="squad__name">
           {teamTitle(team)}
           <span class="squad__count">{team.member_count}</span>
-        </h2>
+        </h3>
         <ul class="roster">
           {team.members.map((m) => (
             <li class="roster__item">
@@ -49,48 +54,27 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
         </ul>
       </section>
     ))}
-
-    <footer class="foot">
-      <p>
-        Dane pochodzą z platformy
-        <a href="https://surfpoland.com">surfpoland.com</a>.
-      </p>
-    </footer>
   </main>
+
+  <SiteFooter org={org} />
 </Base>
 
 <style>
-  /* Structure only — every value is a token, so the design language governs
-     the look and this file never restates it. */
-  /* A black band running edge to edge — the source site's main compositional
-     device, light content between dark full-width sections. It sits OUTSIDE
-     .page so it can reach the viewport edges, and re-centres its own content
-     to the same measure. `.on-dark` re-points the role tokens; nothing in here
-     is re-coloured by hand. */
-  .band { padding-block: var(--space-6); }
-  .band__inner {
-    max-width: var(--page-max);
-    margin-inline: auto;
-    padding-inline: var(--space-3);
-  }
-  .masthead__eyebrow {
-    margin: 0 0 var(--space-2);
-    color: var(--color-text-muted);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-subhead);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-  .masthead h1 {
-    font-size: var(--text-hero);
+  /* The header is absolutely positioned, so it needs a positioned ancestor it
+     shares with the hero — otherwise it anchors to the page and scrolls away
+     from the footage it is meant to sit on. */
+  .hero-wrap { position: relative; }
+
+  .section__title {
+    font-size: var(--text-2xl);
     line-height: var(--leading-2xl);
     font-weight: var(--weight-display);
+    color: var(--color-text);
   }
-  .masthead__lede {
-    margin: var(--space-3) 0 0;
+  .section__lede {
+    margin: var(--space-2) 0 var(--space-5);
     color: var(--color-text-muted);
     font-size: var(--text-lg);
-    line-height: var(--leading-lg);
   }
 
   .squad { margin-bottom: var(--space-5); }
@@ -99,8 +83,8 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
     align-items: baseline;
     gap: var(--space-2);
     padding-bottom: var(--space-2);
-    /* The red rule under a section heading is the one place the brand colour
-       appears on a light background. Used once per squad, never decoratively. */
+    /* The one place the brand red appears on a light ground. Once per squad,
+       never decoratively. */
     border-bottom: 2px solid var(--color-accent);
     font-size: var(--text-lg);
     font-weight: var(--weight-subhead);
@@ -129,13 +113,4 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
     border-radius: var(--radius);
   }
   .roster__cats { color: var(--color-text-faint); font-size: var(--text-xs); }
-
-  .foot {
-    margin-top: var(--space-6);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--color-border);
-    color: var(--color-text-faint);
-    font-size: var(--text-sm);
-  }
-  .foot a { color: var(--color-accent); }
 </style>

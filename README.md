@@ -55,6 +55,20 @@ list against the live API — which is what the API's 30s `s-maxage` is for.
 > single Cloud Run instance behind it, and the **CDN's** cache window governs
 > this site's HTML. Neither is the other.
 
+## Assets
+
+`public/` holds the federation's own imagery, **copied in rather than linked**
+from surfpoland.com:
+
+| File | From |
+|---|---|
+| `hero.mp4`, `hero-poster.jpg` | the platform's landing hero — the same footage |
+| `pzsurf-mark.png` | the federation's mark; also the favicon |
+
+Copied because a site that cannot render without another site's assets is not
+independent, and a hotlink breaks silently the day that path changes. The cost
+is ~5 MB in the repository, paid once.
+
 ## Design
 
 `src/styles/tokens.css` is the design language, and is currently a **marked
