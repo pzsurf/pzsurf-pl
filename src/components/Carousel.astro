@@ -1,0 +1,156 @@
+---
+// A horizontal, snapping track of cards.
+//
+// The scrolling is CSS — overflow-x plus scroll-snap — so it works with a
+// swipe, a trackpad and the keyboard with NO JavaScript. The arrows are the
+// only scripted part.
+//
+// They are written in the markup but `hidden`, and the script reveals them.
+// The first attempt CREATED them in JS to avoid shipping inert buttons, and
+// that failed in a way worth recording: Astro's <style> is scoped by a
+// `data-astro-cid-*` attribute stamped onto elements in the TEMPLATE, so
+// runtime-created nodes match none of it and the arrows rendered as unstyled
+// browser buttons. Hidden-then-revealed gets both properties — scoped styles
+// apply, and a visitor without JS sees no button rather than a dead one.
+//
+// The roster itself is never affected: every name is in the HTML as written,
+// which is what keeps link previews and crawlers reading the full squad.
+interface Props { label: string }
+const { label } = Astro.props;
+---
+<div class="carousel" data-carousel>
+  <div class="carousel__track" data-track tabindex="0" role="group" aria-label={label}>
+    <slot />
+  </div>
+  <button type="button" class="carousel__arrow carousel__arrow--prev"
+          data-dir="prev" aria-label="Poprzednie" hidden>‹</button>
+  <button type="button" class="carousel__arrow carousel__arrow--next"
+          data-dir="next" aria-label="Następne" hidden>›</button>
+</div>
+
+<style>
+  .carousel { position: relative; }
+  .carousel__track {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    /* PROXIMITY, not mandatory. Measured: with `x mandatory` this track refused
+       to move at all — `scrollBy` and even a direct `scrollLeft = 250` were
+       re-snapped straight back to its resting 4px, so both arrows were dead
+       while looking perfectly alive. Proximity snaps when a scroll ends near a
+       card and otherwise leaves the scroll alone, which is also the kinder
+       behaviour on a long row: mandatory can trap a reader mid-list. */
+    scroll-snap-type: x proximity;
+    /* NO `scroll-behavior: smooth` here, deliberately. Measured in Chrome: with
+       it set in CSS, `track.scrollBy({left})` called WITHOUT an explicit
+       `behavior` silently does nothing — the arrows looked alive and moved the
+       track not at all. The same call works with `behavior` passed explicitly,
+       which is what the script now does, and that also lets it honour
+       prefers-reduced-motion directly rather than through a media query. */
+    /* Room for the focus ring to sit outside the cards. `scroll-padding` keeps
+       the snap points aligned to the same inset, so a snapped card sits flush
+       rather than four pixels under the edge. */
+    padding: var(--space-1);
+    margin: calc(var(--space-1) * -1);
+    scroll-padding-inline: var(--space-1);
+  }
+  .carousel__track:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* The scrollbar is the ONLY affordance a visitor without JS gets, so it stays
+     — until the arrows appear and make it redundant. */
+  .carousel.is-enhanced .carousel__track { scrollbar-width: none; }
+  .carousel.is-enhanced .carousel__track::-webkit-scrollbar { display: none; }
+
+  .carousel__arrow {
+    position: absolute;
+    /* The media box is a square the width of a card, so its centre is half a
+       card-width down — not half the component, which the captions skew. */
+    top: 100px;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: #fff;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+  .carousel__arrow:hover { background: var(--color-accent-strong); }
+  .carousel__arrow:disabled { opacity: 0; pointer-events: none; }
+  .carousel__arrow--prev { left: -14px; }
+  .carousel__arrow--next { right: -14px; }
+
+  /* No room to hang arrows outside the track on a phone, and a swipe is the
+     natural gesture there. The scrollbar comes back with them gone. */
+  @media (max-width: 900px) {
+    .carousel__arrow { display: none; }
+    .carousel.is-enhanced .carousel__track { scrollbar-width: thin; }
+    .carousel.is-enhanced .carousel__track::-webkit-scrollbar { display: initial; }
+  }
+</style>
+
+<script>
+  // The only JavaScript on the site. Everything it adds is a convenience;
+  // nothing it adds is content.
+  for (const root of document.querySelectorAll<HTMLElement>("[data-carousel]")) {
+    const track = root.querySelector<HTMLElement>("[data-track]");
+    const arrows = root.querySelectorAll<HTMLButtonElement>("[data-dir]");
+    if (!track || arrows.length !== 2) continue;
+
+    root.classList.add("is-enhanced");
+    for (const b of arrows) {
+      b.hidden = false;
+      b.addEventListener("click", () => {
+        // Just under a full view, so the card at the edge stays visible and the
+        // reader keeps their place rather than being teleported.
+        const step = track.clientWidth * 0.8;
+        const delta = b.dataset.dir === "next" ? step : -step;
+
+        // scrollTo with an ABSOLUTE, pre-clamped target — not scrollBy.
+        // Measured in Chrome while building this: `scrollBy` on a snapping
+        // track repeatedly resolved to no movement at all, while `scrollTo`
+        // with an explicit target landed every time. A target we compute
+        // ourselves also cannot overshoot into a snap position that does not
+        // exist, which is the failure mode that makes an arrow look dead.
+        const max = track.scrollWidth - track.clientWidth;
+        const target = Math.max(0, Math.min(max, track.scrollLeft + delta));
+
+        // `behavior` is passed explicitly and must stay that way — see the note
+        // on scroll-behavior in the stylesheet above.
+        const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+        track.scrollTo({ left: target, behavior: smooth ? "smooth" : "auto" });
+      });
+    }
+
+    // Hide an arrow that would do nothing — at either end, and when every card
+    // already fits so the track cannot scroll at all.
+    //
+    // EDGE is not zero and not 1px. The track has its own padding, so at rest
+    // scrollLeft is already a few pixels in (4, measured) and a `<= 1` test
+    // never fires — the back arrow sat there enabled on a carousel that was
+    // fully scrolled left. Browsers also report fractional scrollLeft at
+    // fractional zoom. A dozen pixels of slack costs nothing: a genuinely
+    // scrolled track is hundreds of pixels along.
+    const EDGE = 12;
+    const sync = () => {
+      const max = track.scrollWidth - track.clientWidth;
+      for (const b of arrows) {
+        b.disabled = b.dataset.dir === "prev"
+          ? track.scrollLeft <= EDGE
+          : track.scrollLeft >= max - EDGE;
+      }
+    };
+    track.addEventListener("scroll", sync, { passive: true });
+    addEventListener("resize", sync);
+    sync();
+  }
+</script>

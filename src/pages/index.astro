@@ -3,6 +3,8 @@ import Base from "../layouts/Base.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import Hero from "../components/Hero.astro";
+import AthleteCard from "../components/AthleteCard.astro";
+import Carousel from "../components/Carousel.astro";
 import { getNationalTeams, getOrganisation, latestYear, teamTitle } from "../lib/api";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
@@ -42,16 +44,9 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
           {teamTitle(team)}
           <span class="squad__count">{team.member_count}</span>
         </h3>
-        <ul class="roster">
-          {team.members.map((m) => (
-            <li class="roster__item">
-              <span class="roster__name">{m.display_name}</span>
-              {m.categories.length > 0 && (
-                <span class="roster__cats">{m.categories.join(" · ")}</span>
-              )}
-            </li>
-          ))}
-        </ul>
+        <Carousel label={`Kadra ${teamTitle(team)}`}>
+          {team.members.map((m) => <AthleteCard member={m} />)}
+        </Carousel>
       </section>
     ))}
   </main>
@@ -77,7 +72,7 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
     font-size: var(--text-lg);
   }
 
-  .squad { margin-bottom: var(--space-5); }
+  .squad { margin-bottom: var(--space-6); }
   .squad__name {
     display: flex;
     align-items: baseline;
@@ -85,6 +80,7 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
     padding-bottom: var(--space-2);
     /* The one place the brand red appears on a light ground. Once per squad,
        never decoratively. */
+    margin-bottom: var(--space-3);
     border-bottom: 2px solid var(--color-accent);
     font-size: var(--text-lg);
     font-weight: var(--weight-subhead);
@@ -95,22 +91,4 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
     font-weight: var(--weight-body);
   }
 
-  .roster {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-    gap: var(--space-2);
-    margin: var(--space-3) 0 0;
-    padding: 0;
-    list-style: none;
-  }
-  .roster__item {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    background: var(--color-bg-raised);
-    border-radius: var(--radius);
-  }
-  .roster__cats { color: var(--color-text-faint); font-size: var(--text-xs); }
 </style>

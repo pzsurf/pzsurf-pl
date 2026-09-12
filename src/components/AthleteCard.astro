@@ -1,0 +1,73 @@
+---
+import type { TeamMember } from "../lib/api";
+interface Props { member: TeamMember }
+const { member } = Astro.props;
+
+// Initials from whatever name we were given. "Marta B." -> MB, "Anna Nowak" -> AN.
+// Built from display_name rather than from first/last, because those are not
+// public fields — the API sends one already-formatted string and nothing else.
+const initials = member.display_name
+  .split(/\s+/)
+  .map((part) => part[0])
+  .filter(Boolean)
+  .slice(0, 2)
+  .join("")
+  .toUpperCase();
+---
+<article class="card">
+  {/* The photo slot exists whether or not there is a photo. Today every
+      athlete resolves as a minor (date_of_birth is unset for most people, and
+      the API treats unknown as minor), so image_url is null for all of them
+      and every card shows its monogram. The moment a birth date and a
+      publication consent are recorded, that person's card starts showing their
+      photograph with no change here. */}
+  <div class="card__media">
+    {member.image_url
+      ? <img src={member.image_url} alt={member.display_name} loading="lazy" width="320" height="320" />
+      : <span class="card__monogram" aria-hidden="true">{initials}</span>}
+  </div>
+  <div class="card__body">
+    <p class="card__name">{member.display_name}</p>
+    {member.categories.length > 0 && (
+      <p class="card__cats">{member.categories.join(" · ")}</p>
+    )}
+  </div>
+</article>
+
+<style>
+  .card {
+    /* Fixed width so the track scrolls in even steps; the snap point lands each
+       card at the same offset whatever its name length. */
+    flex: 0 0 auto;
+    width: 200px;
+    scroll-snap-align: start;
+    background: var(--color-bg-raised);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .card__media {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    background: linear-gradient(160deg, #1f2a36, #0d1116);
+  }
+  .card__media img { width: 100%; height: 100%; object-fit: cover; }
+  .card__monogram {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 44px;
+    font-weight: var(--weight-display);
+    letter-spacing: 0.04em;
+  }
+  .card__body { padding: var(--space-3); }
+  .card__name {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-subhead);
+    color: var(--color-text);
+  }
+  .card__cats {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+  }
+</style>
