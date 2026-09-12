@@ -119,14 +119,15 @@ const assignments = assignmentsByPerson(teams);
     border-radius: 2px;
   }
 
-  .squad { margin-bottom: var(--space-6); }
+  /* space-4, not space-6. At 64px the squads read as four separate sections
+     that happen to share a page; at 24px they read as one roster in four
+     parts, which is what they are. The heading's own top margin does the rest
+     of the separating. */
+  .squad { margin-bottom: var(--space-4); }
   .squad__name {
     display: flex;
     align-items: baseline;
     gap: var(--space-2);
-    padding-bottom: var(--space-2);
-    /* The one place the brand red appears on a light ground. Once per squad,
-       never decoratively. */
     margin-bottom: var(--space-3);
     font-size: var(--text-lg);
     font-weight: var(--weight-subhead);
