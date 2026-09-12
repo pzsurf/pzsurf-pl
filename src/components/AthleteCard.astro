@@ -68,7 +68,13 @@ const initials = member.display_name
        while landscape ones happened to fit. Every card was 156x230 and the
        media inside them was not. A definite height fixes both the box and what
        the percentage resolves against. */
-    height: 116px;
+    /* A PORTRAIT rectangle, 3:4 against the card's 156px width. The photo is
+       meant to dominate the card and the name to read as a caption attached
+       under it; the previous 116px made a squat landscape band that the name
+       block competed with. Any definite height works here — what must not come
+       back is `aspect-ratio`, which left the track content-sized and stopped
+       the crop happening at all. */
+    height: 208px;
     /* `flex: none` so the media keeps its definite height while the card
        stretches: without it, stretching the card would stretch the picture. */
     flex: 0 0 auto;
@@ -102,7 +108,7 @@ const initials = member.display_name
   }
   .card__monogram {
     color: rgba(255, 255, 255, 0.65);
-    font-size: 32px;
+    font-size: 46px;
     font-weight: var(--weight-display);
     letter-spacing: 0.04em;
   }
