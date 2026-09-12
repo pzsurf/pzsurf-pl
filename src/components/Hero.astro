@@ -24,17 +24,71 @@ const { title, lede } = Astro.props;
     <p class="hero__lede">{lede}</p>
     <a class="btn btn--outline" href="#kadra">Zobacz kadrę</a>
   </div>
+
+  {/* A LINK, not an ornament. It points at the same place the button does, so
+      a keyboard or screen-reader user gets the way down that the animation is
+      advertising to everyone else. */}
+  <a class="hero__scroll" href="#kadra" aria-label="Przewiń w dół, aby zobaczyć więcej">
+    <span class="hero__scroll-mouse" aria-hidden="true"></span>
+  </a>
 </section>
 
 <style>
   .hero {
     position: relative;
     display: flex;
-    align-items: flex-end;
-    /* Tall enough to be a hero, never taller than the window — a full 100vh
-       hides the fact that there is anything below it. */
-    min-height: min(78vh, 680px);
+    /* Centred rather than bottom-aligned now the hero is full height: at 100vh
+       bottom-aligned text sits on the very edge, and it would collide with the
+       scroll indicator. Horizontally it stays left, as pzsurf.pl has it. */
+    align-items: center;
+    /* Full height, matching surfpoland.com. `svh` is the small-viewport height
+       — the area visible while a mobile browser's address bar is showing — so
+       the hero and its indicator never hide behind the toolbar. The plain vh
+       line is the fallback where svh is unsupported and must stay above it. */
+    height: 100vh;
+    height: 100svh;
+    min-height: 480px;
     overflow: hidden;
+  }
+
+  /* A full-height hero hides the fact that there is anything below it, which is
+     the exact reason this indicator has to exist rather than being decoration.
+     Same idea as surfpoland.com's: a mouse outline with a wheel falling inside
+     it, which reads as "scroll" without a word of copy to translate. */
+  .hero__scroll {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    /* A generous target around a small glyph. */
+    padding: var(--space-2);
+  }
+  .hero__scroll-mouse {
+    display: block;
+    width: 24px;
+    height: 38px;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    border-radius: 14px;
+    position: relative;
+  }
+  .hero__scroll:hover .hero__scroll-mouse { border-color: #fff; }
+  .hero__scroll-mouse::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 7px;
+    width: 4px;
+    height: 7px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateX(-50%);
+    animation: hero-scroll 1.6s ease-in-out infinite;
+  }
+  @keyframes hero-scroll {
+    0%   { opacity: 0; transform: translate(-50%, 0); }
+    40%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, 12px); }
   }
   .hero__video {
     position: absolute;
@@ -98,5 +152,8 @@ const { title, lede } = Astro.props;
   @media (prefers-reduced-motion: reduce) {
     .hero__video { display: none; }
     .hero { background: #000 url("/hero-poster.jpg") center / cover no-repeat; }
+    /* The dot stops, the mouse stays. The animation is decoration; the
+       indicator itself is information about the page and must not vanish. */
+    .hero__scroll-mouse::after { animation: none; opacity: 1; }
   }
 </style>
