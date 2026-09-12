@@ -5,6 +5,7 @@ import SiteFooter from "../components/SiteFooter.astro";
 import Hero from "../components/Hero.astro";
 import AthleteCard from "../components/AthleteCard.astro";
 import Carousel from "../components/Carousel.astro";
+import PersonDialog from "../components/PersonDialog.astro";
 import { getNationalTeams, getOrganisation, latestYear, teamTitle } from "../lib/api";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
@@ -60,13 +61,18 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
           <span class="squad__count">{team.member_count}</span>
         </h3>
         <Carousel label={`Kadra ${teamTitle(team)}`}>
-          {team.members.map((m) => <AthleteCard member={m} />)}
+          {team.members.map((m) => (
+            <AthleteCard member={m} team={teamTitle(team)} year={team.year} />
+          ))}
         </Carousel>
       </section>
     ))}
   </main>
 
   <SiteFooter org={org} />
+
+  {/* One dialog for every card on the page. */}
+  <PersonDialog />
 </Base>
 
 <style>

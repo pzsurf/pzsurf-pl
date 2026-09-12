@@ -1,29 +1,37 @@
 ---
 import type { TeamMember } from "../lib/api";
-interface Props { member: TeamMember }
-const { member } = Astro.props;
+interface Props {
+  member: TeamMember;
+  /** The squad this card appears in — carried so the dialog can name it. */
+  team: string;
+  year: number;
+}
+const { member, team, year } = Astro.props;
 
-// Initials from whatever name we were given. "Marta B." -> MB, "Anna Nowak" -> AN.
-// Built from display_name rather than from first/last, because those are not
-// public fields — the API sends one already-formatted string and nothing else.
+// Initials from whatever name we were given. Built from display_name rather
+// than first/last, because those are not public fields — the API sends one
+// already-formatted string and nothing else.
 const initials = member.display_name
-  .split(/\s+/)
-  .map((part) => part[0])
-  .filter(Boolean)
-  .slice(0, 2)
-  .join("")
-  .toUpperCase();
+  .split(/\s+/).map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 ---
-<article class="card">
-  {/* The photo slot exists whether or not there is a photo. Today every
-      athlete resolves as a minor (date_of_birth is unset for most people, and
-      the API treats unknown as minor), so image_url is null for all of them
-      and every card shows its monogram. The moment a birth date and a
-      publication consent are recorded, that person's card starts showing their
-      photograph with no change here. */}
+{/* A BUTTON, not an article with a click handler: it is focusable, it responds
+    to Enter and Space, and it announces itself as something you can activate.
+    The dialog it opens is one shared element — see PersonDialog. */}
+<button
+  type="button"
+  class="card"
+  data-person
+  data-name={member.display_name}
+  data-image={member.image_url ?? ""}
+  data-initials={initials}
+  data-role={member.role}
+  data-cats={member.categories.join(" · ")}
+  data-team={team}
+  data-year={String(year)}
+>
   <div class="card__media">
     {member.image_url
-      ? <img src={member.image_url} alt={member.display_name} loading="lazy" width="320" height="320" />
+      ? <img src={member.image_url} alt="" loading="lazy" width="320" height="320" />
       : <span class="card__monogram" aria-hidden="true">{initials}</span>}
   </div>
   <div class="card__body">
@@ -32,112 +40,83 @@ const initials = member.display_name
       <p class="card__cats">{member.categories.join(" · ")}</p>
     )}
   </div>
-</article>
+</button>
 
 <style>
   .card {
-    /* Fixed WIDTH, so the track scrolls in even steps. The height is NOT fixed:
-       the track is a flex row and `align-items: stretch` is its default, so
-       every card in a carousel takes the height of the tallest one in that
-       carousel — which is exactly the rule wanted. A squad whose names all fit
-       on one line gets short cards; one name wrapping to two lines lifts every
-       card in THAT squad and no other.
-       A fixed height cannot express this: it has to be tall enough for the
-       worst case everywhere, which left a band of empty space under every
-       one-line name. */
+    /* 186px is measured, not chosen: the longest name on the roster —
+       "Maksymilian Michalewski" — is 160px at this size, plus 16px of padding,
+       plus a little slack. Every name therefore sits on ONE line, which is what
+       `white-space: nowrap` below enforces and what stops a card growing a
+       second line and dragging its whole row taller. */
+    width: 186px;
     display: flex;
     flex-direction: column;
     flex: 0 0 auto;
-    width: 156px;
     scroll-snap-align: start;
+    padding: 0;
     background: var(--color-bg-raised);
-    /* A visible edge, not just a change of tone — the same relationship
-       surfpoland.com's cards have with their own background. */
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius);
     overflow: hidden;
+    font: inherit;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
   }
+  .card:hover { border-color: var(--color-accent); }
+  .card:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-color: var(--color-accent);
+  }
+
   .card__media {
-    /* `relative` so the photo can be positioned against THIS box rather than
-       against a grid track — see the note on the img below. The grid and its
-       centring remain, but they now only serve the monogram. */
     position: relative;
     display: grid;
     place-items: center;
-    /* An EXPLICIT height, not `aspect-ratio`, and that distinction was the bug.
-       aspect-ratio only expresses a PREFERRED size: the image's `height: 100%`
-       has no definite height to resolve against, so the box fell back to the
-       photo's natural height and portrait shots blew it out to 234 and 237px
-       while landscape ones happened to fit. Every card was 156x230 and the
-       media inside them was not. A definite height fixes both the box and what
-       the percentage resolves against. */
-    /* A PORTRAIT rectangle, 3:4 against the card's 156px width. The photo is
-       meant to dominate the card and the name to read as a caption attached
-       under it; the previous 116px made a squat landscape band that the name
-       block competed with. Any definite height works here — what must not come
-       back is `aspect-ratio`, which left the track content-sized and stopped
-       the crop happening at all. */
-    height: 208px;
-    /* `flex: none` so the media keeps its definite height while the card
-       stretches: without it, stretching the card would stretch the picture. */
+    /* 3:4 against the 186px width. A definite height, never `aspect-ratio`:
+       that left the grid track content-sized, so the image took its own height
+       and the crop never happened. */
+    height: 248px;
     flex: 0 0 auto;
-    /* Belt and braces: the box is definite now, so nothing should overflow —
-       but if a future change makes one, it is clipped rather than shoving the
-       name out of the card. */
     overflow: hidden;
     background: linear-gradient(160deg, #1f2a36, #0d1116);
   }
   .card__media img {
-    /* ABSOLUTE, and this is the fix for photos that were showing their top
-       instead of their middle.
-       `height: 100%` looks like it should work and does not: `place-items:
-       center` leaves the grid TRACK content-sized, so the percentage has no
-       definite basis, falls back to `auto`, and a portrait rendered at its own
-       aspect — 4672x7008 came out 156x234 in a 116px box. `overflow: hidden`
-       then clipped it, so what you saw was the TOP 116px of the photo and
-       `object-fit: cover` never had anything to crop. Landscape photos happened
-       to fit, which is why only some cards looked wrong.
-       Positioned against the box itself, the image is exactly 156x116 whatever
-       its shape, and cover/center then take the middle as intended. */
+    /* Absolute, so the picture cannot resolve its height against an indefinite
+       track and spill out of the box. */
     position: absolute;
     inset: 0;
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* The middle band, as asked. On a full-length portrait that is the torso,
-       so `center 35%` biases toward faces if they start getting cut. */
     object-position: center;
   }
   .card__monogram {
     color: rgba(255, 255, 255, 0.65);
-    font-size: 46px;
+    font-size: 52px;
     font-weight: var(--weight-display);
     letter-spacing: 0.04em;
   }
+
   .card__body {
-    /* Sized by its CONTENT, then stretched to match the tallest card in the
-       row. This is what takes the empty band out from under a one-line name,
-       and it is also why the picture now reads as the card rather than as a
-       strip above a big grey box. */
     flex: 1 1 auto;
     padding: 10px var(--space-2);
     overflow: hidden;
   }
   .card__name {
     margin: 0;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.3;
     font-weight: var(--weight-subhead);
     color: var(--color-text);
-    /* Two lines, then ellipsis. NOT `nowrap`: full names arrived only once the
-       API stopped abbreviating them, and truncating "Marta Budzanowska" to
-       "Marta Budz…" would hand back what that change was for. Two lines fit
-       every name on the current roster. */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    /* One line, always. The ellipsis is a backstop for a name longer than any
+       on today's roster, not the expected outcome. */
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
   .card__cats {
     margin: var(--space-1) 0 0;
