@@ -36,10 +36,13 @@ const initials = member.display_name
 
 <style>
   .card {
-    /* Fixed width so the track scrolls in even steps; the snap point lands each
-       card at the same offset whatever its name length. */
+    /* Fixed width AND fixed height. The width keeps the track scrolling in even
+       steps; the height is what makes a row of cards read as a row rather than
+       a ragged edge — a two-line name would otherwise make one card taller than
+       its neighbours. Both halves below are sized to add up to it exactly. */
     flex: 0 0 auto;
-    width: 200px;
+    width: 156px;
+    height: 230px;
     scroll-snap-align: start;
     background: var(--color-bg-raised);
     border-radius: var(--radius);
@@ -48,26 +51,55 @@ const initials = member.display_name
   .card__media {
     display: grid;
     place-items: center;
+    /* Square, so the media is exactly the card's width tall (156px) and the
+       body gets the remaining 74. */
     aspect-ratio: 1;
     background: linear-gradient(160deg, #1f2a36, #0d1116);
   }
-  .card__media img { width: 100%; height: 100%; object-fit: cover; }
+  .card__media img {
+    width: 100%;
+    height: 100%;
+    /* `cover` fills the square and crops the overflow; `center` decides WHICH
+       part survives. A portrait taller than it is wide keeps its middle rather
+       than its top, which is where a face usually is — the default would be the
+       same here, but leaving it implicit invites somebody to "tidy" it away. */
+    object-fit: cover;
+    object-position: center;
+  }
   .card__monogram {
     color: rgba(255, 255, 255, 0.65);
-    font-size: 44px;
+    font-size: 36px;
     font-weight: var(--weight-display);
     letter-spacing: 0.04em;
   }
-  .card__body { padding: var(--space-3); }
+  .card__body {
+    /* 74px: whatever is left of the card once the square media is taken. Fixed
+       rather than fluid, so a missing categories line does not shorten a card. */
+    height: 74px;
+    padding: 10px var(--space-2);
+    overflow: hidden;
+  }
   .card__name {
     margin: 0;
-    font-size: var(--text-sm);
+    font-size: 14px;
+    line-height: 1.3;
     font-weight: var(--weight-subhead);
     color: var(--color-text);
+    /* Two lines, then ellipsis. NOT `nowrap`: full names arrived only once the
+       API stopped abbreviating them, and truncating "Marta Budzanowska" to
+       "Marta Budz…" would hand back what that change was for. Two lines fit
+       every name on the current roster. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .card__cats {
     margin: var(--space-1) 0 0;
     color: var(--color-text-faint);
-    font-size: var(--text-xs);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>
