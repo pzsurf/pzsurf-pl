@@ -55,6 +55,10 @@ const initials = member.display_name
     overflow: hidden;
   }
   .card__media {
+    /* `relative` so the photo can be positioned against THIS box rather than
+       against a grid track — see the note on the img below. The grid and its
+       centring remain, but they now only serve the monogram. */
+    position: relative;
     display: grid;
     place-items: center;
     /* An EXPLICIT height, not `aspect-ratio`, and that distinction was the bug.
@@ -75,15 +79,25 @@ const initials = member.display_name
     background: linear-gradient(160deg, #1f2a36, #0d1116);
   }
   .card__media img {
+    /* ABSOLUTE, and this is the fix for photos that were showing their top
+       instead of their middle.
+       `height: 100%` looks like it should work and does not: `place-items:
+       center` leaves the grid TRACK content-sized, so the percentage has no
+       definite basis, falls back to `auto`, and a portrait rendered at its own
+       aspect — 4672x7008 came out 156x234 in a 116px box. `overflow: hidden`
+       then clipped it, so what you saw was the TOP 116px of the photo and
+       `object-fit: cover` never had anything to crop. Landscape photos happened
+       to fit, which is why only some cards looked wrong.
+       Positioned against the box itself, the image is exactly 156x116 whatever
+       its shape, and cover/center then take the middle as intended. */
+    position: absolute;
+    inset: 0;
     display: block;
     width: 100%;
     height: 100%;
-    /* `cover` fills the rectangle and crops whatever overflows; `center` decides
-       WHICH part survives — the middle band of the photo, as asked. Worth
-       knowing: on a full-length portrait the middle is the torso, so if faces
-       start getting cut, `object-position: center 35%` biases the crop upward
-       without changing anything else. */
     object-fit: cover;
+    /* The middle band, as asked. On a full-length portrait that is the torso,
+       so `center 35%` biases toward faces if they start getting cut. */
     object-position: center;
   }
   .card__monogram {
