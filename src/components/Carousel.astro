@@ -53,6 +53,19 @@ const { label } = Astro.props;
     padding: var(--space-1);
     margin: calc(var(--space-1) * -1);
     scroll-padding-inline: var(--space-1);
+    /* Mobile. The swipe itself is free — `overflow-x` on a touch device IS a
+       swipe — but two things make it behave rather than merely work:
+       `overscroll-behavior-x: contain` stops a swipe that reaches the end of
+       the track from chaining into the browser's back-gesture, which on iOS
+       and Android otherwise navigates away from the page mid-flick; and
+       `-webkit-overflow-scrolling` keeps momentum on older iOS WebKit, where
+       its absence makes the track stop dead under the finger. */
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    /* Only the horizontal gesture is claimed, so a vertical swipe still scrolls
+       the PAGE with the finger on a card — `touch-action: none` here would trap
+       the reader inside the carousel, which is the classic mobile carousel bug. */
+    touch-action: pan-x pan-y;
   }
   .carousel__track:focus-visible {
     outline: 2px solid var(--color-accent);
@@ -92,6 +105,8 @@ const { label } = Astro.props;
   /* No room to hang arrows outside the track on a phone, and a swipe is the
      natural gesture there. The scrollbar comes back with them gone. */
   @media (max-width: 900px) {
+    /* No room to hang arrows outside the track, and a swipe is the natural
+       gesture here — so the scrollbar comes back as the affordance. */
     .carousel__arrow { display: none; }
     .carousel.is-enhanced .carousel__track { scrollbar-width: thin; }
     .carousel.is-enhanced .carousel__track::-webkit-scrollbar { display: initial; }
