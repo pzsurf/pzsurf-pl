@@ -12,9 +12,20 @@ const links = [
 ];
 ---
 <header class="masthead on-dark">
+  {/* The federation's own horizontal logotype — shield, PZS and the full name
+      are all INSIDE the image, so there is no HTML wordmark beside it to keep
+      in step, and no risk of the two disagreeing at a breakpoint.
+
+      Taken from pzsurf.pl, where the header uses this same red-on-dark asset
+      at the same sort of size. Red over dark footage is the federation's own
+      usage, not an oversight to correct: there is no white variant published,
+      and inventing one by filtering would change their mark.
+
+      `alt` carries the name because the image IS the name here; a decorative
+      empty alt would leave the site's own title unreadable to a screen reader. */}
   <a class="masthead__brand" href="/">
-    <img src="/pzsurf-mark.png" alt="" width="40" height="40" />
-    <span class="masthead__wordmark">Polski Związek<br />Surfingu</span>
+    <img src="/pzs-logotype.png" alt="Polski Związek Surfingu"
+         width="330" height="178" />
   </a>
   <nav class="masthead__nav" aria-label="Główne">
     {links.map((l) => <a href={l.href}>{l.label}</a>)}
@@ -40,16 +51,19 @@ const links = [
   .masthead__brand {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    color: var(--color-text);
     text-decoration: none;
   }
-  .masthead__wordmark {
-    font-size: 13px;
-    font-weight: var(--weight-display);
-    line-height: 1.15;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+  /* Height-driven: the intrinsic width/height on the <img> gives the browser the
+     aspect ratio up front, so the row does not jump as the logo loads.
+     The asset is CROPPED to its ink — the original carried 45px of transparent
+     padding on top and 31px below on a 250px canvas, so 70% of any height you
+     set was the logo and 30% was nothing. That is why it first rendered as a
+     smudge at a size that should have been ample. */
+  .masthead__brand img {
+    width: auto;
+    height: 46px;
+    /* Lifts the mark off dark footage without recolouring it. */
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
   }
   .masthead__nav {
     display: flex;
@@ -70,5 +84,7 @@ const links = [
   @media (max-width: 560px) {
     .masthead { padding: var(--space-2) var(--space-3); }
     .masthead__nav { gap: var(--space-3); letter-spacing: 0.08em; }
+    /* Smaller, but not so small that the two lines under PZS turn to mush. */
+    .masthead__brand img { height: 34px; }
   }
 </style>
