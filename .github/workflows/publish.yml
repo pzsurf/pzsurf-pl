@@ -40,9 +40,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      # 22, NOT the 20 the surfpoland monorepo's workflows use. Astro requires
+      # >=22.12.0 and refuses to build below it. Copying the monorepo's pin is
+      # exactly how this broke the first time: it builds on a developer's newer
+      # local Node and fails only in CI. `engines` in package.json states the
+      # same floor, so the two cannot drift apart quietly.
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
       - run: npm ci
 
