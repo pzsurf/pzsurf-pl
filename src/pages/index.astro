@@ -19,14 +19,17 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
   title={`Kadra Narodowa ${year ?? ""} — Polski Związek Surfingu`}
   description={`${athletes} zawodniczek i zawodników w ${season.length} kadrach narodowych w sezonie ${year ?? ""}.`}
 >
-  <main class="page">
-    <header class="masthead">
+  <header class="band on-dark">
+    <div class="band__inner">
       <p class="masthead__eyebrow">Polski Związek Surfingu</p>
       <h1>Kadra Narodowa {year}</h1>
       <p class="masthead__lede">
         {athletes} zawodniczek i zawodników w {season.length} kadrach.
       </p>
-    </header>
+    </div>
+  </header>
+
+  <main class="page">
 
     {season.map((team) => (
       <section class="squad">
@@ -57,20 +60,37 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
 </Base>
 
 <style>
-  /* Structure only. Every value is a token, so the design language lands here
-     without touching the markup. */
-  .masthead { margin-bottom: var(--space-6); }
+  /* Structure only — every value is a token, so the design language governs
+     the look and this file never restates it. */
+  /* A black band running edge to edge — the source site's main compositional
+     device, light content between dark full-width sections. It sits OUTSIDE
+     .page so it can reach the viewport edges, and re-centres its own content
+     to the same measure. `.on-dark` re-points the role tokens; nothing in here
+     is re-coloured by hand. */
+  .band { padding-block: var(--space-6); }
+  .band__inner {
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--space-3);
+  }
   .masthead__eyebrow {
     margin: 0 0 var(--space-2);
-    color: var(--color-text-faint);
-    font-size: 13px;
-    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-subhead);
+    letter-spacing: 0.14em;
     text-transform: uppercase;
   }
-  .masthead h1 { font-size: clamp(30px, 6vw, 46px); }
+  .masthead h1 {
+    font-size: var(--text-hero);
+    line-height: var(--leading-2xl);
+    font-weight: var(--weight-display);
+  }
   .masthead__lede {
-    margin: var(--space-2) 0 0;
+    margin: var(--space-3) 0 0;
     color: var(--color-text-muted);
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
   }
 
   .squad { margin-bottom: var(--space-5); }
@@ -79,18 +99,21 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
     align-items: baseline;
     gap: var(--space-2);
     padding-bottom: var(--space-2);
-    border-bottom: 1px solid var(--color-border);
-    font-size: 20px;
+    /* The red rule under a section heading is the one place the brand colour
+       appears on a light background. Used once per squad, never decoratively. */
+    border-bottom: 2px solid var(--color-accent);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-subhead);
   }
   .squad__count {
     color: var(--color-text-faint);
-    font-size: 14px;
-    font-weight: 400;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-body);
   }
 
   .roster {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     gap: var(--space-2);
     margin: var(--space-3) 0 0;
     padding: 0;
@@ -105,13 +128,14 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
     background: var(--color-bg-raised);
     border-radius: var(--radius);
   }
-  .roster__cats { color: var(--color-text-faint); font-size: 12px; }
+  .roster__cats { color: var(--color-text-faint); font-size: var(--text-xs); }
 
   .foot {
     margin-top: var(--space-6);
     padding-top: var(--space-3);
     border-top: 1px solid var(--color-border);
     color: var(--color-text-faint);
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
+  .foot a { color: var(--color-accent); }
 </style>

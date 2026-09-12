@@ -1,58 +1,111 @@
 /*
- * THE DESIGN LANGUAGE — and right now, a PLACEHOLDER for it.
+ * PZSurf design language — derived from pzsurf.pl, September 2026.
  *
- * Every visual decision on this site resolves to a token in this file, so that
- * adopting the real design language is a change to ONE file rather than a hunt
- * through components. Nothing below is a design proposal: the greys are chosen
- * to be obviously provisional, so an unstyled page reads as unfinished rather
- * than as a decision somebody made.
+ * Measured from the live site rather than guessed. Two findings worth keeping:
  *
- * The two-layer shape is borrowed from the monorepo's index.css, which has
- * earned it: a --palette-* layer says what the colours ARE, and a --color-*
- * layer says what they are FOR. Components only ever name the second. Rebrand
- * by rewriting the palette; re-theme by re-pointing the roles.
+ *   1. The red is #ea3323 and the darker red #c02415 — byte-identical to the
+ *      surfpoland platform's --palette-primary / --palette-primary-strong. The
+ *      federation's site and its platform already agree; this file records that
+ *      rather than inventing a third opinion.
+ *   2. pzsurf.pl loads NO webfont — it renders on the system stack. That is a
+ *      real decision with real benefits (instant first paint, no request, full
+ *      Polish diacritic coverage) and it is kept.
+ *
+ * What is deliberately NOT copied is the source's drift: the live site uses
+ * five corner radii (2, 3, 4, 5 and 10px) because it grew inside a page
+ * builder. A design system's job is to choose. Two radii here, and a reason
+ * for each.
+ *
+ * Two layers, as in the platform's own stylesheet: --palette-* says what a
+ * colour IS, --color-* says what it is FOR. Components only ever name the
+ * second. Rebrand by rewriting the palette; re-theme by re-pointing the roles.
  */
 
 :root {
-  /* ---- palette: what the colours are ------------------------------------ */
-  --palette-ink:            #14181f;
-  --palette-ink-soft:       #4a5361;
-  --palette-ink-faint:      #7b8494;
-  --palette-paper:          #ffffff;
-  --palette-paper-shade:    #f4f6f8;
-  --palette-line:           #e2e6ea;
-  /* Placeholder accent. The federation's mark is red (#ea3323 in the
-     platform), but the real value belongs to the design language, not here. */
-  --palette-accent:         #ea3323;
+  /* ---- palette ---------------------------------------------------------- */
+  --palette-red:          #ea3323;  /* the federation's red */
+  --palette-red-strong:   #c02415;  /* hover / pressed */
+  --palette-black:        #000000;  /* full-bleed feature sections */
+  --palette-near-black:   #1a1a1a;  /* panels inside those sections */
+  --palette-slate:        #3a4f66;  /* body text on light — not grey, blue */
+  --palette-slate-soft:   #6b7d92;
+  --palette-slate-faint:  #9aa7b6;
+  --palette-white:        #ffffff;
+  --palette-paper:        #fafbfc;
+  --palette-paper-shade:  #f2f5f7;
+  --palette-line:         #dfe5ea;
 
-  /* ---- roles: what they are for ----------------------------------------- */
-  --color-text:             var(--palette-ink);
-  --color-text-muted:       var(--palette-ink-soft);
-  --color-text-faint:       var(--palette-ink-faint);
-  --color-bg:               var(--palette-paper);
-  --color-bg-raised:        var(--palette-paper-shade);
-  --color-border:           var(--palette-line);
-  --color-accent:           var(--palette-accent);
+  /* ---- roles: light, the default ---------------------------------------- */
+  --color-bg:             var(--palette-white);
+  --color-bg-raised:      var(--palette-paper-shade);
+  --color-text:           var(--palette-slate);
+  --color-text-muted:     var(--palette-slate-soft);
+  --color-text-faint:     var(--palette-slate-faint);
+  --color-border:         var(--palette-line);
+  --color-accent:         var(--palette-red);
+  --color-accent-strong:  var(--palette-red-strong);
+  --color-on-accent:      var(--palette-white);
 
   /* ---- type ------------------------------------------------------------- */
-  /* A system stack until the design language names real faces: it renders
-     immediately, costs no request, and has full Polish diacritic coverage. */
-  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
-               Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font-body);
 
-  /* ---- spacing ---------------------------------------------------------- */
+  /* Measured from the source: headings 700, subheads 600, buttons 500,
+     body 400, and a body line-height near 1.65 that the site reads well at. */
+  --weight-body:     400;
+  --weight-button:   500;
+  --weight-subhead:  600;
+  --weight-display:  700;
+
+  --text-xs:      12px;   --leading-xs:   1.5;
+  --text-sm:      15px;   --leading-sm:   1.65;
+  --text-base:    16px;   --leading-base: 1.65;
+  --text-lg:      20px;   --leading-lg:   1.3;
+  --text-xl:      26px;   --leading-xl:   1.25;
+  --text-2xl:     35px;   --leading-2xl:  1.2;
+  /* The hero only; clamped so it never outgrows a phone. */
+  --text-hero:    clamp(32px, 6vw, 46px);
+
+  /* ---- space ------------------------------------------------------------ */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 16px;
   --space-4: 24px;
   --space-5: 40px;
   --space-6: 64px;
+  --space-7: 96px;
 
-  --radius: 8px;
-  --measure: 68ch;          /* readable line length for prose (the statute) */
-  --page-max: 1100px;
+  /* ---- shape ------------------------------------------------------------ */
+  /* Two, not five. `--radius` is the default for anything with a box; the
+     source's dominant small value was 2-4px, so a restrained 4px keeps the
+     square, sporting feel rather than softening it. */
+  --radius:       4px;
+  /* `--radius-pill` is for buttons only, where the source went to 10px and the
+     extra roundness reads as a deliberate call to action. */
+  --radius-pill:  10px;
+
+  --page-max: 1180px;
+  --measure:  68ch;
 }
+
+/* ---- roles: dark ---------------------------------------------------------
+   Not a night mode — pzsurf.pl uses black full-bleed bands as a compositional
+   device, with light content between them. Put this class on the SECTION. */
+.on-dark {
+  --color-bg:         var(--palette-black);
+  --color-bg-raised:  var(--palette-near-black);
+  --color-text:       var(--palette-white);
+  --color-text-muted: rgba(255, 255, 255, 0.72);
+  --color-text-faint: rgba(255, 255, 255, 0.5);
+  --color-border:     rgba(255, 255, 255, 0.16);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* ---- base ---------------------------------------------------------------
+   Everything below is the site's own baseline, not part of the design system:
+   the tokens above are the shared contract, this is how this site sits on it. */
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -61,17 +114,17 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
-  font-size: 16px;
-  line-height: 1.55;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-body);
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 { font-family: var(--font-display); line-height: 1.2; margin: 0; }
-a { color: inherit; }
+h1, h2, h3 { margin: 0; font-family: var(--font-display); }
+img { max-width: 100%; }
 
 .page {
   max-width: var(--page-max);
-  /* padding-block, never the shorthand: the side gutter must survive. */
   margin-inline: auto;
   padding-inline: var(--space-3);
   padding-block: var(--space-5);
