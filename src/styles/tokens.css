@@ -34,14 +34,24 @@
   --palette-paper:        #fafbfc;
   --palette-paper-shade:  #f2f5f7;
   --palette-line:         #dfe5ea;
+  /* One step stronger than `line`, for a border that has to be SEEN rather
+     than merely separate two surfaces — a card sitting on the grey page. */
+  --palette-line-strong:  #d3dce4;
 
   /* ---- roles: light, the default ---------------------------------------- */
-  --color-bg:             var(--palette-white);
-  --color-bg-raised:      var(--palette-paper-shade);
+  /* The page is GREY and a raised surface is WHITE — the inverse of the
+     obvious reading, and it is deliberate. surfpoland.com does the same thing
+     in the other direction: its page is #0f1117, its cards #1a202c, its card
+     borders #2d3748 — each a step away from the last. On a light theme that
+     means a grey ground with white cards, so a card reads as sitting ON the
+     page rather than being a shaded hole in it. */
+  --color-bg:             var(--palette-paper-shade);
+  --color-bg-raised:      var(--palette-white);
   --color-text:           var(--palette-slate);
   --color-text-muted:     var(--palette-slate-soft);
   --color-text-faint:     var(--palette-slate-faint);
   --color-border:         var(--palette-line);
+  --color-border-strong:  var(--palette-line-strong);
   --color-accent:         var(--palette-red);
   --color-accent-strong:  var(--palette-red-strong);
   --color-on-accent:      var(--palette-white);
@@ -99,6 +109,7 @@
   --color-text-muted: rgba(255, 255, 255, 0.72);
   --color-text-faint: rgba(255, 255, 255, 0.5);
   --color-border:     rgba(255, 255, 255, 0.16);
+  --color-border-strong: rgba(255, 255, 255, 0.24);
   background: var(--color-bg);
   color: var(--color-text);
 }

@@ -47,12 +47,40 @@ const { label } = Astro.props;
        track not at all. The same call works with `behavior` passed explicitly,
        which is what the script now does, and that also lets it honour
        prefers-reduced-motion directly rather than through a media query. */
-    /* Room for the focus ring to sit outside the cards. `scroll-padding` keeps
-       the snap points aligned to the same inset, so a snapped card sits flush
-       rather than four pixels under the edge. */
-    padding: var(--space-1);
-    margin: calc(var(--space-1) * -1);
-    scroll-padding-inline: var(--space-1);
+    /* FULL-BLEED: the track runs to both edges of the window while its content
+       still starts in line with the heading above it.
+       `margin-inline: calc(50% - 50vw)` pulls each edge out to the viewport —
+       50% of this element's own width back, 50vw of the window forward — and
+       the matching padding puts the inset back INSIDE the scroller. So the
+       first card sits under the heading, and scrolling carries cards past the
+       window edge instead of stopping short of it.
+       `scroll-padding-inline` has to repeat the same figure or snapping would
+       park a card flush against the window edge, undoing the alignment. */
+    margin-inline: calc(50% - 50vw);
+    /* The inset is on the FIRST AND LAST CARD, not on the scroller.
+       Padding on the scroller was tried and pre-scrolled the track: the snap
+       port starts inside the padding, so on load a snapping track settled at
+       scrollLeft = 146 and its first card sat flush against the window edge —
+       and only on the carousels long enough to scroll, which made it look
+       random. Margins on the end cards put the same gap in the CONTENT, where
+       scrollLeft 0 is genuinely the start.
+       Viewport arithmetic rather than a percentage, because a percentage on a
+       child resolves against the full-bleed track and would come out zero. */
+    --gutter: max(
+      var(--space-3),
+      calc((100vw - var(--page-max)) / 2 + var(--space-3))
+    );
+    /* Moves the SNAPPORT in by the same gutter, and without it the spacers are
+       pointless: `scroll-snap-align: start` aligns a card to the scrollport's
+       start edge, so the first card snapped flush to the window and every
+       scrollable carousel loaded already scrolled 146px. With the snapport
+       inset to match, the first card's snap position is scrollLeft 0 — where
+       it belongs. */
+    scroll-padding-inline: var(--gutter);
+    /* Vertical only — the horizontal inset is handled above. Keeps room for the
+       focus ring and the cards' shadows. */
+    padding-block: var(--space-1);
+    margin-block: calc(var(--space-1) * -1);
     /* Mobile. The swipe itself is free — `overflow-x` on a touch device IS a
        swipe — but two things make it behave rather than merely work:
        `overscroll-behavior-x: contain` stops a swipe that reaches the end of
@@ -67,6 +95,19 @@ const { label } = Astro.props;
        the reader inside the carousel, which is the classic mobile carousel bug. */
     touch-action: pan-x pan-y;
   }
+  /* Spacers, not margins on the cards. `.carousel__track > :first-child` was
+     tried and silently matched nothing: Astro scopes by a cid attribute, the
+     cards come through a <slot> from AthleteCard and carry ITS cid, so the
+     selector never applied. A pseudo-element belongs to the track, so it
+     carries the track's own cid and always matches.
+     `--gutter` minus the flex gap, because the gap sits between the spacer and
+     the first card and would otherwise be added on top. */
+  .carousel__track::before,
+  .carousel__track::after {
+    content: "";
+    flex: 0 0 calc(var(--gutter) - var(--space-2));
+  }
+
   .carousel__track:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
