@@ -42,7 +42,7 @@ const initials = member.display_name
        its neighbours. Both halves below are sized to add up to it exactly. */
     flex: 0 0 auto;
     width: 156px;
-    height: 230px;
+    height: 190px;
     scroll-snap-align: start;
     background: var(--color-bg-raised);
     border-radius: var(--radius);
@@ -51,30 +51,41 @@ const initials = member.display_name
   .card__media {
     display: grid;
     place-items: center;
-    /* Square, so the media is exactly the card's width tall (156px) and the
-       body gets the remaining 74. */
-    aspect-ratio: 1;
+    /* An EXPLICIT height, not `aspect-ratio`, and that distinction was the bug.
+       aspect-ratio only expresses a PREFERRED size: the image's `height: 100%`
+       has no definite height to resolve against, so the box fell back to the
+       photo's natural height and portrait shots blew it out to 234 and 237px
+       while landscape ones happened to fit. Every card was 156x230 and the
+       media inside them was not. A definite height fixes both the box and what
+       the percentage resolves against. */
+    height: 116px;
+    /* Belt and braces: the box is definite now, so nothing should overflow —
+       but if a future change makes one, it is clipped rather than shoving the
+       name out of the card. */
+    overflow: hidden;
     background: linear-gradient(160deg, #1f2a36, #0d1116);
   }
   .card__media img {
+    display: block;
     width: 100%;
     height: 100%;
-    /* `cover` fills the square and crops the overflow; `center` decides WHICH
-       part survives. A portrait taller than it is wide keeps its middle rather
-       than its top, which is where a face usually is — the default would be the
-       same here, but leaving it implicit invites somebody to "tidy" it away. */
+    /* `cover` fills the rectangle and crops whatever overflows; `center` decides
+       WHICH part survives — the middle band of the photo, as asked. Worth
+       knowing: on a full-length portrait the middle is the torso, so if faces
+       start getting cut, `object-position: center 35%` biases the crop upward
+       without changing anything else. */
     object-fit: cover;
     object-position: center;
   }
   .card__monogram {
     color: rgba(255, 255, 255, 0.65);
-    font-size: 36px;
+    font-size: 32px;
     font-weight: var(--weight-display);
     letter-spacing: 0.04em;
   }
   .card__body {
-    /* 74px: whatever is left of the card once the square media is taken. Fixed
-       rather than fluid, so a missing categories line does not shorten a card. */
+    /* 74px, and the card's 190 is exactly 116 + 74. Fixed rather than fluid so
+       a card with no age categories does not come up short. */
     height: 74px;
     padding: 10px var(--space-2);
     overflow: hidden;
