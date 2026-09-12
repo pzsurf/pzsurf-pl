@@ -1,12 +1,13 @@
 ---
-import type { TeamMember } from "../lib/api";
+import type { Assignment, TeamMember } from "../lib/api";
 interface Props {
   member: TeamMember;
-  /** The squad this card appears in — carried so the dialog can name it. */
-  team: string;
-  year: number;
+  /** EVERY squad this person belongs to, not just the one this card sits in —
+   *  nine of the twenty-six are in more than one, and the dialog lists them all
+   *  the way surfpoland.com's profile does. */
+  assignments: Assignment[];
 }
-const { member, team, year } = Astro.props;
+const { member, assignments } = Astro.props;
 
 // Initials from whatever name we were given. Built from display_name rather
 // than first/last, because those are not public fields — the API sends one
@@ -25,9 +26,7 @@ const initials = member.display_name
   data-image={member.image_url ?? ""}
   data-initials={initials}
   data-role={member.role}
-  data-cats={member.categories.join(" · ")}
-  data-team={team}
-  data-year={String(year)}
+  data-teams={JSON.stringify(assignments)}
 >
   <div class="card__media">
     {member.image_url

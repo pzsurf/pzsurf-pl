@@ -6,7 +6,7 @@ import Hero from "../components/Hero.astro";
 import AthleteCard from "../components/AthleteCard.astro";
 import Carousel from "../components/Carousel.astro";
 import PersonDialog from "../components/PersonDialog.astro";
-import { getNationalTeams, getOrganisation, latestYear, teamTitle } from "../lib/api";
+import { assignmentsByPerson, getNationalTeams, getOrganisation, latestYear, teamTitle } from "../lib/api";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
 // single always-on container serves nobody's page views.
@@ -22,6 +22,10 @@ const season = teams
 // Still counted, but only for the share description — the page itself no
 // longer prints a tally under the heading.
 const athletes = season.reduce((n, t) => n + t.member_count, 0);
+
+// Built from ALL teams, not just the season on show, so a dialog lists every
+// squad a person belongs to — which for nine of the twenty-six is more than one.
+const assignments = assignmentsByPerson(teams);
 ---
 <Base
   title="Polski Związek Surfingu"
@@ -62,7 +66,10 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
         </h3>
         <Carousel label={`Kadra ${teamTitle(team)}`}>
           {team.members.map((m) => (
-            <AthleteCard member={m} team={teamTitle(team)} year={team.year} />
+            <AthleteCard
+              member={m}
+              assignments={assignments.get(m.display_name) ?? []}
+            />
           ))}
         </Carousel>
       </section>

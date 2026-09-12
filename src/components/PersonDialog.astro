@@ -24,16 +24,13 @@
     <h2 class="person__name" id="person-name" data-name></h2>
     <p class="person__badges">
       <span class="badge badge--role" data-role></span>
-      <span class="badge" data-team></span>
     </p>
   </div>
 
   <div class="person__section">
     <h3 class="person__section-title">Kadra narodowa</h3>
-    <div class="person__team">
-      <p class="person__team-name" data-team-line></p>
-      <p class="person__team-cats" data-cats></p>
-    </div>
+    {/* One row per squad, filled by the script. */}
+    <ul class="person__teams" data-teams-list></ul>
   </div>
 </dialog>
 
@@ -114,15 +111,46 @@
     text-transform: uppercase;
     color: var(--color-text-faint);
   }
-  .person__team {
-    padding: var(--space-3);
+  .person__teams {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* ONE LINE per squad: the season and squad on the left, the age categories
+     on the right, never stacked. `space-between` puts the gap in the middle so
+     the categories align down the right edge whatever the squad name's length,
+     and `nowrap` on both halves keeps the row a row.
+     `:global()` because the SCRIPT builds these rows: Astro scopes by a
+     data-astro-cid stamped onto template elements, and a node created at
+     runtime has none, so scoped selectors miss it completely — the rows
+     rendered as unstyled list items stacked two lines tall. Scoped on the
+     ancestor, global on the descendant, so nothing leaks past this dialog. */
+  .person__teams :global(.person__team) {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     background: var(--color-bg);
+    text-align: left;
   }
-  .person__team-name { margin: 0; font-weight: var(--weight-subhead); }
-  .person__team-cats { margin: var(--space-1) 0 0; color: var(--color-text-faint); font-size: var(--text-sm); }
-  .person__team-cats:empty { display: none; }
+  .person__teams :global(.person__team-name) {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-subhead);
+    white-space: nowrap;
+  }
+  .person__teams :global(.person__team-cats) {
+    margin: 0;
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+  }
 </style>
 
 <script>
@@ -142,9 +170,32 @@
         const d = card.dataset;
         set("[data-name]", d.name ?? "");
         set("[data-role]", d.role ? (ROLE_PL[d.role] ?? d.role) : "");
-        set("[data-team]", d.team ?? "");
-        set("[data-team-line]", `${d.year} — ${d.team}`);
-        set("[data-cats]", d.cats ?? "");
+
+        // Every squad this person is in, one row each — nine of the roster are
+        // in more than one, and a dialog that named only the card you happened
+        // to click would under-report them.
+        const list = dialog.querySelector<HTMLElement>("[data-teams-list]");
+        if (list) {
+          list.innerHTML = "";
+          const teams: { year: number; team: string; categories: string }[] =
+            JSON.parse(d.teams || "[]");
+          for (const t of teams) {
+            const li = document.createElement("li");
+            li.className = "person__team";
+            const name = document.createElement("p");
+            name.className = "person__team-name";
+            name.textContent = `${t.year} — ${t.team}`;
+            li.appendChild(name);
+            // Only when there are any: an empty node would still claim its gap.
+            if (t.categories) {
+              const cats = document.createElement("p");
+              cats.className = "person__team-cats";
+              cats.textContent = t.categories;
+              li.appendChild(cats);
+            }
+            list.appendChild(li);
+          }
+        }
 
         const avatar = dialog.querySelector<HTMLElement>("[data-avatar]");
         if (avatar) {

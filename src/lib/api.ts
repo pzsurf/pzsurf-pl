@@ -154,3 +154,48 @@ export function socialLinks(org: Organisation): { label: string; url: string }[]
   }
   return out;
 }
+
+/** One squad a person belongs to, as the dialog lists them. */
+export interface Assignment {
+  year: number;
+  team: string;
+  categories: string;
+}
+
+/**
+ * Every squad each person appears in, keyed by DISPLAY NAME.
+ *
+ * By name because there is nothing else to key on: the public API exposes no
+ * stable per-person id, deliberately — an id across responses would be the join
+ * key that turns two endpoints into a profile (contract §4.5). So two athletes
+ * who genuinely share a name would be merged here into one dialog. That is the
+ * accepted cost of the contract's privacy design, and the alternative is worse:
+ * a person's id IS recoverable from their photo URL, which the contract records
+ * as a known limitation, and building on a documented leak to work around a
+ * deliberate omission would be the wrong trade.
+ *
+ * Every season is included, not only the latest, so a second year appears here
+ * the day the API returns one without any change to this page.
+ */
+export function assignmentsByPerson(
+  teams: NationalTeam[],
+): Map<string, Assignment[]> {
+  const out = new Map<string, Assignment[]>();
+  for (const team of teams) {
+    for (const m of team.members) {
+      const list = out.get(m.display_name) ?? [];
+      list.push({
+        year: team.year,
+        team: teamTitle(team),
+        categories: m.categories.join(" · "),
+      });
+      out.set(m.display_name, list);
+    }
+  }
+  // Newest season first, then alphabetically — so a dialog reads the same way
+  // whichever card opened it.
+  for (const list of out.values()) {
+    list.sort((a, b) => b.year - a.year || a.team.localeCompare(b.team, "pl"));
+  }
+  return out;
+}
