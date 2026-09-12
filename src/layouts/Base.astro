@@ -1,0 +1,41 @@
+---
+import "../styles/tokens.css";
+
+interface Props {
+  title: string;
+  description: string;
+  /** Absolute URL of the share image, when the page has its own. */
+  image?: string;
+}
+const { title, description, image } = Astro.props;
+
+// Astro.site comes from astro.config.mjs, so these are absolute in the built
+// HTML — which is the whole point. A crawler fetching the raw file resolves
+// og:url and og:image without a base to work from.
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    {/* The reason this site is statically generated at all: none of the
+        messengers people actually share links in execute JavaScript, so these
+        tags have to be in the file as written, not added by a script. */}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Polski Związek Surfingu" />
+    <meta property="og:locale" content="pl_PL" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {image && <meta property="og:image" content={image} />}
+    <meta name="twitter:card" content={image ? "summary_large_image" : "summary"} />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

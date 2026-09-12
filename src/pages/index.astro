@@ -1,0 +1,117 @@
+---
+import Base from "../layouts/Base.astro";
+import { getNationalTeams, latestYear, teamTitle } from "../lib/api";
+
+// Runs at BUILD time — `astro build` calls the API once and the result is
+// baked into dist/. No visitor ever waits on Cloud Run for this page.
+const teams = await getNationalTeams();
+const year = latestYear(teams);
+
+// Only the current season. Older squads are a page of their own once there is
+// more than one season in the data; today the API returns 2026 only.
+const season = teams
+  .filter((t) => t.year === year)
+  .sort((a, b) => teamTitle(a).localeCompare(teamTitle(b), "pl"));
+
+const athletes = season.reduce((n, t) => n + t.member_count, 0);
+---
+<Base
+  title={`Kadra Narodowa ${year ?? ""} — Polski Związek Surfingu`}
+  description={`${athletes} zawodniczek i zawodników w ${season.length} kadrach narodowych w sezonie ${year ?? ""}.`}
+>
+  <main class="page">
+    <header class="masthead">
+      <p class="masthead__eyebrow">Polski Związek Surfingu</p>
+      <h1>Kadra Narodowa {year}</h1>
+      <p class="masthead__lede">
+        {athletes} zawodniczek i zawodników w {season.length} kadrach.
+      </p>
+    </header>
+
+    {season.map((team) => (
+      <section class="squad">
+        <h2 class="squad__name">
+          {teamTitle(team)}
+          <span class="squad__count">{team.member_count}</span>
+        </h2>
+        <ul class="roster">
+          {team.members.map((m) => (
+            <li class="roster__item">
+              <span class="roster__name">{m.display_name}</span>
+              {m.categories.length > 0 && (
+                <span class="roster__cats">{m.categories.join(" · ")}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+
+    <footer class="foot">
+      <p>
+        Dane pochodzą z platformy
+        <a href="https://surfpoland.com">surfpoland.com</a>.
+      </p>
+    </footer>
+  </main>
+</Base>
+
+<style>
+  /* Structure only. Every value is a token, so the design language lands here
+     without touching the markup. */
+  .masthead { margin-bottom: var(--space-6); }
+  .masthead__eyebrow {
+    margin: 0 0 var(--space-2);
+    color: var(--color-text-faint);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .masthead h1 { font-size: clamp(30px, 6vw, 46px); }
+  .masthead__lede {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-muted);
+  }
+
+  .squad { margin-bottom: var(--space-5); }
+  .squad__name {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 20px;
+  }
+  .squad__count {
+    color: var(--color-text-faint);
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  .roster {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .roster__item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-bg-raised);
+    border-radius: var(--radius);
+  }
+  .roster__cats { color: var(--color-text-faint); font-size: 12px; }
+
+  .foot {
+    margin-top: var(--space-6);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-faint);
+    font-size: 14px;
+  }
+</style>

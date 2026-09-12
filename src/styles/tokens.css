@@ -1,0 +1,78 @@
+/*
+ * THE DESIGN LANGUAGE — and right now, a PLACEHOLDER for it.
+ *
+ * Every visual decision on this site resolves to a token in this file, so that
+ * adopting the real design language is a change to ONE file rather than a hunt
+ * through components. Nothing below is a design proposal: the greys are chosen
+ * to be obviously provisional, so an unstyled page reads as unfinished rather
+ * than as a decision somebody made.
+ *
+ * The two-layer shape is borrowed from the monorepo's index.css, which has
+ * earned it: a --palette-* layer says what the colours ARE, and a --color-*
+ * layer says what they are FOR. Components only ever name the second. Rebrand
+ * by rewriting the palette; re-theme by re-pointing the roles.
+ */
+
+:root {
+  /* ---- palette: what the colours are ------------------------------------ */
+  --palette-ink:            #14181f;
+  --palette-ink-soft:       #4a5361;
+  --palette-ink-faint:      #7b8494;
+  --palette-paper:          #ffffff;
+  --palette-paper-shade:    #f4f6f8;
+  --palette-line:           #e2e6ea;
+  /* Placeholder accent. The federation's mark is red (#ea3323 in the
+     platform), but the real value belongs to the design language, not here. */
+  --palette-accent:         #ea3323;
+
+  /* ---- roles: what they are for ----------------------------------------- */
+  --color-text:             var(--palette-ink);
+  --color-text-muted:       var(--palette-ink-soft);
+  --color-text-faint:       var(--palette-ink-faint);
+  --color-bg:               var(--palette-paper);
+  --color-bg-raised:        var(--palette-paper-shade);
+  --color-border:           var(--palette-line);
+  --color-accent:           var(--palette-accent);
+
+  /* ---- type ------------------------------------------------------------- */
+  /* A system stack until the design language names real faces: it renders
+     immediately, costs no request, and has full Polish diacritic coverage. */
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+               Arial, sans-serif;
+  --font-display: var(--font-body);
+
+  /* ---- spacing ---------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 40px;
+  --space-6: 64px;
+
+  --radius: 8px;
+  --measure: 68ch;          /* readable line length for prose (the statute) */
+  --page-max: 1100px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.2; margin: 0; }
+a { color: inherit; }
+
+.page {
+  max-width: var(--page-max);
+  /* padding-block, never the shorthand: the side gutter must survive. */
+  margin-inline: auto;
+  padding-inline: var(--space-3);
+  padding-block: var(--space-5);
+}
