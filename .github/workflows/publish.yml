@@ -1,0 +1,88 @@
+name: Publish pzsurf.pl
+
+# Three triggers, because the content has two independent sources of change.
+#
+#   push      — the SITE changed (a template, the design language, a new page)
+#   schedule  — the DATA changed. Somebody edited an event or a committee in the
+#               platform; nothing here changed at all, but the built HTML is now
+#               stale. This is the price of static generation and the whole
+#               reason a schedule exists.
+#   dispatch  — "publish now", for when six hours is too long to wait.
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Every six hours, NOT hourly, and the reason is quota rather than taste.
+    # This organisation is on GitHub Free: 2,000 Actions minutes a month for
+    # private repositories, shared with the surfpoland monorepo's CI. An hourly
+    # rebuild is 720 runs — at ~1.5 min each, over half the allowance spent on
+    # republishing content that had not changed. Four times a day costs ~180
+    # minutes, and `workflow_dispatch` covers anything urgent.
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+# Workload Identity Federation needs this to mint the OIDC token. Without
+# `id-token: write` the auth step fails with a token-request error that reads
+# like a permissions problem on Google's side.
+permissions:
+  contents: read
+  id-token: write
+
+# A scheduled run and a push can otherwise race and release two versions in
+# either order. Last one wins is fine; two at once is not.
+concurrency:
+  group: publish-pzsurf-pl
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build and release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+
+      # The build CALLS api.surfpoland.com. A failure here is a real failure:
+      # src/lib/api.ts throws rather than emitting an empty page, so a bad
+      # response stops the release instead of publishing a blank site over a
+      # good one.
+      - name: Build
+        run: npm run build
+
+      # Belt and braces on that promise. If the federation's own name is not in
+      # the output, something rendered empty and must not be released — a
+      # scheduled job publishing a blank site at 3am is exactly the failure
+      # nobody would notice until somebody shared a link.
+      - name: The build actually contains content
+        run: |
+          test -s dist/index.html || { echo "::error::dist/index.html is missing or empty"; exit 1; }
+          grep -q "Kadra Narodowa" dist/index.html \
+            || { echo "::error::built page has no roster — refusing to release"; exit 1; }
+          grep -q 'property="og:title"' dist/index.html \
+            || { echo "::error::built page has no og:title — link previews would be generic"; exit 1; }
+
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SITE_SERVICE_ACCOUNT }}
+
+      - name: Release to Firebase Hosting
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: python3 .github/scripts/deploy_hosting.py
+
+      - name: Smoke test
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://pzsurf-pl.web.app/ || true)
+            [ "$code" = "200" ] && { echo "pzsurf-pl.web.app -> 200"; exit 0; }
+            echo "attempt $i: $code"; sleep 5
+          done
+          echo "::error::site did not return 200 after release"; exit 1
