@@ -26,8 +26,18 @@ const [teams, org, bodies, statute, documents, resolutions] = await Promise.all(
 // The three shelves. `documentsOfType` matches on the API's own `doc_type`,
 // which ships with surfpoland#33 — until then every document has none and the
 // two document carousels are empty while Uchwały fills from its own endpoint.
-const forms = documentsOfType(documents, "FORM");
-const transparency = documentsOfType(documents, "TRANSPARENCY");
+// The document shelves, in the order they are read. Data rather than four
+// copies of the same markup: they differ only by label and filter, and the
+// third copy was already one too many.
+//
+// `Inne` sits LAST because OTHER is the fallback rather than a peer — the same
+// reason it sorts last in the admin's type picker. Anything uncategorised is
+// still worth publishing; it is just not what somebody came looking for.
+const docShelves = [
+  { label: "Transparentność", docs: documentsOfType(documents, "TRANSPARENCY") },
+  { label: "Formularze", docs: documentsOfType(documents, "FORM") },
+  { label: "Inne", docs: documentsOfType(documents, "OTHER") },
+].filter((shelf) => shelf.docs.length > 0);
 
 // A date reads better than a timestamp on a card, and the API already sends
 // only the date part.
@@ -35,7 +45,7 @@ const dayOf = (iso: string | null) => (iso ?? "").slice(0, 10) || null;
 
 // Whether the Dokumenty section exists at all — the nav entry follows it, so
 // the menu never points at an anchor that is not on the page.
-const hasDocuments = resolutions.length > 0 || transparency.length > 0 || forms.length > 0;
+const hasDocuments = resolutions.length > 0 || docShelves.length > 0;
 const year = latestYear(teams);
 
 // Current season only. Older squads become their own page once the API returns
@@ -194,10 +204,15 @@ const bodyRows = bodiesByPerson(bodies);
   </section>
 
   {/* ── Dokumenty ─────────────────────────────────────────────────────────
-      Three shelves, each a carousel: what the association DECIDED (uchwały,
-      read in a dialog) and what it PUBLISHES (transparency filings and forms,
-      downloaded as PDFs). Rendered only when there is something on at least
-      one shelf — an empty section teaches people the page is broken. */}
+      Shelves, each a carousel: what the association DECIDED (uchwały, read in
+      a dialog) and what it PUBLISHES (transparency filings, forms and
+      everything else, downloaded as PDFs). Uchwały are their own block because
+      they come from a different endpoint and open rather than download; the
+      rest are the same card driven by `docShelves`.
+
+      A shelf with nothing on it is left out, and the section itself is not
+      rendered when every shelf is empty — an empty section teaches people the
+      page is broken. */}
   {hasDocuments && (
     <section class="page" id="dokumenty">
       <div class="section__head">
@@ -228,35 +243,20 @@ const bodyRows = bodiesByPerson(bodies);
         </section>
       )}
 
-      {transparency.length > 0 && (
+      {docShelves.map((shelf) => (
         <section class="squad">
           <h3 class="squad__name">
-            <span class="squad__label">Transparentność</span>
-            <span class="squad__count">{transparency.length}</span>
+            <span class="squad__label">{shelf.label}</span>
+            <span class="squad__count">{shelf.docs.length}</span>
           </h3>
-          <Carousel label="Transparentność">
-            {transparency.map((d) => (
+          <Carousel label={shelf.label}>
+            {shelf.docs.map((d) => (
               <DocCard title={d.title} eyebrow={dayOf(d.doc_date)}
                 footnote={d.file_name} href={d.file_url} />
             ))}
           </Carousel>
         </section>
-      )}
-
-      {forms.length > 0 && (
-        <section class="squad">
-          <h3 class="squad__name">
-            <span class="squad__label">Formularze</span>
-            <span class="squad__count">{forms.length}</span>
-          </h3>
-          <Carousel label="Formularze">
-            {forms.map((d) => (
-              <DocCard title={d.title} eyebrow={dayOf(d.doc_date)}
-                footnote={d.file_name} href={d.file_url} />
-            ))}
-          </Carousel>
-        </section>
-      )}
+      ))}
     </section>
   )}
 
