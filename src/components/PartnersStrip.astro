@@ -1,0 +1,208 @@
+---
+// The partners strip: centred when it fits, auto-rotating when it does not.
+//
+// **It is never swipeable.** The viewport is `overflow: hidden` and nothing
+// scrolls it — this is an acknowledgement running past, not a list you work
+// through, so there is no affordance to offer and none is drawn.
+//
+// Two states, decided by measurement rather than by a breakpoint:
+//
+//   FITS      centred, static, no clones, no timer.
+//   OVERFLOWS the set is cloned until it is wider than the viewport, then the
+//             track steps left by one card every 2s. When a whole set has
+//             passed, the transform snaps back by exactly that set's width
+//             with the transition off — invisible, because the content at the
+//             new offset is identical to the content at the old one.
+//
+// Measured, not assumed: the same list fits at 1500px and overflows on a phone,
+// so the decision is re-taken on resize.
+import PartnerCard from "./PartnerCard.astro";
+import type { Partner } from "../lib/api";
+
+interface Props { partners: Partner[] }
+const { partners } = Astro.props;
+---
+<section class="partners" aria-label="Partnerzy">
+  <div class="partners__viewport" data-partners-viewport>
+    <ul class="partners__track" data-partners-track>
+      {partners.map((p) => (
+        <li class="partners__item">
+          <PartnerCard name={p.name} logoUrl={p.logo_url} url={p.url} />
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  /* The footer carries `margin-top: var(--space-7)` to hold itself off the
+     page. This strip takes that gap over and the footer's own is removed, so
+     the two meet with no seam. `:global` because the footer is another
+     component and a scoped selector would never reach it. */
+  .partners {
+    margin-top: var(--space-7);
+    padding-block: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+  .partners + :global(.foot) { margin-top: 0; }
+
+  .partners__viewport {
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--space-3);
+    /* No scrolling, by anyone. This is what makes it un-swipeable. */
+    overflow: hidden;
+  }
+
+  .partners__track {
+    display: flex;
+    gap: var(--space-3);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    /* The step is a transform rather than a scroll: it composites, it cannot be
+       interrupted by a stray wheel event, and it leaves `overflow: hidden`
+       meaning exactly what it says. */
+    will-change: transform;
+  }
+  .partners__track--moving {
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  /* The snap back to the start of a set must not animate, or the whole strip
+     visibly rewinds. */
+  .partners__track--snap { transition: none; }
+
+  /* When the whole set fits there is nothing to rotate, so it simply centres. */
+  .partners__viewport--static .partners__track { justify-content: center; }
+
+  .partners__item { flex: 0 0 auto; }
+
+  /* Motion nobody asked for. The strip falls back to the centred, static state
+     — which is also why that state is the CSS default rather than something the
+     script has to apply. */
+  @media (prefers-reduced-motion: reduce) {
+    .partners__track { transition: none !important; transform: none !important; }
+    .partners__viewport { justify-content: center; }
+    .partners__track { justify-content: center; }
+  }
+</style>
+
+<script>
+  const STEP_MS = 2000;
+
+  const viewport = document.querySelector<HTMLElement>("[data-partners-viewport]");
+  const track = document.querySelector<HTMLElement>("[data-partners-track]");
+
+  // `matchMedia`, not a media query alone: the script must not start a timer
+  // that the stylesheet is going to neutralise anyway.
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+
+  if (viewport && track) {
+    const originals = [...track.children] as HTMLElement[];
+    let timer: ReturnType<typeof setInterval> | null = null;
+    let offset = 0;
+    let setWidth = 0;   // one full set, including the gap that follows it
+    let paused = false;
+
+    const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+
+    function gapPx(): number {
+      const gap = parseFloat(getComputedStyle(track!).columnGap || "0");
+      return Number.isFinite(gap) ? gap : 0;
+    }
+
+    function step() {
+      if (paused || !setWidth) return;
+      const gap = gapPx();
+      const first = track!.children[0] as HTMLElement;
+      offset += first.offsetWidth + gap;
+      track!.classList.remove("partners__track--snap");
+      track!.classList.add("partners__track--moving");
+      track!.style.transform = `translateX(-${offset}px)`;
+    }
+
+    // When a whole set has gone past, rewind by exactly that much with the
+    // transition off. The content at the new offset is identical to the content
+    // at the old one, so nothing is seen to move.
+    track.addEventListener("transitionend", (e) => {
+      // TRANSITIONS BUBBLE. Every card carries its own transition on
+      // `border-color` and `transform` for the hover lift, so a pointer moving
+      // across the strip fires transitionend on this very element — and without
+      // these two guards a hover could trigger the rewind mid-step.
+      if (e.target !== track || e.propertyName !== "transform") return;
+      if (offset < setWidth) return;
+      offset -= setWidth;
+      track.classList.add("partners__track--snap");
+      track.style.transform = `translateX(-${offset}px)`;
+      // Force the style to land before the transition class comes back, or the
+      // browser coalesces the two and animates the rewind after all.
+      void track.offsetWidth;
+      track.classList.remove("partners__track--snap");
+    });
+
+    function layout() {
+      stop();
+      // Start from a known state: no clones, no offset.
+      for (const clone of [...track!.querySelectorAll("[data-clone]")]) clone.remove();
+      track!.classList.remove("partners__track--moving", "partners__track--snap");
+      track!.style.transform = "";
+      offset = 0;
+
+      const gap = gapPx();
+      const natural = track!.scrollWidth;
+      const fits = natural <= viewport!.clientWidth + 1;
+
+      viewport!.classList.toggle("partners__viewport--static", fits);
+      if (fits || reduced.matches) return;
+
+      setWidth = natural + gap;
+
+      // Clone whole sets until the track is at least one viewport longer than a
+      // set, so there is always something in frame to move INTO.
+      while (track!.scrollWidth < setWidth + viewport!.clientWidth) {
+        for (const item of originals) {
+          const clone = item.cloneNode(true) as HTMLElement;
+          clone.setAttribute("data-clone", "");
+          // A clone is decoration: it must not be read out twice, and its links
+          // must not be reachable by keyboard.
+          clone.setAttribute("aria-hidden", "true");
+          for (const a of clone.querySelectorAll("a")) a.tabIndex = -1;
+          track!.appendChild(clone);
+        }
+      }
+
+      timer = setInterval(step, STEP_MS);
+    }
+
+    // Every card is a LINK, and a moving link cannot be clicked. Pausing while
+    // a pointer or the keyboard is on the strip is what makes the logos usable
+    // rather than merely visible.
+    const pause = () => { paused = true; };
+    const resume = () => { paused = false; };
+    viewport.addEventListener("pointerenter", pause);
+    viewport.addEventListener("pointerleave", resume);
+    viewport.addEventListener("focusin", pause);
+    viewport.addEventListener("focusout", resume);
+
+    // A background tab still fires the interval but paints nothing, so the
+    // strip would jump several places on return.
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stop();
+      else if (!timer) layout();
+    });
+
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(layout, 150);
+    });
+    reduced.addEventListener("change", layout);
+
+    // Logos decide the width, so measure after they have loaded — before that
+    // the track is narrower than it will be and a strip that overflows looks
+    // like one that fits.
+    if (document.readyState === "complete") layout();
+    else addEventListener("load", layout);
+  }
+</script>

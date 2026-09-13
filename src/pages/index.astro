@@ -10,7 +10,7 @@ import BodyDialog from "../components/BodyDialog.astro";
 import StatuteDialog from "../components/StatuteDialog.astro";
 import ResolutionDialog from "../components/ResolutionDialog.astro";
 import DocCard from "../components/DocCard.astro";
-import PartnerCard from "../components/PartnerCard.astro";
+import PartnersStrip from "../components/PartnersStrip.astro";
 import {
   assignmentsByPerson, bodiesByPerson, getBodies, getNationalTeams,
   bodyTypeLabel, documentsOfType, getDocuments, getOrganisation, getPartners,
@@ -264,26 +264,14 @@ const bodyRows = bodiesByPerson(bodies);
   {/* ── Partnerzy ─────────────────────────────────────────────────────────
       NOT a section and NOT in the menu. Partners are an acknowledgement, not
       somewhere a visitor navigates to — so this sits directly on top of the
-      footer with no gap between them, reading as the top of that block rather
-      than as the last thing on the page.
+      footer with no gap between them.
+
+      The strip centres itself when the logos fit and rotates them when they do
+      not; it owns that decision, so this file just hands it the list.
 
       Publication is opt-in per row, so an empty list is the normal state and
-      the strip simply does not render.
-
-      `aria-label`, not `aria-labelledby`: the visible heading is gone, so the
-      region needs a name of its own or it announces as an unlabelled group of
-      links. The logos say what this is to anyone who can see them. */}
-  {partners.length > 0 && (
-    <section class="partners" aria-label="Partnerzy">
-      <div class="partners__inner">
-        <ul class="partners__list">
-          {partners.map((p) => (
-            <li><PartnerCard name={p.name} logoUrl={p.logo_url} url={p.url} /></li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  )}
+      the strip simply does not render. */}
+  {partners.length > 0 && <PartnersStrip partners={partners} />}
 
   <SiteFooter org={org} />
 
@@ -299,38 +287,6 @@ const bodyRows = bodiesByPerson(bodies);
      shares with the hero — otherwise it anchors to the page and scrolls away
      from the footage it is meant to sit on. */
   .hero-wrap { position: relative; }
-
-  /* ── Partnerzy, glued to the footer ───────────────────────────────────────
-     The footer carries `margin-top: var(--space-7)` to hold itself off the page.
-     When this strip is present it takes that gap over and the footer's own is
-     removed, so the two meet with no seam — which is what "on top of the
-     footer" means. `:global(.foot)` because the footer is another component and
-     a scoped selector would never match it. */
-  .partners {
-    margin-top: var(--space-7);
-    padding-block: var(--space-5);
-    border-top: 1px solid var(--color-border);
-    background: var(--color-bg);
-  }
-  .partners + :global(.foot) { margin-top: 0; }
-
-  .partners__inner {
-    max-width: var(--page-max);
-    margin-inline: auto;
-    padding-inline: var(--space-3);
-  }
-  /* CENTRED, and wrapping rather than scrolling. A carousel is for a list you
-     work through; this is a wall you take in at a glance, and a centred wrap
-     stays centred at three logos and at thirty. */
-  .partners__list {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-3);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
 
   /* A band set BACK from the page rather than raised above it — one step darker
      than the ground, which is what distinguishes a section without needing a
