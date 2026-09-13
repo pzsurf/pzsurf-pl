@@ -62,7 +62,13 @@
      put while a long remit is read. */
   .body-dialog .person__head { flex: none; }
 
-  .body-dialog__crest { background: var(--color-bg); }
+  /* Square, overriding the shared portrait: a crest is a logo, roughly square,
+     and letting it keep the person's 3:4 box would render it small between two
+     empty bands. The rounded corners and the width come from tokens.css. */
+  .body-dialog__crest {
+    height: 132px;
+    background: var(--color-bg);
+  }
   /* `:global` because the script creates this <img> — a runtime node carries no
      data-astro-cid, so a scoped selector never matches it. */
   .body-dialog__crest :global(img) {

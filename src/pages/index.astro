@@ -261,10 +261,14 @@ const bodyRows = bodiesByPerson(bodies);
   .squad__crest {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    /* A rounded rectangle rather than a circle. These crests are shields and
+       wordmarks drawn to square edges, and a circular mask clipped the corners
+       off every one of them — the shield's own outline is the thing that
+       distinguishes one komisja's badge from the next. */
+    border-radius: 6px;
     border: 1px solid var(--color-border-strong);
     background: var(--color-bg-raised);
-    /* `contain`, not cover: a crest cropped to fill a circle loses its edges,
+    /* `contain`, not cover: a crest cropped to fill the box loses its edges,
        which is the part that makes it recognisable. */
     object-fit: contain;
     padding: 3px;
