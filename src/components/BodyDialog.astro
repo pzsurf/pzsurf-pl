@@ -5,10 +5,13 @@
 // somebody's memberships.
 //
 // One dialog for the page, filled from the row that opened it, the same way
-// PersonDialog works. The crest is the ORGANISATION's: governance bodies have
-// no image of their own — `Image` is polymorphic over person and organisation
-// only — so this is the federation's mark, not a per-body logo that does not
-// exist.
+// PersonDialog works. The crest is the BODY's own, with the federation's mark
+// as a fallback for a body that has none — the row that opens this dialog has
+// already resolved which, and passes it in `data-body-crest`.
+//
+// It used to say bodies had no image of their own. That was wrong: `Image` is
+// polymorphic over `governance_body` too, every body already had a crest, and
+// the public API simply never returned it (surfpoland#31).
 ---
 <dialog class="person body-dialog" data-body-dialog aria-labelledby="body-name">
   <form method="dialog" class="person__close-form">
@@ -34,6 +37,31 @@
 <style>
   /* The shell, head, circle and close button all come from tokens.css, which
      both dialogs share. Only what is different about a BODY lives here. */
+
+  /* WIDER and TALLER than the person dialog, because the content is a different
+     shape: a person's dialog holds a portrait and a handful of one-line rows,
+     a body's holds several paragraphs of prose about its remit. Overriding
+     here rather than widening `.person` in tokens.css keeps the person dialog
+     at the 420px its content was measured for. */
+  .body-dialog {
+    width: min(720px, calc(100vw - 32px));
+    /* `svh`, not `vh`: on mobile `vh` is the viewport with the browser chrome
+       RETRACTED, so a `100vh`-tall dialog is taller than what you can actually
+       see until you scroll. The 2×var(--space-4) is the vertical breathing
+       room either side. */
+    max-height: calc(100svh - var(--space-4) * 2);
+  }
+  /* `[open]`, NEVER the bare class: the UA stylesheet hides a closed dialog
+     with `display: none`, so an unqualified `display: flex` here would override
+     it and leave the dialog permanently on the page. */
+  .body-dialog[open] {
+    display: flex;
+    flex-direction: column;
+  }
+  /* The head is fixed; only the prose scrolls, so the crest and the name stay
+     put while a long remit is read. */
+  .body-dialog .person__head { flex: none; }
+
   .body-dialog__crest { background: var(--color-bg); }
   /* `:global` because the script creates this <img> — a runtime node carries no
      data-astro-cid, so a scoped selector never matches it. */
@@ -59,7 +87,14 @@
     line-height: var(--leading-sm);
     white-space: pre-wrap;
     text-align: left;
-    max-height: 46vh;
+    /* `0 1 auto` rather than `1 1 auto`, so the dialog GROWS WITH the content
+       instead of always filling the screen: a short remit gets a short dialog,
+       and only prose that overflows the max-height above shrinks this box and
+       starts scrolling. `min-height: 0` is what lets a flex item shrink below
+       its content — without it the box refuses to shrink and the dialog
+       overflows the viewport instead. */
+    flex: 0 1 auto;
+    min-height: 0;
     overflow-y: auto;
   }
   .body-dialog__desc:empty { display: none; }

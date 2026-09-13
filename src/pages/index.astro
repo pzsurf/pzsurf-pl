@@ -101,7 +101,15 @@ const bodyRows = bodiesByPerson(bodies);
         <h2 class="section__title">Zarząd i komisje</h2>
       </div>
 
-      {orderedBodies.map((body) => (
+      {orderedBodies.map((body) => {
+        /* The BODY's own crest, falling back to the federation's mark only
+           when a body has none. It was the federation's mark unconditionally,
+           which made all eight komisje look identical — the crests existed all
+           along, the public API just did not return them (surfpoland#31). The
+           fallback stays because the field is genuinely optional, and because
+           it is what renders until that change is deployed. */
+        const crest = body.image_url || org.image_url || "";
+        return (
         <section class="squad">
           {/* A BUTTON only when there is something to open. Zarząd currently
               has no description, and a control that opens an empty dialog is
@@ -118,15 +126,15 @@ const bodyRows = bodiesByPerson(bodies);
                 data-body-type={bodyTypeLabel(body.body_type)}
                 data-body-count={`${body.member_count} ${body.member_count === 1 ? "osoba" : "osób"}`}
                 data-body-desc={body.description}
-                data-body-crest={org.image_url ?? ""}
+                data-body-crest={crest}
               >
-                {org.image_url && <img class="squad__crest" src={org.image_url} alt="" width="28" height="28" />}
+                {crest && <img class="squad__crest" src={crest} alt="" width="28" height="28" />}
                 <span class="squad__label">{body.name}</span>
                 <span class="squad__count">{body.member_count}</span>
               </button>
             ) : (
               <span class="squad__row squad__row--static">
-                {org.image_url && <img class="squad__crest" src={org.image_url} alt="" width="28" height="28" />}
+                {crest && <img class="squad__crest" src={crest} alt="" width="28" height="28" />}
                 <span class="squad__label">{body.name}</span>
                 <span class="squad__count">{body.member_count}</span>
               </span>
@@ -143,7 +151,8 @@ const bodyRows = bodiesByPerson(bodies);
             ))}
           </Carousel>
         </section>
-      ))}
+        );
+      })}
     </div>
   </section>
 
