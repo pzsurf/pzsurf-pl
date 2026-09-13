@@ -29,17 +29,36 @@ permissions:
   id-token: write
 
 # A scheduled run and a push can otherwise race and release two versions in
-# either order. Last one wins is fine; two at once is not.
+# either order.
+#
+# `cancel-in-progress: true`, and the false version cost a live regression:
+# a scheduled publish sat QUEUED for over eight hours, then finished AFTER a
+# later push had already deployed, and released its own build — of the commit
+# it was created from, before that push existed. The newer site was overwritten
+# with older content and every check was green, because each run did exactly
+# what it was told.
+#
+# Queuing is wrong for this job by its nature. It publishes THE CURRENT STATE;
+# an older publish waiting behind a newer one has nothing left to contribute,
+# so superseding it is the only outcome that can be correct. Cancelling
+# mid-upload is safe: a Hosting version is released only after it is finalized,
+# so an abandoned one is never served.
 concurrency:
   group: publish-pzsurf-pl
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   publish:
     name: Build and release
     runs-on: ubuntu-latest
     steps:
+      # Explicitly `main`, not the commit that triggered the run. Belt and braces
+      # against the same failure: a run that starts late would otherwise build
+      # whatever main looked like when it was QUEUED. This job's contract is
+      # "publish the current state", so it should read the current state.
       - uses: actions/checkout@v5
+        with:
+          ref: main
       # 22, NOT the 20 the surfpoland monorepo's workflows use. Astro requires
       # >=22.12.0 and refuses to build below it. Copying the monorepo's pin is
       # exactly how this broke the first time: it builds on a developer's newer
