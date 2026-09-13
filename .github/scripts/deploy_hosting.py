@@ -17,7 +17,24 @@ Flow (https://firebase.google.com/docs/hosting/api-deploy):
   3. upload what the server is missing   4. finalize   5. release to live
 
 Env:
-  ACCESS_TOKEN  OAuth token for an SA holding roles/firebasehosting.admin
+  ACCESS_TOKEN         OAuth token for an SA holding roles/firebasehosting.admin
+  GOOGLE_CLOUD_PROJECT optional; sends X-Goog-User-Project, which USER
+                       credentials need and service-account ones do not
+
+BREAK GLASS — deploying by hand when Actions cannot run it. This happened on
+2026-09-13: a run wedged in `queued` with no jobs, and cancel, force-cancel and
+dispatch all failed on GitHub's side, so the only way to ship was locally.
+
+    npm ci && npx astro build
+    ACCESS_TOKEN="$(gcloud auth print-access-token)" \
+      GOOGLE_CLOUD_PROJECT=pzsurf-platform python3 .github/scripts/deploy_hosting.py
+
+`GOOGLE_CLOUD_PROJECT` is why that env var exists. A WIF-minted token belongs to
+a service account and carries its own billing project, so CI never sets it; a
+token from `gcloud auth print-access-token` belongs to a PERSON, and the Hosting
+API refuses it with a 403 about a missing quota project unless the header says
+which project to bill. Unset in CI, the header is simply not sent and nothing
+changes there.
 """
 import gzip
 import hashlib
@@ -30,12 +47,16 @@ import urllib.request
 API = "https://firebasehosting.googleapis.com/v1beta1"
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TOKEN = os.environ["ACCESS_TOKEN"]
+# Only ever set for a hand-run deploy with user credentials — see the docstring.
+QUOTA_PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
 
 
 def _request(method, url, body=None, raw=False):
     data = body if raw else (json.dumps(body).encode() if body is not None else None)
     req = urllib.request.Request(url, data=data, method=method)
     req.add_header("Authorization", f"Bearer {TOKEN}")
+    if QUOTA_PROJECT:
+        req.add_header("X-Goog-User-Project", QUOTA_PROJECT)
     if raw:
         req.add_header("Content-Type", "application/octet-stream")
     elif body is not None:
