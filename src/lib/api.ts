@@ -228,6 +228,10 @@ export interface GovernanceBody {
   name: string;
   body_type: string;
   description: string | null;
+  /** The body's OWN crest. Optional twice over: a body need not have one, and
+   *  the field itself is absent until the API change that adds it is deployed
+   *  (this page builds against the live API, which lags the repo). */
+  image_url?: string | null;
   member_count: number;
   members: TeamMember[];
 }
