@@ -7,15 +7,17 @@ import PersonCard from "../components/PersonCard.astro";
 import Carousel from "../components/Carousel.astro";
 import PersonDialog from "../components/PersonDialog.astro";
 import BodyDialog from "../components/BodyDialog.astro";
+import StatuteDialog from "../components/StatuteDialog.astro";
 import {
   assignmentsByPerson, bodiesByPerson, getBodies, getNationalTeams,
-  bodyTypeLabel, getOrganisation, latestYear, orderBodies, roleLabel, teamTitle,
+  bodyTypeLabel, getOrganisation, getStatute, latestYear, orderBodies, roleLabel,
+  teamTitle,
 } from "../lib/api";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
 // single always-on container serves nobody's page views.
-const [teams, org, bodies] = await Promise.all([
-  getNationalTeams(), getOrganisation(), getBodies(),
+const [teams, org, bodies, statute] = await Promise.all([
+  getNationalTeams(), getOrganisation(), getBodies(), getStatute(),
 ]);
 const year = latestYear(teams);
 
@@ -179,6 +181,7 @@ const bodyRows = bodiesByPerson(bodies);
   {/* One dialog for every card on the page. */}
   <PersonDialog />
   <BodyDialog />
+  <StatuteDialog statute={statute} />
 </Base>
 
 <style>

@@ -22,7 +22,16 @@ const { title, lede } = Astro.props;
   <div class="hero__inner">
     <h1 class="hero__title">{title}</h1>
     <p class="hero__lede">{lede}</p>
-    <a class="btn btn--outline" href="#kadra">Zobacz kadrę</a>
+    {/* A BUTTON, not a link: it opens a dialog on this page rather than going
+        anywhere, and a link that navigates nowhere is a lie to a screen reader
+        and to anyone who middle-clicks it. StatuteDialog binds every
+        `[data-open-statute]` on the page, so the hero does not need to know
+        the dialog exists.
+
+        The scroll indicator below still points at #kadra, so the way down that
+        "Zobacz kadrę" used to offer has not been taken away — it was always
+        the more discoverable of the two. */}
+    <button class="btn btn--outline" type="button" data-open-statute>Statut</button>
   </div>
 
   {/* A LINK, not an ornament. It points at the same place the button does, so
@@ -132,6 +141,9 @@ const { title, lede } = Astro.props;
     line-height: var(--leading-lg);
   }
 
+  /* Styles a <button> as well as an <a> now, hence the four resets: a button
+     carries the UA's own font, background and border and inherits none of the
+     page's. */
   .btn {
     display: inline-flex;
     align-items: center;
@@ -140,10 +152,13 @@ const { title, lede } = Astro.props;
     padding: 0 var(--space-4);
     border: 2px solid currentColor;
     border-radius: var(--radius-pill);
+    font-family: inherit;
     font-size: var(--text-sm);
     font-weight: var(--weight-button);
     text-decoration: none;
+    background: none;
     color: var(--color-text);
+    cursor: pointer;
   }
   .btn--outline:hover { color: var(--color-accent); }
 
