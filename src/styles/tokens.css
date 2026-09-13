@@ -225,12 +225,19 @@ html:has(dialog[open]) {
 .person__close:hover { color: var(--color-accent); }
 
 .person__head { text-align: center; }
+/* A ROUNDED RECTANGLE, not a circle, and in the card's own 3:4 proportion
+   (132x176 against the card's 186x248). A circle crops a portrait to its
+   middle and throws away the top of the head and the shoulders — the parts
+   that make a person recognisable — and it disagreed with the card that was
+   clicked to get here, so the same photograph changed shape on the way into
+   the dialog. BodyDialog overrides the height back to square: a crest is a
+   logo, and a logo in a portrait box is a small logo between two empty bands. */
 .person__avatar {
   position: relative;
-  width: 104px;
-  height: 104px;
+  width: 132px;
+  height: 176px;
   margin: 0 auto var(--space-3);
-  border-radius: 50%;
+  border-radius: 14px;
   overflow: hidden;
   display: grid;
   place-items: center;
