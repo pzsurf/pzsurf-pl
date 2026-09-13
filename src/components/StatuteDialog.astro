@@ -26,46 +26,19 @@ if (unhandled.length) {
 // then the plain word. The live API sends an empty title, which is why the
 // fallback chain is not decorative.
 const heading = statute.title?.trim() || title || "Statut";
-
-// A REAL file if one exists; otherwise the browser's own print-to-PDF. See the
-// note on `source_file_url` in lib/api.ts — nothing has been uploaded yet.
-const pdfUrl = statute.source_file_url;
 ---
 <dialog class="statute" data-statute-dialog aria-labelledby="statute-title">
   <div class="statute__head">
     <h2 class="statute__title" id="statute-title">{heading}</h2>
-
-    <div class="statute__actions">
-      {pdfUrl ? (
-        <a class="statute__pdf" href={pdfUrl} download target="_blank" rel="noopener noreferrer">
-          Pobierz PDF
-        </a>
-      ) : (
-        /* No PDF on file, so this opens the browser's print dialog, where
-           "Save as PDF" is the destination on every current desktop browser
-           and "Print to PDF"/share-to-Files on mobile. The @media print rules
-           below are what make that produce the statute alone rather than the
-           whole page. */
-        <button type="button" class="statute__pdf" data-statute-print>
-          Pobierz PDF
-        </button>
-      )}
-      <form method="dialog" class="statute__close-form">
-        <button class="statute__close" aria-label="Zamknij">×</button>
-      </form>
-    </div>
+    <form method="dialog" class="statute__close-form">
+      <button class="statute__close" aria-label="Zamknij">×</button>
+    </form>
   </div>
 
   {/* The rendered statute. `set:html` is safe here because renderStatute
       escapes every character of the source before applying any formatting —
       see the note at the top of lib/markdown.ts. */}
   <div class="statute__body" data-statute-body tabindex="0" set:html={html} />
-
-  {statute.source_url && (
-    <p class="statute__source">
-      Źródło: <a href={statute.source_url} target="_blank" rel="noopener noreferrer">{statute.source_url}</a>
-    </p>
-  )}
 </dialog>
 
 <style>
@@ -86,8 +59,8 @@ const pdfUrl = statute.source_file_url;
   }
   .statute::backdrop { background: rgba(10, 16, 24, 0.55); }
 
-  /* Sticky rather than scrolling away: in a 42k-character document the close
-     button and the download have to stay reachable from clause 200. */
+  /* Fixed rather than scrolling away: in a 42k-character document the close
+     button has to stay reachable from clause 200. */
   .statute__head {
     flex: none;
     display: flex;
@@ -105,33 +78,7 @@ const pdfUrl = statute.source_file_url;
     line-height: var(--leading-lg);
     font-weight: var(--weight-display);
   }
-  .statute__actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    flex: 0 0 auto;
-  }
-  .statute__pdf {
-    display: inline-flex;
-    align-items: center;
-    min-height: 38px;
-    padding: 0 var(--space-3);
-    border: 1px solid var(--color-accent);
-    border-radius: var(--radius-pill);
-    background: none;
-    color: var(--color-accent);
-    font: inherit;
-    font-size: var(--text-sm);
-    font-weight: var(--weight-button);
-    text-decoration: none;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .statute__pdf:hover {
-    background: var(--color-accent);
-    color: var(--color-on-accent);
-  }
-  .statute__close-form { margin: 0; }
+  .statute__close-form { margin: 0; flex: 0 0 auto; }
   .statute__close {
     width: 32px;
     height: 32px;
@@ -192,17 +139,6 @@ const pdfUrl = statute.source_file_url;
   .statute__body :global(li) { margin-bottom: var(--space-2); }
   .statute__body :global(ol ol) { margin-top: var(--space-2); }
 
-  .statute__source {
-    flex: none;
-    margin: 0;
-    padding: var(--space-2) var(--space-4) var(--space-3);
-    border-top: 1px solid var(--color-border);
-    color: var(--color-text-faint);
-    font-size: var(--text-xs);
-    overflow-wrap: anywhere;
-  }
-  .statute__source a { color: inherit; }
-
   @media (max-width: 600px) {
     .statute__head { flex-wrap: wrap; }
     .statute__title { font-size: var(--text-base); }
@@ -248,10 +184,9 @@ const pdfUrl = statute.source_file_url;
     .statute__body :global(h2),
     .statute__body :global(h3) { break-inside: avoid; }
     .statute__body :global(h2) { break-after: avoid; }
-    /* Controls are not part of the document. */
-    .statute__actions, .statute__close-form { display: none; }
+    /* The close button is not part of the document. */
+    .statute__close-form { display: none; }
     .statute__head { border: 0; padding: 0 0 12pt; }
-    .statute__source { border: 0; padding: 12pt 0 0; color: #555; }
   }
 </style>
 
@@ -282,9 +217,6 @@ const pdfUrl = statute.source_file_url;
         dialog.querySelector<HTMLElement>("[data-statute-body]")?.focus();
       });
     }
-
-    dialog.querySelector<HTMLElement>("[data-statute-print]")
-      ?.addEventListener("click", () => window.print());
 
     // Backdrop click closes, as the other two dialogs do. The test is on the
     // dialog itself because the backdrop is not an element that can be hit.
