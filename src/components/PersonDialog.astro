@@ -28,7 +28,7 @@
   </div>
 
   <div class="person__section">
-    <h3 class="person__section-title">Kadra narodowa</h3>
+    <h3 class="person__section-title" data-group></h3>
     {/* One row per squad, filled by the script. */}
     <ul class="person__teams" data-teams-list></ul>
   </div>
@@ -161,37 +161,35 @@
       if (el) el.textContent = text;
     };
 
-    // The API's role is a code. Only ATHLETE occurs on today's rosters; anything
-    // else is shown as it came rather than invented a translation for.
-    const ROLE_PL: Record<string, string> = { ATHLETE: "Zawodnik" };
-
     for (const card of document.querySelectorAll<HTMLElement>("[data-person]")) {
       card.addEventListener("click", () => {
         const d = card.dataset;
         set("[data-name]", d.name ?? "");
-        set("[data-role]", d.role ? (ROLE_PL[d.role] ?? d.role) : "");
+        // Already in Polish — the page translated it, because only the page
+        // knows whether a role came from a squad or from a governance body.
+        set("[data-role]", d.role ?? "");
+        set("[data-group]", d.group ?? "");
 
-        // Every squad this person is in, one row each — nine of the roster are
-        // in more than one, and a dialog that named only the card you happened
-        // to click would under-report them.
+        // EVERY membership of this kind, one row each — a dialog that named
+        // only the card you happened to click would under-report anyone who
+        // sits on more than one squad or committee, and many do.
         const list = dialog.querySelector<HTMLElement>("[data-teams-list]");
         if (list) {
           list.innerHTML = "";
-          const teams: { year: number; team: string; categories: string }[] =
-            JSON.parse(d.teams || "[]");
-          for (const t of teams) {
+          const rows: { label: string; detail: string }[] = JSON.parse(d.rows || "[]");
+          for (const r of rows) {
             const li = document.createElement("li");
             li.className = "person__team";
-            const name = document.createElement("p");
-            name.className = "person__team-name";
-            name.textContent = `${t.year} — ${t.team}`;
-            li.appendChild(name);
-            // Only when there are any: an empty node would still claim its gap.
-            if (t.categories) {
-              const cats = document.createElement("p");
-              cats.className = "person__team-cats";
-              cats.textContent = t.categories;
-              li.appendChild(cats);
+            const label = document.createElement("p");
+            label.className = "person__team-name";
+            label.textContent = r.label;
+            li.appendChild(label);
+            // Only when there is one: an empty node would still claim its gap.
+            if (r.detail) {
+              const detail = document.createElement("p");
+              detail.className = "person__team-cats";
+              detail.textContent = r.detail;
+              li.appendChild(detail);
             }
             list.appendChild(li);
           }

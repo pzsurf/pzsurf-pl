@@ -3,14 +3,19 @@ import Base from "../layouts/Base.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import Hero from "../components/Hero.astro";
-import AthleteCard from "../components/AthleteCard.astro";
+import PersonCard from "../components/PersonCard.astro";
 import Carousel from "../components/Carousel.astro";
 import PersonDialog from "../components/PersonDialog.astro";
-import { assignmentsByPerson, getNationalTeams, getOrganisation, latestYear, teamTitle } from "../lib/api";
+import {
+  assignmentsByPerson, bodiesByPerson, getBodies, getNationalTeams,
+  getOrganisation, latestYear, orderBodies, roleLabel, teamTitle,
+} from "../lib/api";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
 // single always-on container serves nobody's page views.
-const [teams, org] = await Promise.all([getNationalTeams(), getOrganisation()]);
+const [teams, org, bodies] = await Promise.all([
+  getNationalTeams(), getOrganisation(), getBodies(),
+]);
 const year = latestYear(teams);
 
 // Current season only. Older squads become their own page once the API returns
@@ -26,6 +31,11 @@ const athletes = season.reduce((n, t) => n + t.member_count, 0);
 // Built from ALL teams, not just the season on show, so a dialog lists every
 // squad a person belongs to — which for nine of the twenty-six is more than one.
 const assignments = assignmentsByPerson(teams);
+
+// The federation's board and its committees. Board first — it is the body a
+// visitor is looking for — then the komisje alphabetically.
+const orderedBodies = orderBodies(bodies);
+const bodyRows = bodiesByPerson(bodies);
 ---
 <Base
   title="Polski Związek Surfingu"
@@ -66,15 +76,52 @@ const assignments = assignmentsByPerson(teams);
         </h3>
         <Carousel label={`Kadra ${teamTitle(team)}`}>
           {team.members.map((m) => (
-            <AthleteCard
+            <PersonCard
               member={m}
-              assignments={assignments.get(m.display_name) ?? []}
+              subtitle={m.categories.join(" · ")}
+              role={roleLabel(m.role)}
+              group="Kadra narodowa"
+              rows={(assignments.get(m.display_name) ?? []).map((a) => ({
+                label: `${a.year} — ${a.team}`,
+                detail: a.categories,
+              }))}
             />
           ))}
         </Carousel>
       </section>
     ))}
   </main>
+
+  {/* A sunken band, so the governance section reads as a different part of the
+      record rather than more of the same list. Full-bleed like the hero: it
+      sits OUTSIDE .page and re-centres its own content. */}
+  <section class="band band--sunken" id="wladze">
+    <div class="band__inner">
+      <div class="section__head">
+        <h2 class="section__title">Zarząd i komisje</h2>
+      </div>
+
+      {orderedBodies.map((body) => (
+        <section class="squad">
+          <h3 class="squad__name">
+            {body.name}
+            <span class="squad__count">{body.member_count}</span>
+          </h3>
+          <Carousel label={body.name}>
+            {body.members.map((m) => (
+              <PersonCard
+                member={m}
+                subtitle={roleLabel(m.role)}
+                role={roleLabel(m.role)}
+                group="Władze"
+                rows={bodyRows.get(m.display_name) ?? []}
+              />
+            ))}
+          </Carousel>
+        </section>
+      ))}
+    </div>
+  </section>
 
   <SiteFooter org={org} />
 
@@ -87,6 +134,24 @@ const assignments = assignmentsByPerson(teams);
      shares with the hero — otherwise it anchors to the page and scrolls away
      from the footage it is meant to sit on. */
   .hero-wrap { position: relative; }
+
+  /* A band set BACK from the page rather than raised above it — one step darker
+     than the ground, which is what distinguishes a section without needing a
+     rule or a heavier heading. It carries the page's own gutters because it
+     sits outside .page. */
+  .band--sunken {
+    background: var(--palette-paper-sunken);
+    padding-block: var(--space-6);
+    margin-top: var(--space-6);
+  }
+  .band--sunken .band__inner {
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--space-3);
+  }
+  /* Cards on the sunken band keep their white face: the contrast that makes a
+     card read as a card is with whatever is behind it, and behind it is now
+     darker, so nothing needs restating. */
 
   .section__title {
     font-size: var(--text-2xl);

@@ -33,6 +33,8 @@
   --palette-white:        #ffffff;
   --palette-paper:        #fafbfc;
   --palette-paper-shade:  #f2f5f7;
+  /* One step below the page, for a band that should read as set back from it. */
+  --palette-paper-sunken: #e7edf2;
   --palette-line:         #dfe5ea;
   /* One step stronger than `line`, for a border that has to be SEEN rather
      than merely separate two surfaces — a card sitting on the grey page. */

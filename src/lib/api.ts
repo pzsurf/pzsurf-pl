@@ -199,3 +199,65 @@ export function assignmentsByPerson(
   }
   return out;
 }
+
+// ── Governance bodies ───────────────────────────────────────────────────────
+
+export interface GovernanceBody {
+  name: string;
+  body_type: string;
+  description: string | null;
+  member_count: number;
+  members: TeamMember[];
+}
+
+export async function getBodies(): Promise<GovernanceBody[]> {
+  const { data } = await fetchJson<GovernanceBody[]>(`/orgs/${ORG_SLUG}/bodies`);
+  return data;
+}
+
+/**
+ * Bodies first, committees after, each group alphabetical.
+ *
+ * The federation's board is the one body a visitor is looking for, so it leads
+ * whatever its name sorts to; the rest are komisje and their order is arbitrary,
+ * which is exactly when alphabetical is the honest choice.
+ */
+export const orderBodies = (bodies: GovernanceBody[]): GovernanceBody[] =>
+  [...bodies].sort((a, b) =>
+    (a.body_type === "BOARD" ? 0 : 1) - (b.body_type === "BOARD" ? 0 : 1) ||
+    a.name.localeCompare(b.name, "pl"));
+
+/** Polish for the governance roles the API returns as codes. */
+const ROLE_PL: Record<string, string> = {
+  PRESIDENT: "Prezes",
+  CHAIR: "Przewodniczący",
+  VICE_CHAIR: "Wiceprzewodniczący",
+  MEMBER: "Członek",
+  ATHLETE: "Zawodnik",
+};
+export const roleLabel = (role: string): string => ROLE_PL[role] ?? role;
+
+/**
+ * Which bodies each person sits on, keyed by display name.
+ *
+ * Deliberately NOT joined with `assignmentsByPerson`, even though a person can
+ * be both an athlete and a committee member. The two endpoints format the same
+ * person differently — a national team roster publishes "Przemysław Kowalski"
+ * and a body publishes "Przemysław K." — so matching across them by name would
+ * mostly fail and would occasionally match the WRONG person. Each section
+ * therefore lists only its own kind of membership.
+ */
+export function bodiesByPerson(
+  bodies: GovernanceBody[],
+): Map<string, { label: string; detail: string }[]> {
+  const out = new Map<string, { label: string; detail: string }[]>();
+  for (const body of bodies) {
+    for (const m of body.members) {
+      const list = out.get(m.display_name) ?? [];
+      list.push({ label: body.name, detail: roleLabel(m.role) });
+      out.set(m.display_name, list);
+    }
+  }
+  for (const list of out.values()) list.sort((a, b) => a.label.localeCompare(b.label, "pl"));
+  return out;
+}

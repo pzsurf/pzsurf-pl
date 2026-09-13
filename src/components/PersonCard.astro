@@ -1,13 +1,26 @@
 ---
-import type { Assignment, TeamMember } from "../lib/api";
+import type { TeamMember } from "../lib/api";
+
+export interface DialogRow {
+  /** Left of the row: a squad ("2026 — Longboard") or a body's name. */
+  label: string;
+  /** Right of the row: age categories, or a governance role. */
+  detail: string;
+}
+
 interface Props {
   member: TeamMember;
-  /** EVERY squad this person belongs to, not just the one this card sits in —
-   *  nine of the twenty-six are in more than one, and the dialog lists them all
-   *  the way surfpoland.com's profile does. */
-  assignments: Assignment[];
+  /** Under the name on the CARD. Categories for an athlete, role for a body
+   *  member — whichever the section makes sense of. */
+  subtitle?: string;
+  /** The badge in the dialog, already in Polish. */
+  role: string;
+  /** Heading above the rows in the dialog: "Kadra narodowa" / "Władze". */
+  group: string;
+  /** Every membership of this KIND that this person holds. */
+  rows: DialogRow[];
 }
-const { member, assignments } = Astro.props;
+const { member, subtitle = "", role, group, rows } = Astro.props;
 
 // Initials from whatever name we were given. Built from display_name rather
 // than first/last, because those are not public fields — the API sends one
@@ -25,8 +38,9 @@ const initials = member.display_name
   data-name={member.display_name}
   data-image={member.image_url ?? ""}
   data-initials={initials}
-  data-role={member.role}
-  data-teams={JSON.stringify(assignments)}
+  data-role={role}
+  data-group={group}
+  data-rows={JSON.stringify(rows)}
 >
   <div class="card__media">
     {member.image_url
@@ -35,9 +49,7 @@ const initials = member.display_name
   </div>
   <div class="card__body">
     <p class="card__name">{member.display_name}</p>
-    {member.categories.length > 0 && (
-      <p class="card__cats">{member.categories.join(" · ")}</p>
-    )}
+    {subtitle && <p class="card__cats">{subtitle}</p>}
   </div>
 </button>
 
