@@ -11,14 +11,13 @@
 // Dokumenty section renders only when the API has something to put in it, and
 // a menu entry pointing at an anchor that is not on the page is exactly the
 // dead link this comment is about.
-interface Props { hasDocuments?: boolean; hasPatrons?: boolean }
-const { hasDocuments = false, hasPatrons = false } = Astro.props;
+interface Props { hasDocuments?: boolean }
+const { hasDocuments = false } = Astro.props;
 
 const links = [
   { label: "Kadra", href: "#kadra" },
   { label: "Władze", href: "#wladze" },
   ...(hasDocuments ? [{ label: "Dokumenty", href: "#dokumenty" }] : []),
-  ...(hasPatrons ? [{ label: "Patroni", href: "#patroni" }] : []),
   { label: "Kontakt", href: "#kontakt" },
 ];
 ---

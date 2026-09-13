@@ -10,18 +10,18 @@ import BodyDialog from "../components/BodyDialog.astro";
 import StatuteDialog from "../components/StatuteDialog.astro";
 import ResolutionDialog from "../components/ResolutionDialog.astro";
 import DocCard from "../components/DocCard.astro";
-import PatronCard from "../components/PatronCard.astro";
+import PartnerCard from "../components/PartnerCard.astro";
 import {
   assignmentsByPerson, bodiesByPerson, getBodies, getNationalTeams,
-  bodyTypeLabel, documentsOfType, getDocuments, getOrganisation, getPatrons,
+  bodyTypeLabel, documentsOfType, getDocuments, getOrganisation, getPartners,
   getResolutions, getStatute, latestYear, orderBodies, roleLabel, teamTitle,
 } from "../lib/api";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
 // single always-on container serves nobody's page views.
-const [teams, org, bodies, statute, documents, resolutions, patrons] = await Promise.all([
+const [teams, org, bodies, statute, documents, resolutions, partners] = await Promise.all([
   getNationalTeams(), getOrganisation(), getBodies(), getStatute(),
-  getDocuments(), getResolutions(), getPatrons(),
+  getDocuments(), getResolutions(), getPartners(),
 ]);
 
 // The three shelves. `documentsOfType` matches on the API's own `doc_type`,
@@ -47,7 +47,6 @@ const dayOf = (iso: string | null) => (iso ?? "").slice(0, 10) || null;
 // Whether the Dokumenty section exists at all — the nav entry follows it, so
 // the menu never points at an anchor that is not on the page.
 const hasDocuments = resolutions.length > 0 || docShelves.length > 0;
-const hasPatrons = patrons.length > 0;
 const year = latestYear(teams);
 
 // Current season only. Older squads become their own page once the API returns
@@ -74,7 +73,7 @@ const bodyRows = bodiesByPerson(bodies);
   description={`Oficjalna strona Polskiego Związku Surfingu. Kadra narodowa ${year ?? ""}: ${athletes} zawodniczek i zawodników w ${season.length} kadrach.`}
 >
   <div class="hero-wrap">
-    <SiteHeader hasDocuments={hasDocuments} hasPatrons={hasPatrons} />
+    <SiteHeader hasDocuments={hasDocuments} />
     <Hero
       title="Polski Związek Surfingu"
       lede="Krajowa federacja surfingu — kadra narodowa, zawody i kluby zrzeszone w całej Polsce."
@@ -262,22 +261,23 @@ const bodyRows = bodiesByPerson(bodies);
     </section>
   )}
 
-  {/* ── Patroni ───────────────────────────────────────────────────────────
-      Who backs the federation. Publication is opt-in per sponsor, so an empty
-      list is the NORMAL state rather than a failure — 41 are on file and none
-      are switched on yet — and the section hides itself until somebody picks,
-      exactly as the document shelves do. */}
-  {patrons.length > 0 && (
-    <section class="band band--sunken" id="patroni">
-      <div class="band__inner">
-        <div class="section__head">
-          <h2 class="section__title">Patroni</h2>
-        </div>
-        <Carousel label="Patroni">
-          {patrons.map((p) => (
-            <PatronCard name={p.name} logoUrl={p.logo_url} url={p.url} />
+  {/* ── Partnerzy ─────────────────────────────────────────────────────────
+      NOT a section and NOT in the menu. Partners are an acknowledgement, not
+      somewhere a visitor navigates to — so this sits directly on top of the
+      footer with no gap between them, reading as the top of that block rather
+      than as the last thing on the page.
+
+      Publication is opt-in per row, so an empty list is the normal state and
+      the strip simply does not render. */}
+  {partners.length > 0 && (
+    <section class="partners" aria-labelledby="partners-title">
+      <div class="partners__inner">
+        <h2 class="partners__title" id="partners-title">Partnerzy</h2>
+        <ul class="partners__list">
+          {partners.map((p) => (
+            <li><PartnerCard name={p.name} logoUrl={p.logo_url} url={p.url} /></li>
           ))}
-        </Carousel>
+        </ul>
       </div>
     </section>
   )}
@@ -296,6 +296,47 @@ const bodyRows = bodiesByPerson(bodies);
      shares with the hero — otherwise it anchors to the page and scrolls away
      from the footage it is meant to sit on. */
   .hero-wrap { position: relative; }
+
+  /* ── Partnerzy, glued to the footer ───────────────────────────────────────
+     The footer carries `margin-top: var(--space-7)` to hold itself off the page.
+     When this strip is present it takes that gap over and the footer's own is
+     removed, so the two meet with no seam — which is what "on top of the
+     footer" means. `:global(.foot)` because the footer is another component and
+     a scoped selector would never match it. */
+  .partners {
+    margin-top: var(--space-7);
+    padding-block: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+  .partners + :global(.foot) { margin-top: 0; }
+
+  .partners__inner {
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--space-3);
+  }
+  .partners__title {
+    margin: 0 0 var(--space-4);
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-subhead);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  /* CENTRED, and wrapping rather than scrolling. A carousel is for a list you
+     work through; this is a wall you take in at a glance, and a centred wrap
+     stays centred at three logos and at thirty. */
+  .partners__list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
 
   /* A band set BACK from the page rather than raised above it — one step darker
      than the ground, which is what distinguishes a section without needing a

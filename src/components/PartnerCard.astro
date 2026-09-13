@@ -1,11 +1,11 @@
 ---
-// One patron: a logo, and the name under it.
+// One partner: a logo, and the name under it.
 //
 // Not a `DocCard`, though they sit in similar carousels. A document card is a
 // TITLE you read; this is a LOGO you recognise, so the mark gets the space and
 // the name is the caption rather than the other way round.
 //
-// An `<a>` when the patron has a site and a plain `<div>` when it has not — a
+// An `<a>` when the partner has a site and a plain `<div>` when it has not — a
 // link that goes nowhere is worse than no link, and roughly half of the
 // federation's list is ministries and municipalities with no URL on file.
 interface Props {
@@ -17,21 +17,21 @@ const { name, logoUrl, url } = Astro.props;
 const Tag = url ? "a" : "div";
 ---
 <Tag
-  class="patron"
+  class="partner"
   href={url ?? undefined}
   target={url ? "_blank" : undefined}
   rel={url ? "noopener noreferrer" : undefined}
 >
-  <span class="patron__mark">
+  <span class="partner__mark">
     {logoUrl
       ? <img src={logoUrl} alt="" width="120" height="72" loading="lazy" />
-      : <span class="patron__initial" aria-hidden="true">{name.slice(0, 1)}</span>}
+      : <span class="partner__initial" aria-hidden="true">{name.slice(0, 1)}</span>}
   </span>
-  <span class="patron__name">{name}</span>
+  <span class="partner__name">{name}</span>
 </Tag>
 
 <style>
-  .patron {
+  .partner {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -48,11 +48,11 @@ const Tag = url ? "a" : "div";
   }
   /* Only the linked ones react — a hover state on something that cannot be
      clicked promises an action that is not there. */
-  a.patron:hover {
+  a.partner:hover {
     border-color: var(--color-accent);
     transform: translateY(-2px);
   }
-  a.patron:focus-visible {
+  a.partner:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
@@ -62,26 +62,26 @@ const Tag = url ? "a" : "div";
      ministry's coat of arms — and without a fixed box each card would be a
      different height and the row would stagger. `contain`, never `cover`: a
      cropped logo is a damaged logo. */
-  .patron__mark {
+  .partner__mark {
     display: grid;
     place-items: center;
     width: 100%;
     height: 72px;
   }
-  .patron__mark img {
+  .partner__mark img {
     max-width: 100%;
     max-height: 72px;
     width: auto;
     height: auto;
     object-fit: contain;
   }
-  .patron__initial {
+  .partner__initial {
     font-size: var(--text-2xl);
     font-weight: var(--weight-display);
     color: var(--color-text-faint);
   }
 
-  .patron__name {
+  .partner__name {
     font-size: var(--text-xs);
     line-height: 1.35;
     text-align: center;

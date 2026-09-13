@@ -387,34 +387,34 @@ export async function getResolutions(): Promise<PublicResolution[]> {
 export const documentsOfType = (docs: PublicDocument[], type: string): PublicDocument[] =>
   docs.filter((d) => d.doc_type === type);
 
-// ── Patrons ─────────────────────────────────────────────────────────────────
+// ── Partners ────────────────────────────────────────────────────────────────
 
-export interface Patron {
+export interface Partner {
   name: string;
   logo_url: string | null;
   url: string | null;
 }
 
 /**
- * The organisation's published sponsors and patrons.
+ * The organisation's published partners.
  *
- * Empty is the NORMAL answer, not a failure: publication is opt-in per sponsor
- * and the federation has 41 on file with none switched on yet. The section
- * hides itself when this is empty, the same way the document shelves do.
+ * Empty is the NORMAL answer, not a failure: publication is opt-in per row and
+ * most of the federation's are still off. The strip hides itself when this is
+ * empty, the same way the document shelves do.
  *
  * Tolerates a 404 for as long as the endpoint is undeployed, exactly as
  * `getResolutions` did — and like that one, the tolerance is scaffolding to
  * delete once it is live.
  */
-export async function getPatrons(): Promise<Patron[]> {
-  const res = await fetch(`${API_BASE}/orgs/${ORG_SLUG}/patrons`, {
+export async function getPartners(): Promise<Partner[]> {
+  const res = await fetch(`${API_BASE}/orgs/${ORG_SLUG}/partners`, {
     headers: { Accept: "application/json" },
   });
   if (res.status === 404) {
-    console.warn("[api] /patrons is not deployed yet — the Patroni section will be hidden.");
+    console.warn("[api] /partners is not deployed yet — the partners strip will be hidden.");
     return [];
   }
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} from /patrons`);
-  const body = (await res.json()) as { data: Patron[] };
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} from /partners`);
+  const body = (await res.json()) as { data: Partner[] };
   return body.data ?? [];
 }
