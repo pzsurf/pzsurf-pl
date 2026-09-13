@@ -1,0 +1,295 @@
+---
+// The statute, read on the page rather than downloaded — which is what a
+// statute is for: a text you consult a clause of, not a file you file away.
+//
+// Rendered at BUILD time into the markup, so the whole 42k document is in the
+// page and opening the dialog costs no request and no parse.
+import { renderStatute } from "../lib/markdown";
+import type { Statute } from "../lib/api";
+
+interface Props { statute: Statute }
+const { statute } = Astro.props;
+
+const { title, html, unhandled } = renderStatute(statute.body_md);
+
+// Say so out loud rather than shipping a quietly mangled legal document. The
+// converter degrades an unknown construct to plain text, so this is a warning
+// about FIDELITY, not a crash.
+if (unhandled.length) {
+  console.warn(
+    `[statute] ${unhandled.length} line(s) used Markdown this renderer does not ` +
+    `handle and were rendered as plain text:\n  ${unhandled.slice(0, 5).join("\n  ")}`,
+  );
+}
+
+// The heading, in order of preference: the API's own title, the document's `# `,
+// then the plain word. The live API sends an empty title, which is why the
+// fallback chain is not decorative.
+const heading = statute.title?.trim() || title || "Statut";
+
+// A REAL file if one exists; otherwise the browser's own print-to-PDF. See the
+// note on `source_file_url` in lib/api.ts — nothing has been uploaded yet.
+const pdfUrl = statute.source_file_url;
+---
+<dialog class="statute" data-statute-dialog aria-labelledby="statute-title">
+  <div class="statute__head">
+    <h2 class="statute__title" id="statute-title">{heading}</h2>
+
+    <div class="statute__actions">
+      {pdfUrl ? (
+        <a class="statute__pdf" href={pdfUrl} download target="_blank" rel="noopener noreferrer">
+          Pobierz PDF
+        </a>
+      ) : (
+        /* No PDF on file, so this opens the browser's print dialog, where
+           "Save as PDF" is the destination on every current desktop browser
+           and "Print to PDF"/share-to-Files on mobile. The @media print rules
+           below are what make that produce the statute alone rather than the
+           whole page. */
+        <button type="button" class="statute__pdf" data-statute-print>
+          Pobierz PDF
+        </button>
+      )}
+      <form method="dialog" class="statute__close-form">
+        <button class="statute__close" aria-label="Zamknij">×</button>
+      </form>
+    </div>
+  </div>
+
+  {/* The rendered statute. `set:html` is safe here because renderStatute
+      escapes every character of the source before applying any formatting —
+      see the note at the top of lib/markdown.ts. */}
+  <div class="statute__body" data-statute-body tabindex="0" set:html={html} />
+
+  {statute.source_url && (
+    <p class="statute__source">
+      Źródło: <a href={statute.source_url} target="_blank" rel="noopener noreferrer">{statute.source_url}</a>
+    </p>
+  )}
+</dialog>
+
+<style>
+  /* Wider and taller than either person dialog: this is a document, and a
+     statute set in a 420px column is a column of two-word lines. */
+  .statute {
+    width: min(820px, calc(100vw - 32px));
+    max-height: calc(100svh - var(--space-4) * 2);
+    padding: 0;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 12px;
+    background: var(--color-bg-raised);
+    color: var(--color-text);
+  }
+  .statute[open] {
+    display: flex;
+    flex-direction: column;
+  }
+  .statute::backdrop { background: rgba(10, 16, 24, 0.55); }
+
+  /* Sticky rather than scrolling away: in a 42k-character document the close
+     button and the download have to stay reachable from clause 200. */
+  .statute__head {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-raised);
+    border-radius: 12px 12px 0 0;
+  }
+  .statute__title {
+    margin: 0;
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-display);
+  }
+  .statute__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 0 0 auto;
+  }
+  .statute__pdf {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--color-accent);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-button);
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .statute__pdf:hover {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+  .statute__close-form { margin: 0; }
+  .statute__close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-faint);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .statute__close:hover { color: var(--color-accent); }
+
+  /* The only thing that scrolls. `tabindex=0` in the markup is what makes it
+     keyboard-scrollable — a scroll container that is not focusable cannot be
+     driven by the arrow keys, which on a document this long is the difference
+     between readable and not. */
+  .statute__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    /* Stops the scroll chaining to the page behind when you hit the end. */
+    overscroll-behavior: contain;
+    padding: var(--space-4);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--color-text-muted);
+  }
+  .statute__body:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+  }
+
+  /* `:global`, because this content is injected with set:html and carries no
+     data-astro-cid — the same scoping trap this codebase has hit four times. */
+  .statute__body :global(h2) {
+    margin: var(--space-5) 0 var(--space-2);
+    color: var(--color-text);
+    font-size: var(--text-base);
+    font-weight: var(--weight-display);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .statute__body :global(h2:first-child) { margin-top: 0; }
+  .statute__body :global(h3) {
+    margin: var(--space-4) 0 var(--space-2);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+  }
+  .statute__body :global(p) { margin: 0 0 var(--space-3); }
+  /* `**§1**` is a paragraph of its own in the source and acts as the clause
+     marker, so it gets the weight of a heading without being one. */
+  .statute__body :global(p strong) { color: var(--color-text); }
+  .statute__body :global(ol) {
+    margin: 0 0 var(--space-3);
+    padding-left: var(--space-4);
+  }
+  .statute__body :global(li) { margin-bottom: var(--space-2); }
+  .statute__body :global(ol ol) { margin-top: var(--space-2); }
+
+  .statute__source {
+    flex: none;
+    margin: 0;
+    padding: var(--space-2) var(--space-4) var(--space-3);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+    overflow-wrap: anywhere;
+  }
+  .statute__source a { color: inherit; }
+
+  @media (max-width: 600px) {
+    .statute__head { flex-wrap: wrap; }
+    .statute__title { font-size: var(--text-base); }
+  }
+
+  /* ── Print ────────────────────────────────────────────────────────────────
+     SCOPED, not in the is:global block below, and that is the whole reason
+     these work. Astro stamps every scoped selector with `[data-astro-cid-…]`,
+     so a screen rule is `.statute__body[data-astro-cid-x]` at specificity
+     (0,2,0) while a global `.statute__body` is (0,1,0) — the global one loses
+     every time. Written globally, this entire block was being overridden by
+     the screen styles above it: the body printed in muted slate instead of
+     black, kept its screen padding, and `.statute[open]` kept its 820px cap.
+     Here they carry the same cid, come later, and win without a single
+     `!important`. */
+  @media print {
+    .statute[open] {
+      position: static;
+      display: block;
+      width: auto;
+      max-width: none;
+      max-height: none;
+      border: 0;
+      border-radius: 0;
+      background: #fff;
+      color: #000;
+    }
+    .statute::backdrop { display: none; }
+    /* The scroll container becomes the document. Without this only the visible
+       window prints and the remaining forty-odd pages are simply gone. */
+    .statute__body {
+      overflow: visible;
+      max-height: none;
+      padding: 0;
+      color: #000;
+      font-size: 11pt;
+    }
+    .statute__body :global(h2),
+    .statute__body :global(h3),
+    .statute__body :global(p strong) { color: #000; }
+    /* A clause should not be split across a page break where it can be helped. */
+    .statute__body :global(li),
+    .statute__body :global(h2),
+    .statute__body :global(h3) { break-inside: avoid; }
+    .statute__body :global(h2) { break-after: avoid; }
+    /* Controls are not part of the document. */
+    .statute__actions, .statute__close-form { display: none; }
+    .statute__head { border: 0; padding: 0 0 12pt; }
+    .statute__source { border: 0; padding: 12pt 0 0; color: #555; }
+  }
+</style>
+
+{/* The ONE print rule that has to be global: it talks about the page AROUND
+    the dialog — every sibling of <body>, each carrying some other component's
+    cid — which no scoped selector of this component can reach.
+
+    `!important` because those siblings' own scoped rules set `display` at a
+    higher specificity than this can. Everything else about printing lives in
+    the scoped block above, where it needs no such thing. */}
+<style is:global>
+  @media print {
+    /* Print the statute, not the site. Removed rather than hidden off-screen,
+       so they contribute no blank leading pages. */
+    body > *:not(dialog) { display: none !important; }
+  }
+</style>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>("[data-statute-dialog]");
+  if (dialog) {
+    for (const opener of document.querySelectorAll<HTMLElement>("[data-open-statute]")) {
+      opener.addEventListener("click", (e) => {
+        e.preventDefault();
+        dialog.showModal();
+        // Focus the scroll container, not the first control: the point of
+        // opening this is to read it, and it is what the arrow keys must drive.
+        dialog.querySelector<HTMLElement>("[data-statute-body]")?.focus();
+      });
+    }
+
+    dialog.querySelector<HTMLElement>("[data-statute-print]")
+      ?.addEventListener("click", () => window.print());
+
+    // Backdrop click closes, as the other two dialogs do. The test is on the
+    // dialog itself because the backdrop is not an element that can be hit.
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+  }
+</script>

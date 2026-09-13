@@ -295,3 +295,23 @@ export function bodiesByPerson(
   for (const list of out.values()) list.sort((a, b) => a.label.localeCompare(b.label, "pl"));
   return out;
 }
+
+// ── Statute ─────────────────────────────────────────────────────────────────
+
+export interface Statute {
+  title: string;
+  body_md: string;
+  adopted_on: string | null;
+  /** The signed PDF held in GCS, when there is one. **Currently null for
+   *  PZSurf** — no PDF has been uploaded, so the dialog falls back to printing.
+   *  The moment somebody uploads one in the admin this fills in and the button
+   *  becomes a true download with no change here. */
+  source_file_url: string | null;
+  /** The page on the open web it was transcribed from. Provenance, not a file. */
+  source_url: string | null;
+}
+
+export async function getStatute(): Promise<Statute> {
+  const { data } = await fetchJson<Statute>(`/orgs/${ORG_SLUG}/statute`);
+  return data;
+}
