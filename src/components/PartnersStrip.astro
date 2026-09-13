@@ -41,16 +41,28 @@ const { partners } = Astro.props;
      component and a scoped selector would never reach it. */
   .partners {
     margin-top: var(--space-7);
-    padding-block: var(--space-5);
+    /* Less the 4px the viewport now adds at each edge, so the visible gap
+       above and below the logos is unchanged by that fix. */
+    padding-block: calc(var(--space-5) - 4px);
     border-top: 1px solid var(--color-border);
     background: var(--color-bg);
   }
-  .partners + :global(.foot) { margin-top: 0; }
+  /* `~`, NOT `+`. Astro emits this component's own <script> as the element
+     immediately after the section, so the adjacent-sibling selector stopped
+     matching the moment these styles moved into the component — and the footer
+     silently kept its 96px, leaving the strip floating above it. A general
+     sibling selector does not care what Astro puts in between. */
+  .partners ~ :global(.foot) { margin-top: 0; }
 
   .partners__viewport {
     max-width: var(--page-max);
     margin-inline: auto;
     padding-inline: var(--space-3);
+    /* Room for the hover lift. `overflow: hidden` clips at the PADDING box, so
+       these four pixels are what the card's `translateY(-2px)` moves into —
+       without them the lifted card's top border was sliced off. Vertical only:
+       the horizontal clipping is the whole point. */
+    padding-block: 4px;
     /* No scrolling, by anyone. This is what makes it un-swipeable. */
     overflow: hidden;
   }
