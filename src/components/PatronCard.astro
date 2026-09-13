@@ -1,0 +1,96 @@
+---
+// One patron: a logo, and the name under it.
+//
+// Not a `DocCard`, though they sit in similar carousels. A document card is a
+// TITLE you read; this is a LOGO you recognise, so the mark gets the space and
+// the name is the caption rather than the other way round.
+//
+// An `<a>` when the patron has a site and a plain `<div>` when it has not — a
+// link that goes nowhere is worse than no link, and roughly half of the
+// federation's list is ministries and municipalities with no URL on file.
+interface Props {
+  name: string;
+  logoUrl: string | null;
+  url: string | null;
+}
+const { name, logoUrl, url } = Astro.props;
+const Tag = url ? "a" : "div";
+---
+<Tag
+  class="patron"
+  href={url ?? undefined}
+  target={url ? "_blank" : undefined}
+  rel={url ? "noopener noreferrer" : undefined}
+>
+  <span class="patron__mark">
+    {logoUrl
+      ? <img src={logoUrl} alt="" width="120" height="72" loading="lazy" />
+      : <span class="patron__initial" aria-hidden="true">{name.slice(0, 1)}</span>}
+  </span>
+  <span class="patron__name">{name}</span>
+</Tag>
+
+<style>
+  .patron {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    width: 160px;
+    flex: 0 0 auto;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-bg-raised);
+    color: var(--color-text);
+    text-decoration: none;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  /* Only the linked ones react — a hover state on something that cannot be
+     clicked promises an action that is not there. */
+  a.patron:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+  }
+  a.patron:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* A FIXED box with the logo contained inside it. These marks are every shape
+     there is — a wordmark three times as wide as it is tall, a round crest, a
+     ministry's coat of arms — and without a fixed box each card would be a
+     different height and the row would stagger. `contain`, never `cover`: a
+     cropped logo is a damaged logo. */
+  .patron__mark {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 72px;
+  }
+  .patron__mark img {
+    max-width: 100%;
+    max-height: 72px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+  .patron__initial {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-display);
+    color: var(--color-text-faint);
+  }
+
+  .patron__name {
+    font-size: var(--text-xs);
+    line-height: 1.35;
+    text-align: center;
+    color: var(--color-text-muted);
+    /* Two lines then ellipsis — "Ministerstwo Sportu i Turystyki" is long and
+       the row's rhythm matters more than the last two words. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

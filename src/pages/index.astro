@@ -10,17 +10,18 @@ import BodyDialog from "../components/BodyDialog.astro";
 import StatuteDialog from "../components/StatuteDialog.astro";
 import ResolutionDialog from "../components/ResolutionDialog.astro";
 import DocCard from "../components/DocCard.astro";
+import PatronCard from "../components/PatronCard.astro";
 import {
   assignmentsByPerson, bodiesByPerson, getBodies, getNationalTeams,
-  bodyTypeLabel, documentsOfType, getDocuments, getOrganisation, getResolutions,
-  getStatute, latestYear, orderBodies, roleLabel, teamTitle,
+  bodyTypeLabel, documentsOfType, getDocuments, getOrganisation, getPatrons,
+  getResolutions, getStatute, latestYear, orderBodies, roleLabel, teamTitle,
 } from "../lib/api";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
 // single always-on container serves nobody's page views.
-const [teams, org, bodies, statute, documents, resolutions] = await Promise.all([
+const [teams, org, bodies, statute, documents, resolutions, patrons] = await Promise.all([
   getNationalTeams(), getOrganisation(), getBodies(), getStatute(),
-  getDocuments(), getResolutions(),
+  getDocuments(), getResolutions(), getPatrons(),
 ]);
 
 // The three shelves. `documentsOfType` matches on the API's own `doc_type`,
@@ -46,6 +47,7 @@ const dayOf = (iso: string | null) => (iso ?? "").slice(0, 10) || null;
 // Whether the Dokumenty section exists at all — the nav entry follows it, so
 // the menu never points at an anchor that is not on the page.
 const hasDocuments = resolutions.length > 0 || docShelves.length > 0;
+const hasPatrons = patrons.length > 0;
 const year = latestYear(teams);
 
 // Current season only. Older squads become their own page once the API returns
@@ -72,7 +74,7 @@ const bodyRows = bodiesByPerson(bodies);
   description={`Oficjalna strona Polskiego Związku Surfingu. Kadra narodowa ${year ?? ""}: ${athletes} zawodniczek i zawodników w ${season.length} kadrach.`}
 >
   <div class="hero-wrap">
-    <SiteHeader hasDocuments={hasDocuments} />
+    <SiteHeader hasDocuments={hasDocuments} hasPatrons={hasPatrons} />
     <Hero
       title="Polski Związek Surfingu"
       lede="Krajowa federacja surfingu — kadra narodowa, zawody i kluby zrzeszone w całej Polsce."
@@ -257,6 +259,26 @@ const bodyRows = bodiesByPerson(bodies);
           </Carousel>
         </section>
       ))}
+    </section>
+  )}
+
+  {/* ── Patroni ───────────────────────────────────────────────────────────
+      Who backs the federation. Publication is opt-in per sponsor, so an empty
+      list is the NORMAL state rather than a failure — 41 are on file and none
+      are switched on yet — and the section hides itself until somebody picks,
+      exactly as the document shelves do. */}
+  {patrons.length > 0 && (
+    <section class="band band--sunken" id="patroni">
+      <div class="band__inner">
+        <div class="section__head">
+          <h2 class="section__title">Patroni</h2>
+        </div>
+        <Carousel label="Patroni">
+          {patrons.map((p) => (
+            <PatronCard name={p.name} logoUrl={p.logo_url} url={p.url} />
+          ))}
+        </Carousel>
+      </div>
     </section>
   )}
 
