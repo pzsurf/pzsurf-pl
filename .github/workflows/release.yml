@@ -1,0 +1,135 @@
+name: Release
+
+# THE ONLY WAY TO PRODUCTION, and it is manual on purpose: a merge to main
+# changes nothing that is running until somebody runs this.
+#
+# What one run does, in order:
+#   1. works out the next version   (see "How the version is chosen" below)
+#   2. writes it to package.json, commits that to main, tags it `vX.Y.Z`
+#   3. cuts a GitHub Release named for the tag, with notes generated from the
+#      commits since the previous one — which is where the version is "shown"
+#   4. deploys THAT TAG, not main, so what ships is exactly what was tagged
+#
+# ── How the version is chosen ────────────────────────────────────────────────
+# If `package.json`'s current version has NO tag yet, that version is released
+# as it stands. Otherwise the `bump` input is applied to it.
+#
+# That rule does two useful things. The FIRST release publishes 0.1.0 exactly —
+# the version seeded in package.json — rather than immediately bumping past it.
+# And editing package.json by hand releases precisely that number, which is the
+# escape hatch for "this one is 0.2.0 regardless of what the input says".
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Which part to increase (ignored if the current version is unreleased)"
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+permissions:
+  contents: write   # the version commit, the tag and the GitHub Release
+  id-token: write   # WIF, for the deploy job this calls
+
+# Never cancel a release: a cancelled run can tag without deploying, which
+# leaves a version that claims to be live and is not.
+concurrency:
+  group: release-pzsurf-pl
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Version and tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          # Full history AND tags: the version rule below asks whether a tag
+          # exists, and a shallow clone would answer "no" every time and
+          # re-release the same number.
+          fetch-depth: 0
+
+      - id: v
+        name: Work out the next version
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          set -euo pipefail
+          current=$(node -p "require('./package.json').version")
+          echo "package.json says $current"
+
+          if git rev-parse -q --verify "refs/tags/v$current" >/dev/null; then
+            echo "v$current is already released — applying a $BUMP bump"
+            next=$(node -e '
+              const [maj, min, pat] = process.argv[1].split(".").map(Number);
+              const b = process.argv[2];
+              const out = b === "major" ? [maj + 1, 0, 0]
+                        : b === "minor" ? [maj, min + 1, 0]
+                        : [maj, min, pat + 1];
+              console.log(out.join("."));
+            ' "$current" "$BUMP")
+          else
+            echo "v$current has never been released — releasing it as it stands"
+            next="$current"
+          fi
+
+          echo "version=$next" >> "$GITHUB_OUTPUT"
+          echo "tag=v$next"    >> "$GITHUB_OUTPUT"
+          echo "Releasing v$next"
+
+      - name: Write the version, commit and tag
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          node -e '
+            const fs = require("fs");
+            const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            p.version = process.argv[1];
+            fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n");
+          ' "$VERSION"
+
+          # Nothing to commit when the current version was the unreleased one —
+          # package.json already holds it. The tag still has to be created.
+          if git diff --quiet -- package.json; then
+            echo "package.json already at $VERSION"
+          else
+            git add package.json
+            git commit -m "chore(release): $VERSION"
+            git push origin main
+          fi
+
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"
+
+      - name: Cut the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          # `--generate-notes` writes the changelog from the commits since the
+          # previous tag, so the release page says what changed without anybody
+          # maintaining a CHANGELOG by hand.
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --generate-notes \
+            --verify-tag
+
+  deploy:
+    name: Deploy
+    needs: version
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      # The TAG, never main. Between the tag being cut and this job starting,
+      # main may have moved; what ships must be what the version names.
+      ref: ${{ needs.version.outputs.tag }}
+      version: ${{ needs.version.outputs.tag }}

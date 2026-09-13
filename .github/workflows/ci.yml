@@ -1,0 +1,54 @@
+name: CI
+
+# Work lands on main directly — no pull request — so this is the only thing
+# standing between a bad commit and the next release. It BUILDS and it does NOT
+# deploy: main is now a staging branch whose contents reach the live site only
+# when a release is cut.
+#
+# It runs the same build and the same content gate as deploy.yml, so a commit
+# that passes here will not fail the release for a reason that could have been
+# caught now.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+
+      # Calls the live api.surfpoland.com, exactly as the release build does.
+      # A failure here is real: src/lib/api.ts throws rather than emitting an
+      # empty page.
+      - name: Build
+        run: npm run build
+
+      - name: The build actually contains content
+        run: |
+          test -s dist/index.html || { echo "::error::dist/index.html is missing or empty"; exit 1; }
+          grep -q "Kadra Narodowa" dist/index.html \
+            || { echo "::error::built page has no roster"; exit 1; }
+          grep -q 'property="og:title"' dist/index.html \
+            || { echo "::error::built page has no og:title"; exit 1; }
+
+      - name: Summary
+        run: |
+          echo "Built \`${{ github.sha }}\` — **not** deployed." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Run **Release** to publish." >> "$GITHUB_STEP_SUMMARY"

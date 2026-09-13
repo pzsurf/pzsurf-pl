@@ -1,0 +1,100 @@
+name: Deploy
+
+# The build-and-release steps, in ONE place, called by the two workflows that
+# are allowed to reach production:
+#
+#   release.yml   a version you asked for
+#   publish.yml   the scheduled data refresh, of the version already released
+#
+# It has no trigger of its own. `workflow_call` only — there is deliberately no
+# `push:` here, because a merge to main must not reach production.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: >-
+          The commit, branch or TAG to build. Always a released tag in practice:
+          neither caller ever passes `main`, which is what keeps unreleased work
+          off the live site.
+        required: true
+        type: string
+      version:
+        description: Shown in the run summary, so a run says what it shipped.
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  # Workload Identity Federation needs this to mint the OIDC token. Without it
+  # the auth step fails with a token-request error that reads like a permissions
+  # problem on Google's side.
+  id-token: write
+
+jobs:
+  deploy:
+    name: Build and release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+
+      # 22, NOT the 20 the surfpoland monorepo's workflows use. Astro requires
+      # >=22.12.0 and refuses to build below it. Copying the monorepo's pin is
+      # exactly how this broke the first time: it builds on a developer's newer
+      # local Node and fails only in CI. `engines` in package.json states the
+      # same floor, so the two cannot drift apart quietly.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+
+      # The build CALLS api.surfpoland.com. A failure here is a real failure:
+      # src/lib/api.ts throws rather than emitting an empty page, so a bad
+      # response stops the release instead of publishing a blank site over a
+      # good one.
+      - name: Build
+        run: npm run build
+
+      # Belt and braces on that promise. If the federation's own name is not in
+      # the output, something rendered empty and must not be released — a
+      # scheduled job publishing a blank site at 3am is exactly the failure
+      # nobody would notice until somebody shared a link.
+      - name: The build actually contains content
+        run: |
+          test -s dist/index.html || { echo "::error::dist/index.html is missing or empty"; exit 1; }
+          grep -q "Kadra Narodowa" dist/index.html \
+            || { echo "::error::built page has no roster — refusing to release"; exit 1; }
+          grep -q 'property="og:title"' dist/index.html \
+            || { echo "::error::built page has no og:title — link previews would be generic"; exit 1; }
+
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SITE_SERVICE_ACCOUNT }}
+
+      - name: Release to Firebase Hosting
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: python3 .github/scripts/deploy_hosting.py
+
+      - name: Smoke test
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://pzsurf-pl.web.app/ || true)
+            [ "$code" = "200" ] && { echo "pzsurf-pl.web.app -> 200"; exit 0; }
+            echo "attempt $i: $code"; sleep 5
+          done
+          echo "::error::site did not return 200 after release"; exit 1
+
+      - name: Summary
+        run: |
+          echo "### Deployed ${{ inputs.version || inputs.ref }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ref: \`${{ inputs.ref }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- https://pzsurf-pl.web.app/" >> "$GITHUB_STEP_SUMMARY"

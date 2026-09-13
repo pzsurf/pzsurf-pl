@@ -1,112 +1,74 @@
-name: Publish pzsurf.pl
+name: Refresh published site
 
-# Three triggers, because the content has two independent sources of change.
+# The DATA changed, not the site. Somebody edited a committee or a roster in the
+# platform; nothing in this repository changed at all, but the built HTML is now
+# stale. That is the price of static generation and the whole reason a schedule
+# exists.
 #
-#   push      — the SITE changed (a template, the design language, a new page)
-#   schedule  — the DATA changed. Somebody edited an event or a committee in the
-#               platform; nothing here changed at all, but the built HTML is now
-#               stale. This is the price of static generation and the whole
-#               reason a schedule exists.
-#   dispatch  — "publish now", for when six hours is too long to wait.
+# **It rebuilds the LATEST RELEASED TAG, never main.** That single choice is
+# what lets work land on main freely without reaching the public site: a refresh
+# ships today's data with the last version you released, and unreleased commits
+# stay unreleased no matter how long they sit there.
+#
+# The `push:` trigger this workflow used to have is gone — that is what made a
+# merge to main a deployment.
 on:
-  push:
-    branches: [main]
   schedule:
     # Every six hours, NOT hourly, and the reason is quota rather than taste.
-    # This organisation is on GitHub Free: 2,000 Actions minutes a month for
-    # private repositories, shared with the surfpoland monorepo's CI. An hourly
-    # rebuild is 720 runs — at ~1.5 min each, over half the allowance spent on
-    # republishing content that had not changed. Four times a day costs ~180
-    # minutes, and `workflow_dispatch` covers anything urgent.
+    # An hourly rebuild is 720 runs a month; four times a day is ~120. The
+    # repository is public now, so Actions minutes are unmetered — but a
+    # scheduled job that republishes unchanged content is still waste.
     - cron: "0 */6 * * *"
   workflow_dispatch:
 
-# Workload Identity Federation needs this to mint the OIDC token. Without
-# `id-token: write` the auth step fails with a token-request error that reads
-# like a permissions problem on Google's side.
 permissions:
   contents: read
   id-token: write
 
-# A scheduled run and a push can otherwise race and release two versions in
+# A scheduled run and a manual one can otherwise race and release two builds in
 # either order.
 #
-# `cancel-in-progress: true`, and the false version cost a live regression:
-# a scheduled publish sat QUEUED for over eight hours, then finished AFTER a
-# later push had already deployed, and released its own build — of the commit
-# it was created from, before that push existed. The newer site was overwritten
-# with older content and every check was green, because each run did exactly
-# what it was told.
-#
-# Queuing is wrong for this job by its nature. It publishes THE CURRENT STATE;
-# an older publish waiting behind a newer one has nothing left to contribute,
-# so superseding it is the only outcome that can be correct. Cancelling
-# mid-upload is safe: a Hosting version is released only after it is finalized,
-# so an abandoned one is never served.
+# `cancel-in-progress: true`, and the false version cost a live regression: a
+# scheduled publish sat QUEUED for over eight hours, then finished AFTER a later
+# run had already deployed, and released its own build — of the commit it was
+# created from. The newer site was overwritten with older content and every
+# check was green, because each run did exactly what it was told.
 concurrency:
   group: publish-pzsurf-pl
   cancel-in-progress: true
 
 jobs:
-  publish:
-    name: Build and release
+  which-release:
+    name: Find the released version
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      found: ${{ steps.tag.outputs.found }}
     steps:
-      # Explicitly `main`, not the commit that triggered the run. Belt and braces
-      # against the same failure: a run that starts late would otherwise build
-      # whatever main looked like when it was QUEUED. This job's contract is
-      # "publish the current state", so it should read the current state.
       - uses: actions/checkout@v5
-        with:
-          ref: main
-      # 22, NOT the 20 the surfpoland monorepo's workflows use. Astro requires
-      # >=22.12.0 and refuses to build below it. Copying the monorepo's pin is
-      # exactly how this broke the first time: it builds on a developer's newer
-      # local Node and fails only in CI. `engines` in package.json states the
-      # same floor, so the two cannot drift apart quietly.
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-      - run: npm ci
-
-      # The build CALLS api.surfpoland.com. A failure here is a real failure:
-      # src/lib/api.ts throws rather than emitting an empty page, so a bad
-      # response stops the release instead of publishing a blank site over a
-      # good one.
-      - name: Build
-        run: npm run build
-
-      # Belt and braces on that promise. If the federation's own name is not in
-      # the output, something rendered empty and must not be released — a
-      # scheduled job publishing a blank site at 3am is exactly the failure
-      # nobody would notice until somebody shared a link.
-      - name: The build actually contains content
+        with: { fetch-depth: 0 }
+      - id: tag
         run: |
-          test -s dist/index.html || { echo "::error::dist/index.html is missing or empty"; exit 1; }
-          grep -q "Kadra Narodowa" dist/index.html \
-            || { echo "::error::built page has no roster — refusing to release"; exit 1; }
-          grep -q 'property="og:title"' dist/index.html \
-            || { echo "::error::built page has no og:title — link previews would be generic"; exit 1; }
+          set -euo pipefail
+          # Newest by VERSION, not by date: a patch cut after a later minor
+          # would otherwise win and quietly roll the site back.
+          tag=$(git tag --list 'v*' --sort=-v:refname | head -n1)
+          if [ -z "$tag" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No release tag exists yet, so there is nothing to refresh. Run the Release workflow to publish the first version."
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "tag=$tag" >> "$GITHUB_OUTPUT"
+            echo "Refreshing $tag"
+          fi
 
-      - id: auth
-        name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          token_format: access_token
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SITE_SERVICE_ACCOUNT }}
-
-      - name: Release to Firebase Hosting
-        env:
-          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
-        run: python3 .github/scripts/deploy_hosting.py
-
-      - name: Smoke test
-        run: |
-          for i in 1 2 3 4 5; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://pzsurf-pl.web.app/ || true)
-            [ "$code" = "200" ] && { echo "pzsurf-pl.web.app -> 200"; exit 0; }
-            echo "attempt $i: $code"; sleep 5
-          done
-          echo "::error::site did not return 200 after release"; exit 1
+  refresh:
+    needs: which-release
+    # Skipped rather than falling back to main, deliberately: falling back is
+    # precisely the behaviour this workflow was restructured to remove.
+    if: needs.which-release.outputs.found == 'true'
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      ref: ${{ needs.which-release.outputs.tag }}
+      version: ${{ needs.which-release.outputs.tag }} (data refresh)
