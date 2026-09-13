@@ -178,6 +178,25 @@ img { max-width: 100%; }
    names got NONE of its styles — the crest rendered at 659px in a dialog with
    no shell. Two components sharing a look means the look belongs in the shared
    stylesheet. Anything only one of them needs stays scoped in that component. */
+/* The page behind a modal must not scroll. `showModal()` blocks POINTER events
+   through the backdrop but not the wheel, so the body kept scrolling under an
+   open dialog — and on the body dialog, which is nearly viewport-tall, the
+   whole page slid about behind it while you read.
+
+   `:has()` rather than a class the two scripts toggle: one rule covers both
+   dialogs, and there is no state to get out of step when a dialog is closed by
+   Escape, by the backdrop, or by the form's own button.
+
+   `scrollbar-gutter: stable` is the other half and is not decoration. Hiding
+   the overflow removes the scrollbar, and the page would jump sideways by its
+   width at the exact moment the dialog opens; reserving the gutter for as long
+   as the overflow is hidden reclaims exactly that space. Both revert together
+   on close, so neither is paid for while no dialog is open. */
+html:has(dialog[open]) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
 .person {
   width: min(420px, calc(100vw - 32px));
   padding: var(--space-5) var(--space-4) var(--space-4);

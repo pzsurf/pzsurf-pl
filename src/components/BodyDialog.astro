@@ -96,6 +96,10 @@
     flex: 0 1 auto;
     min-height: 0;
     overflow-y: auto;
+    /* Stops the scroll CHAINING: without it, reaching the end of a long remit
+       hands the remaining wheel travel to the page behind, which is the one
+       route still open to it once the root is locked. */
+    overscroll-behavior: contain;
   }
   .body-dialog__desc:empty { display: none; }
 </style>
