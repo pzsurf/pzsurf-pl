@@ -8,17 +8,34 @@ import Carousel from "../components/Carousel.astro";
 import PersonDialog from "../components/PersonDialog.astro";
 import BodyDialog from "../components/BodyDialog.astro";
 import StatuteDialog from "../components/StatuteDialog.astro";
+import ResolutionDialog from "../components/ResolutionDialog.astro";
+import DocCard from "../components/DocCard.astro";
 import {
   assignmentsByPerson, bodiesByPerson, getBodies, getNationalTeams,
-  bodyTypeLabel, getOrganisation, getStatute, latestYear, orderBodies, roleLabel,
-  teamTitle,
+  bodyTypeLabel, documentsOfType, getDocuments, getOrganisation, getResolutions,
+  getStatute, latestYear, orderBodies, roleLabel, teamTitle,
 } from "../lib/api";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
 // single always-on container serves nobody's page views.
-const [teams, org, bodies, statute] = await Promise.all([
+const [teams, org, bodies, statute, documents, resolutions] = await Promise.all([
   getNationalTeams(), getOrganisation(), getBodies(), getStatute(),
+  getDocuments(), getResolutions(),
 ]);
+
+// The three shelves. `documentsOfType` matches on the API's own `doc_type`,
+// which ships with surfpoland#33 — until then every document has none and the
+// two document carousels are empty while Uchwały fills from its own endpoint.
+const forms = documentsOfType(documents, "FORM");
+const transparency = documentsOfType(documents, "TRANSPARENCY");
+
+// A date reads better than a timestamp on a card, and the API already sends
+// only the date part.
+const dayOf = (iso: string | null) => (iso ?? "").slice(0, 10) || null;
+
+// Whether the Dokumenty section exists at all — the nav entry follows it, so
+// the menu never points at an anchor that is not on the page.
+const hasDocuments = resolutions.length > 0 || transparency.length > 0 || forms.length > 0;
 const year = latestYear(teams);
 
 // Current season only. Older squads become their own page once the API returns
@@ -45,7 +62,7 @@ const bodyRows = bodiesByPerson(bodies);
   description={`Oficjalna strona Polskiego Związku Surfingu. Kadra narodowa ${year ?? ""}: ${athletes} zawodniczek i zawodników w ${season.length} kadrach.`}
 >
   <div class="hero-wrap">
-    <SiteHeader />
+    <SiteHeader hasDocuments={hasDocuments} />
     <Hero
       title="Polski Związek Surfingu"
       lede="Krajowa federacja surfingu — kadra narodowa, zawody i kluby zrzeszone w całej Polsce."
@@ -176,12 +193,80 @@ const bodyRows = bodiesByPerson(bodies);
     </div>
   </section>
 
+  {/* ── Dokumenty ─────────────────────────────────────────────────────────
+      Three shelves, each a carousel: what the association DECIDED (uchwały,
+      read in a dialog) and what it PUBLISHES (transparency filings and forms,
+      downloaded as PDFs). Rendered only when there is something on at least
+      one shelf — an empty section teaches people the page is broken. */}
+  {hasDocuments && (
+    <section class="page" id="dokumenty">
+      <div class="section__head">
+        <h2 class="section__title">Dokumenty</h2>
+      </div>
+
+      {resolutions.length > 0 && (
+        <section class="squad">
+          <h3 class="squad__name">
+            <span class="squad__label">Uchwały</span>
+            <span class="squad__count">{resolutions.length}</span>
+          </h3>
+          <Carousel label="Uchwały">
+            {resolutions.map((r) => (
+              <DocCard
+                title={r.title}
+                eyebrow={r.resolution_number}
+                footnote={dayOf(r.adopted_on)}
+                resolution={{
+                  number: r.resolution_number,
+                  title: r.title,
+                  meta: [r.meeting_title, dayOf(r.adopted_on)].filter(Boolean).join(" · "),
+                  body: r.content ?? "",
+                }}
+              />
+            ))}
+          </Carousel>
+        </section>
+      )}
+
+      {transparency.length > 0 && (
+        <section class="squad">
+          <h3 class="squad__name">
+            <span class="squad__label">Transparentność</span>
+            <span class="squad__count">{transparency.length}</span>
+          </h3>
+          <Carousel label="Transparentność">
+            {transparency.map((d) => (
+              <DocCard title={d.title} eyebrow={dayOf(d.doc_date)}
+                footnote={d.file_name} href={d.file_url} />
+            ))}
+          </Carousel>
+        </section>
+      )}
+
+      {forms.length > 0 && (
+        <section class="squad">
+          <h3 class="squad__name">
+            <span class="squad__label">Formularze</span>
+            <span class="squad__count">{forms.length}</span>
+          </h3>
+          <Carousel label="Formularze">
+            {forms.map((d) => (
+              <DocCard title={d.title} eyebrow={dayOf(d.doc_date)}
+                footnote={d.file_name} href={d.file_url} />
+            ))}
+          </Carousel>
+        </section>
+      )}
+    </section>
+  )}
+
   <SiteFooter org={org} />
 
   {/* One dialog for every card on the page. */}
   <PersonDialog />
   <BodyDialog />
   <StatuteDialog statute={statute} />
+  <ResolutionDialog />
 </Base>
 
 <style>

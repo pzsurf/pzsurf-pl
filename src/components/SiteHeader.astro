@@ -6,9 +6,18 @@
 // Only real destinations appear here. The source site's menu has six sections
 // this one has not built yet; inventing links that 404 would look complete and
 // behave worse than an honest short menu.
+//
+// `hasDocuments` is that rule applied to a section that comes and goes: the
+// Dokumenty section renders only when the API has something to put in it, and
+// a menu entry pointing at an anchor that is not on the page is exactly the
+// dead link this comment is about.
+interface Props { hasDocuments?: boolean }
+const { hasDocuments = false } = Astro.props;
+
 const links = [
   { label: "Kadra", href: "#kadra" },
   { label: "Władze", href: "#wladze" },
+  ...(hasDocuments ? [{ label: "Dokumenty", href: "#dokumenty" }] : []),
   { label: "Kontakt", href: "#kontakt" },
 ];
 ---

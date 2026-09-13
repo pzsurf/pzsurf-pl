@@ -1,0 +1,129 @@
+---
+// An uchwała's text, read on the page. The third dialog on this site and the
+// second that shows a DOCUMENT rather than a person, so it takes the statute's
+// shape — a fixed head, one scrolling body — rather than the person dialog's.
+//
+// Filled from the card that opened it, like the other two: one dialog for the
+// page, and the content travels on the button's data attributes.
+---
+<dialog class="resolution" data-resolution-dialog aria-labelledby="resolution-title">
+  <div class="resolution__head">
+    <div>
+      <p class="resolution__number" data-res-number></p>
+      <h2 class="resolution__title" id="resolution-title" data-res-title></h2>
+      <p class="resolution__meta" data-res-meta></p>
+    </div>
+    <form method="dialog" class="resolution__close-form">
+      <button class="resolution__close" aria-label="Zamknij">×</button>
+    </form>
+  </div>
+
+  {/* `pre-wrap`: the API sends the body as Markdown with its own line breaks
+      and this shows it as written. Rendering it would mean a second Markdown
+      path on the page; the statute has one because it is 42k characters of
+      structured text, an uchwała is a few paragraphs. */}
+  <div class="resolution__body" data-res-body tabindex="0"></div>
+</dialog>
+
+<style>
+  .resolution {
+    width: min(680px, calc(100vw - 32px));
+    max-height: calc(100svh - var(--space-4) * 2);
+    padding: 0;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 12px;
+    background: var(--color-bg-raised);
+    color: var(--color-text);
+  }
+  /* `[open]`, never the bare class: the UA stylesheet hides a closed dialog
+     with `display: none`, and an unqualified `display: flex` beats it. */
+  .resolution[open] { display: flex; flex-direction: column; }
+  .resolution::backdrop { background: rgba(10, 16, 24, 0.55); }
+
+  .resolution__head {
+    flex: none;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .resolution__number {
+    margin: 0 0 var(--space-1);
+    color: var(--color-accent);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-subhead);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .resolution__number:empty { display: none; }
+  .resolution__title {
+    margin: 0;
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-display);
+  }
+  .resolution__meta {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+  }
+  .resolution__close-form { margin: 0; flex: 0 0 auto; }
+  .resolution__close {
+    width: 32px; height: 32px;
+    border: none; border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-faint);
+    font-size: 22px; line-height: 1;
+    cursor: pointer;
+  }
+  .resolution__close:hover { color: var(--color-accent); }
+
+  .resolution__body {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    white-space: pre-wrap;
+  }
+  .resolution__body:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+  }
+  .resolution__body:empty::before {
+    content: "Treść uchwały nie została opublikowana.";
+    color: var(--color-text-faint);
+  }
+</style>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>("[data-resolution-dialog]");
+  if (dialog) {
+    const set = (sel: string, text: string) => {
+      const el = dialog.querySelector<HTMLElement>(sel);
+      if (el) el.textContent = text;
+    };
+
+    for (const card of document.querySelectorAll<HTMLElement>("[data-resolution]")) {
+      card.addEventListener("click", () => {
+        const d = card.dataset;
+        set("[data-res-number]", d.resNumber ?? "");
+        set("[data-res-title]", d.resTitle ?? "");
+        set("[data-res-meta]", d.resMeta ?? "");
+        // textContent, never innerHTML: this is API text going into the page.
+        set("[data-res-body]", d.resBody ?? "");
+        dialog.showModal();
+        dialog.querySelector<HTMLElement>("[data-res-body]")?.focus();
+      });
+    }
+
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+  }
+</script>

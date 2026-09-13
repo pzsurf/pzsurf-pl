@@ -315,3 +315,74 @@ export async function getStatute(): Promise<Statute> {
   const { data } = await fetchJson<Statute>(`/orgs/${ORG_SLUG}/statute`);
   return data;
 }
+
+// ── Documents and resolutions ───────────────────────────────────────────────
+
+export interface PublicDocument {
+  title: string;
+  /** Optional ONLY because this page builds against the live API, which lags
+   *  the repo — the field ships with surfpoland#33. Treat a missing value as
+   *  "uncategorised" rather than assuming a shelf. */
+  doc_type?: string;
+  doc_date: string | null;
+  file_url: string;
+  file_name: string | null;
+}
+
+export interface PublicResolution {
+  id: string;
+  resolution_number: string | null;
+  title: string;
+  content: string | null;
+  meeting_title: string;
+  adopted_on: string | null;
+}
+
+export async function getDocuments(): Promise<PublicDocument[]> {
+  const { data } = await fetchJson<PublicDocument[]>(`/orgs/${ORG_SLUG}/documents`);
+  return data;
+}
+
+/**
+ * Resolutions, or an empty list if the endpoint is not deployed yet.
+ *
+ * The ONLY tolerated failure in this client, and narrowly: a 404 means
+ * surfpoland#33 has not shipped, and failing the whole build over a section
+ * that cannot exist yet would take the entire site down with it. Every other
+ * status still throws, because a 500 from a deployed endpoint IS a broken
+ * build and must not publish a page with a silently missing section.
+ *
+ * Delete the tolerance once the endpoint is live — it is scaffolding, not a
+ * pattern. A section that renders empty forever is the failure this guards
+ * against becoming permanent.
+ */
+export async function getResolutions(): Promise<PublicResolution[]> {
+  const res = await fetch(`${API_BASE}/orgs/${ORG_SLUG}/resolutions`, {
+    headers: { Accept: "application/json" },
+  });
+  if (res.status === 404) {
+    console.warn("[api] /resolutions is not deployed yet — the Uchwały carousel will be empty.");
+    return [];
+  }
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} from /resolutions`);
+  const first = (await res.json()) as
+    { data: PublicResolution[]; meta?: { total?: number } };
+
+  // PAGE THROUGH. The endpoint's default page is 50 and its hard cap is 100,
+  // and this association already has 84 uchwały — a single unpaged request
+  // silently dropped 34 of them, and a register missing a third of its entries
+  // looks complete, which is the worst kind of wrong.
+  const out = [...(first.data ?? [])];
+  const total = first.meta?.total ?? out.length;
+  while (out.length < total) {
+    const page = await fetchJson<PublicResolution[]>(
+      `/orgs/${ORG_SLUG}/resolutions?limit=100&offset=${out.length}`);
+    if (!page.data?.length) break;   // never loop on an endpoint that stops moving
+    out.push(...page.data);
+  }
+  return out;
+}
+
+/** Documents of one type, in the order the API returned them. */
+export const documentsOfType = (docs: PublicDocument[], type: string): PublicDocument[] =>
+  docs.filter((d) => d.doc_type === type);

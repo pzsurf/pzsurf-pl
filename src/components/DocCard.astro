@@ -1,0 +1,132 @@
+---
+// One card in a Dokumenty carousel. Two shapes, one component, because they sit
+// side by side in the same section and a reader should not have to learn two
+// card languages:
+//
+//   a RESOLUTION  — a <button> that opens the uchwała's text in a dialog
+//   a DOCUMENT    — an <a> that downloads the PDF
+//
+// The element differs because the ACTION differs, and that is the point: a
+// download is a link (middle-click it, copy it, save it), and opening a dialog
+// is a button (it goes nowhere). Making both buttons would break the download;
+// making both links would lie about the dialog.
+interface Props {
+  title: string;
+  /** Shown small above the title — the uchwała's number, or the document date. */
+  eyebrow?: string | null;
+  /** Shown small below — which meeting adopted it, or the file name. */
+  footnote?: string | null;
+  /** A PDF to download. When absent the card is a resolution and needs the
+   *  `data-*` below instead. */
+  href?: string | null;
+  /** Resolution payload, read by ResolutionDialog off the card that was clicked. */
+  resolution?: {
+    number: string | null;
+    title: string;
+    meta: string;
+    body: string;
+  } | null;
+}
+const { title, eyebrow = null, footnote = null, href = null, resolution = null } = Astro.props;
+
+const DOC_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+</svg>`;
+const DOWNLOAD_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/>
+  <line x1="12" y1="15" x2="12" y2="3"/>
+</svg>`;
+---
+{href ? (
+  <a class="doccard" href={href} target="_blank" rel="noopener noreferrer">
+    <span class="doccard__icon" set:html={DOC_ICON} />
+    {eyebrow && <span class="doccard__eyebrow">{eyebrow}</span>}
+    <span class="doccard__title">{title}</span>
+    {footnote && <span class="doccard__foot">{footnote}</span>}
+    <span class="doccard__action" set:html={DOWNLOAD_ICON} />
+  </a>
+) : (
+  <button
+    type="button"
+    class="doccard"
+    data-resolution
+    data-res-number={resolution?.number ?? ""}
+    data-res-title={resolution?.title ?? title}
+    data-res-meta={resolution?.meta ?? ""}
+    data-res-body={resolution?.body ?? ""}
+  >
+    <span class="doccard__icon" set:html={DOC_ICON} />
+    {eyebrow && <span class="doccard__eyebrow">{eyebrow}</span>}
+    <span class="doccard__title">{title}</span>
+    {footnote && <span class="doccard__foot">{footnote}</span>}
+  </button>
+)}
+
+<style>
+  /* Same 186px as PersonCard, so the two carousels on this page scroll in step
+     and a row of documents does not read as a different component family. */
+  .doccard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    width: 186px;
+    min-height: 168px;
+    flex: 0 0 auto;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius);
+    background: var(--color-bg-raised);
+    color: var(--color-text);
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .doccard:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+  }
+  .doccard:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .doccard__icon { color: var(--color-accent); }
+  .doccard__eyebrow {
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .doccard__title {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-subhead);
+    line-height: 1.35;
+    /* Three lines, then ellipsis: the titles run from four words to a full
+       sentence, and a card that grows with its title breaks the row's rhythm.
+       The whole title is in the dialog (resolutions) or the PDF (documents). */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .doccard__foot {
+    margin-top: auto;
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .doccard__action {
+    position: absolute;
+    right: var(--space-3);
+    bottom: var(--space-3);
+    color: var(--color-text-faint);
+  }
+  .doccard:hover .doccard__action { color: var(--color-accent); }
+</style>
