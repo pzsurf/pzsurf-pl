@@ -6,9 +6,10 @@ import Hero from "../components/Hero.astro";
 import PersonCard from "../components/PersonCard.astro";
 import Carousel from "../components/Carousel.astro";
 import PersonDialog from "../components/PersonDialog.astro";
+import BodyDialog from "../components/BodyDialog.astro";
 import {
   assignmentsByPerson, bodiesByPerson, getBodies, getNationalTeams,
-  getOrganisation, latestYear, orderBodies, roleLabel, teamTitle,
+  bodyTypeLabel, getOrganisation, latestYear, orderBodies, roleLabel, teamTitle,
 } from "../lib/api";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
@@ -102,9 +103,34 @@ const bodyRows = bodiesByPerson(bodies);
 
       {orderedBodies.map((body) => (
         <section class="squad">
+          {/* A BUTTON only when there is something to open. Zarząd currently
+              has no description, and a control that opens an empty dialog is
+              worse than no control — it teaches people the row does nothing.
+              Give it a description in the admin and it becomes clickable with
+              no change here. */}
           <h3 class="squad__name">
-            {body.name}
-            <span class="squad__count">{body.member_count}</span>
+            {body.description ? (
+              <button
+                type="button"
+                class="squad__row"
+                data-body
+                data-body-name={body.name}
+                data-body-type={bodyTypeLabel(body.body_type)}
+                data-body-count={`${body.member_count} ${body.member_count === 1 ? "osoba" : "osób"}`}
+                data-body-desc={body.description}
+                data-body-crest={org.image_url ?? ""}
+              >
+                {org.image_url && <img class="squad__crest" src={org.image_url} alt="" width="28" height="28" />}
+                <span class="squad__label">{body.name}</span>
+                <span class="squad__count">{body.member_count}</span>
+              </button>
+            ) : (
+              <span class="squad__row squad__row--static">
+                {org.image_url && <img class="squad__crest" src={org.image_url} alt="" width="28" height="28" />}
+                <span class="squad__label">{body.name}</span>
+                <span class="squad__count">{body.member_count}</span>
+              </span>
+            )}
           </h3>
           <Carousel label={body.name}>
             {body.members.map((m) => (
@@ -125,6 +151,7 @@ const bodyRows = bodiesByPerson(bodies);
 
   {/* One dialog for every card on the page. */}
   <PersonDialog />
+  <BodyDialog />
 </Base>
 
 <style>
@@ -200,5 +227,40 @@ const bodyRows = bodiesByPerson(bodies);
     font-size: var(--text-xs);
     font-weight: var(--weight-body);
   }
+
+  /* The whole row — crest, name and count — is the target, so the thing you
+     aim at is the thing you read. */
+  .squad__row {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .squad__row--static { cursor: default; }
+  .squad__row:not(.squad__row--static):hover .squad__label { color: var(--color-accent); }
+  .squad__row:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  .squad__crest {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-bg-raised);
+    /* `contain`, not cover: a crest cropped to fill a circle loses its edges,
+       which is the part that makes it recognisable. */
+    object-fit: contain;
+    padding: 3px;
+    flex: 0 0 auto;
+  }
+  .squad__label { transition: color 0.15s ease; }
 
 </style>

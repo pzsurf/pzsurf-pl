@@ -41,54 +41,6 @@
 </dialog>
 
 <style>
-  .person {
-    width: min(420px, calc(100vw - 32px));
-    padding: var(--space-5) var(--space-4) var(--space-4);
-    border: 1px solid var(--color-border-strong);
-    border-radius: 12px;
-    background: var(--color-bg-raised);
-    color: var(--color-text);
-  }
-  .person::backdrop { background: rgba(10, 16, 24, 0.55); }
-
-  .person__close-form { margin: 0; }
-  .person__close {
-    position: absolute;
-    top: var(--space-2);
-    right: var(--space-2);
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--color-text-faint);
-    font-size: 22px;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .person__close:hover { color: var(--color-accent); }
-
-  .person__head { text-align: center; }
-  .person__avatar {
-    width: 104px;
-    height: 104px;
-    margin: 0 auto var(--space-3);
-    border-radius: 50%;
-    overflow: hidden;
-    display: grid;
-    place-items: center;
-    background: linear-gradient(160deg, #1f2a36, #0d1116);
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 34px;
-    font-weight: var(--weight-display);
-  }
-  .person__avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
-  .person__name {
-    margin: 0;
-    font-size: var(--text-xl);
-    line-height: var(--leading-xl);
-    font-weight: var(--weight-display);
-  }
   .person__foot {
     display: flex;
     align-items: center;

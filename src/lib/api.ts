@@ -249,6 +249,14 @@ export const orderBodies = (bodies: GovernanceBody[]): GovernanceBody[] =>
     (a.body_type === "BOARD" ? 0 : 1) - (b.body_type === "BOARD" ? 0 : 1) ||
     a.name.localeCompare(b.name, "pl"));
 
+/** Polish for the body kinds the API returns as codes. */
+const BODY_TYPE_PL: Record<string, string> = {
+  BOARD: "Zarząd",
+  COMMITTEE: "Komisja",
+  COMMISSION: "Komisja",
+};
+export const bodyTypeLabel = (t: string): string => BODY_TYPE_PL[t] ?? t;
+
 /** Polish for the governance roles the API returns as codes. */
 const ROLE_PL: Record<string, string> = {
   PRESIDENT: "Prezes",

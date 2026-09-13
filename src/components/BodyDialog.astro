@@ -1,0 +1,102 @@
+---
+// What a governance body IS — its own dialog rather than a mode on
+// PersonDialog, because the content is a different thing rather than the same
+// thing rendered differently: prose about a committee's remit, not a list of
+// somebody's memberships.
+//
+// One dialog for the page, filled from the row that opened it, the same way
+// PersonDialog works. The crest is the ORGANISATION's: governance bodies have
+// no image of their own — `Image` is polymorphic over person and organisation
+// only — so this is the federation's mark, not a per-body logo that does not
+// exist.
+---
+<dialog class="person body-dialog" data-body-dialog aria-labelledby="body-name">
+  <form method="dialog" class="person__close-form">
+    <button class="person__close" aria-label="Zamknij">×</button>
+  </form>
+
+  <div class="person__head">
+    <div class="person__avatar body-dialog__crest" data-crest></div>
+    <h2 class="person__name" id="body-name" data-body-name></h2>
+    <p class="body-dialog__meta">
+      <span data-body-type></span>
+      <span aria-hidden="true">·</span>
+      <span data-body-count></span>
+    </p>
+  </div>
+
+  {/* `pre-wrap`, because these read as paragraphs and the API sends plain text
+      with newlines rather than markup. Rendering it as a single block would
+      run four paragraphs into one wall. */}
+  <p class="body-dialog__desc" data-body-desc></p>
+</dialog>
+
+<style>
+  /* The shell, head, circle and close button all come from tokens.css, which
+     both dialogs share. Only what is different about a BODY lives here. */
+  .body-dialog__crest { background: var(--color-bg); }
+  /* `:global` because the script creates this <img> — a runtime node carries no
+     data-astro-cid, so a scoped selector never matches it. */
+  .body-dialog__crest :global(img) {
+    /* `contain`, not the person avatar's `cover`: a crest cropped to fill a
+       circle loses its edges, which is the part that makes it recognisable. */
+    object-fit: contain;
+    padding: 10px;
+  }
+
+  .body-dialog__meta {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-faint);
+    font-size: var(--text-sm);
+  }
+  .body-dialog__desc {
+    margin: var(--space-4) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    white-space: pre-wrap;
+    text-align: left;
+    max-height: 46vh;
+    overflow-y: auto;
+  }
+  .body-dialog__desc:empty { display: none; }
+</style>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>("[data-body-dialog]");
+  if (dialog) {
+    const set = (sel: string, text: string) => {
+      const el = dialog.querySelector<HTMLElement>(sel);
+      if (el) el.textContent = text;
+    };
+
+    for (const row of document.querySelectorAll<HTMLElement>("[data-body]")) {
+      row.addEventListener("click", () => {
+        const d = row.dataset;
+        set("[data-body-name]", d.bodyName ?? "");
+        set("[data-body-type]", d.bodyType ?? "");
+        set("[data-body-count]", d.bodyCount ?? "");
+        set("[data-body-desc]", d.bodyDesc ?? "");
+
+        const crest = dialog.querySelector<HTMLElement>("[data-crest]");
+        if (crest) {
+          crest.innerHTML = "";
+          if (d.bodyCrest) {
+            const img = document.createElement("img");
+            img.src = d.bodyCrest;
+            img.alt = "";
+            crest.appendChild(img);
+          }
+        }
+        dialog.showModal();
+      });
+    }
+
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+  }
+</script>
