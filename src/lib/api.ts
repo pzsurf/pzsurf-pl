@@ -302,12 +302,12 @@ export interface Statute {
   title: string;
   body_md: string;
   adopted_on: string | null;
-  /** The signed PDF held in GCS, when there is one. **Currently null for
-   *  PZSurf** — no PDF has been uploaded, so the dialog falls back to printing.
-   *  The moment somebody uploads one in the admin this fills in and the button
-   *  becomes a true download with no change here. */
+  /* Provenance, both nullable, and neither is rendered: `source_file_url` is
+   * the signed PDF in GCS when one exists (null for PZSurf — none has been
+   * uploaded) and `source_url` the page it was transcribed from. Kept on the
+   * interface because they are part of the API's shape, not because the dialog
+   * shows them. */
   source_file_url: string | null;
-  /** The page on the open web it was transcribed from. Provenance, not a file. */
   source_url: string | null;
 }
 
