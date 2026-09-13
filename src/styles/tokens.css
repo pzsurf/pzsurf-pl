@@ -120,6 +120,25 @@
    Everything below is the site's own baseline, not part of the design system:
    the tokens above are the shared contract, this is how this site sits on it. */
 
+/* Every in-page jump glides instead of teleporting — the menu's four anchors,
+   the hero's scroll indicator, and any `#id` link added later.
+   
+   On the ROOT only. `scroll-behavior` does not inherit, so this cannot reach the
+   carousel tracks or a dialog's body; the carousels additionally pass `behavior`
+   explicitly on every programmatic scroll (see Carousel.astro), which is what
+   keeps them working whatever is set here.
+
+   A long page makes this more than decoration: jumping from the hero to
+   Dokumenty gives no sense of having MOVED, and a reader who lands somewhere
+   unexpected cannot tell whether they scrolled or the page changed. */
+html { scroll-behavior: smooth; }
+
+/* Motion nobody asked for is still motion. The same preference that stops the
+   hero video and the carousel arrows' glide stops this one. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
