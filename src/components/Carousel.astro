@@ -140,13 +140,19 @@ const { label } = Astro.props;
   }
 
   /* No room to hang arrows outside the track on a phone, and a swipe is the
-     natural gesture there. The scrollbar comes back with them gone. */
+     natural gesture there — so the arrows go.
+
+     The scrollbar used to come back with them, as the replacement affordance.
+     It does not any more: the row is visibly CUT OFF at the edge, which says
+     "there is more" without spending a strip of the card on saying it, and how
+     far through a roster you are is not something anybody needs to read. A
+     swipe needs no progress bar.
+
+     Note what is NOT undone here: the rule above is `.is-enhanced`, set by the
+     script, so a visitor without JS still gets the scrollbar on a phone. It is
+     their only affordance and the one case where it is still doing work. */
   @media (max-width: 900px) {
-    /* No room to hang arrows outside the track, and a swipe is the natural
-       gesture here — so the scrollbar comes back as the affordance. */
     .carousel__arrow { display: none; }
-    .carousel.is-enhanced .carousel__track { scrollbar-width: thin; }
-    .carousel.is-enhanced .carousel__track::-webkit-scrollbar { display: initial; }
   }
 </style>
 
