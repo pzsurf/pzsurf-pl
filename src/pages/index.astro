@@ -99,6 +99,24 @@ const bodyRows = bodiesByPerson(bodies);
     <div class="band__inner">
       <div class="section__head">
         <h2 class="section__title">Zarząd i komisje</h2>
+        {/* The federation's own page on the platform, which carries what this
+            section does not: the statute, the documents shelf, the affiliated
+            clubs and each body's full membership over time.
+
+            Trailing slash on purpose — surfpoland.com 301s the bare path to it,
+            so linking the canonical form saves every visitor a redirect.
+
+            Same treatment as the Kadra link above, deliberately: two different
+            shapes for "there is more of this elsewhere" would read as two
+            different kinds of thing. */}
+        <a class="section__more" href="https://surfpoland.com/organisations/polski-zwiazek-surfingu/"
+           target="_blank" rel="noopener noreferrer">
+          Więcej na surfpoland.com
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 17L17 7M17 7H9M17 7v8" />
+          </svg>
+        </a>
       </div>
 
       {orderedBodies.map((body) => {
