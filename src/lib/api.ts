@@ -47,6 +47,11 @@ async function fetchJson<T>(path: string): Promise<Envelope<T>> {
 }
 
 /** A person as the public API is willing to describe them. */
+export interface PersonSocial {
+  platform: string;
+  url: string;
+}
+
 export interface TeamMember {
   /** Already abbreviated where the API decided it must be — a minor gets an
    *  abbreviated surname, and unknown date of birth counts as minor. Never
@@ -59,6 +64,9 @@ export interface TeamMember {
   /** Age groups (U10…U18), assigned on the roster. No date of birth is ever
    *  exposed, so this is the only age signal and it is deliberately coarse. */
   categories: string[];
+  /** Accounts the person published themselves. Empty for a minor and for
+   *  anybody who withdrew publication consent — the API decides, not the page. */
+  socials: PersonSocial[];
 }
 
 export interface NationalTeam {
@@ -70,11 +78,25 @@ export interface NationalTeam {
   members: TeamMember[];
 }
 
+/**
+ * The page builds against the LIVE API, which can lag this repo — a field added
+ * to the contract is not in production until that deploy lands. `socials` is
+ * exactly that case, so it is defaulted here, once, rather than every component
+ * having to wonder.
+ *
+ * This is not the same as swallowing an error. `fetchJson` still fails the build
+ * on a bad response; this only says that an ADDITIVE field which has not shipped
+ * yet reads as empty rather than as a crash. The contract is v0 and explicitly
+ * unstable, so a consumer that cannot survive a field arriving later is a
+ * consumer that breaks on every release.
+ */
+const withSocials = (m: TeamMember): TeamMember => ({ ...m, socials: m.socials ?? [] });
+
 export async function getNationalTeams(): Promise<NationalTeam[]> {
   const { data } = await fetchJson<NationalTeam[]>(
     `/orgs/${ORG_SLUG}/national-teams`,
   );
-  return data;
+  return data.map((t) => ({ ...t, members: t.members.map(withSocials) }));
 }
 
 export interface OrgAddress {
@@ -212,7 +234,7 @@ export interface GovernanceBody {
 
 export async function getBodies(): Promise<GovernanceBody[]> {
   const { data } = await fetchJson<GovernanceBody[]>(`/orgs/${ORG_SLUG}/bodies`);
-  return data;
+  return data.map((b) => ({ ...b, members: b.members.map(withSocials) }));
 }
 
 /**

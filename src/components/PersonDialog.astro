@@ -29,6 +29,15 @@
     {/* One row per squad, filled by the script. */}
     <ul class="person__teams" data-teams-list></ul>
   </div>
+
+  {/* Bottom of the dialog. Socials sit RIGHT; the left half is deliberately
+      empty for now — organisation crests belong there and are out of scope
+      until the public organisations view exists. The row is only rendered when
+      there is something in it, so an empty footer never claims space. */}
+  <div class="person__foot" data-foot hidden>
+    <div class="person__foot-left"></div>
+    <div class="person__socials" data-socials-slot></div>
+  </div>
 </dialog>
 
 <style>
@@ -80,6 +89,17 @@
     line-height: var(--leading-xl);
     font-weight: var(--weight-display);
   }
+  .person__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+  }
+  .person__socials { display: flex; gap: var(--space-2); }
+
   .person__section { margin-top: var(--space-5); }
   .person__section-title {
     margin: 0 0 var(--space-2);
@@ -185,6 +205,19 @@
             avatar.textContent = d.initials ?? "";
           }
         }
+        // Clone the card's own socials template. Cloning rather than rebuilding
+        // keeps one source for the markup and the icons.
+        const foot = dialog.querySelector<HTMLElement>("[data-foot]");
+        const slot = dialog.querySelector<HTMLElement>("[data-socials-slot]");
+        const template = card.querySelector<HTMLTemplateElement>("[data-socials]");
+        if (foot && slot) {
+          slot.innerHTML = "";
+          if (template) slot.appendChild(template.content.cloneNode(true));
+          // `hidden` rather than an empty row: a footer with nothing in it
+          // still costs its own margin.
+          foot.hidden = !template;
+        }
+
         dialog.showModal();
       });
     }

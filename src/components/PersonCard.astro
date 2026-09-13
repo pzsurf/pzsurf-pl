@@ -1,4 +1,5 @@
 ---
+import SocialIcon from "./SocialIcon.astro";
 import type { TeamMember } from "../lib/api";
 
 export interface DialogRow {
@@ -44,6 +45,25 @@ const initials = member.display_name
       ? <img src={member.image_url} alt="" loading="lazy" width="320" height="320" />
       : <span class="card__monogram" aria-hidden="true">{initials}</span>}
   </div>
+  {/* The person's own accounts, rendered at BUILD time inside a <template> and
+      cloned into the dialog when this card opens it. A template is inert —
+      nothing is shown, nothing is focusable, nothing is fetched — which is what
+      makes it safe to carry on all 63 cards.
+      Built here rather than assembled from SVG strings in the dialog's script
+      because the icons are Astro components; and styled by a GLOBAL class
+      rather than a scoped one, because a clone carries this component's
+      data-astro-cid into a dialog that has a different one. */}
+  {member.socials.length > 0 && (
+    <template data-socials>
+      {member.socials.map((s) => (
+        <a class="person-social" href={s.url} target="_blank" rel="noopener noreferrer"
+           aria-label={s.platform}>
+          <SocialIcon platform={s.platform} />
+        </a>
+      ))}
+    </template>
+  )}
+
   <div class="card__body">
     <p class="card__name">{member.display_name}</p>
     {subtitle && <p class="card__cats">{subtitle}</p>}
