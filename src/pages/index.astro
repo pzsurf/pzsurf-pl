@@ -79,7 +79,6 @@ const bodyRows = bodiesByPerson(bodies);
             <PersonCard
               member={m}
               subtitle={m.categories.join(" · ")}
-              role={roleLabel(m.role)}
               group="Kadra narodowa"
               rows={(assignments.get(m.display_name) ?? []).map((a) => ({
                 label: `${a.year} — ${a.team}`,
@@ -112,8 +111,7 @@ const bodyRows = bodiesByPerson(bodies);
               <PersonCard
                 member={m}
                 subtitle={roleLabel(m.role)}
-                role={roleLabel(m.role)}
-                group="Władze"
+                  group="Władze"
                 rows={bodyRows.get(m.display_name) ?? []}
               />
             ))}

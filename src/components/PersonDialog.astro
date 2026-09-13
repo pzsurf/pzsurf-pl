@@ -22,9 +22,6 @@
   <div class="person__head">
     <div class="person__avatar" data-avatar></div>
     <h2 class="person__name" id="person-name" data-name></h2>
-    <p class="person__badges">
-      <span class="badge badge--role" data-role></span>
-    </p>
   </div>
 
   <div class="person__section">
@@ -83,25 +80,6 @@
     line-height: var(--leading-xl);
     font-weight: var(--weight-display);
   }
-  .person__badges {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-2);
-    margin: var(--space-3) 0 0;
-  }
-  .badge {
-    padding: 4px 12px;
-    border-radius: 999px;
-    background: var(--color-bg);
-    border: 1px solid var(--color-border-strong);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-subhead);
-    color: var(--color-text-muted);
-  }
-  .badge--role { border-color: var(--color-accent); color: var(--color-accent); }
-  .badge:empty { display: none; }
-
   .person__section { margin-top: var(--space-5); }
   .person__section-title {
     margin: 0 0 var(--space-2);
@@ -165,9 +143,6 @@
       card.addEventListener("click", () => {
         const d = card.dataset;
         set("[data-name]", d.name ?? "");
-        // Already in Polish — the page translated it, because only the page
-        // knows whether a role came from a squad or from a governance body.
-        set("[data-role]", d.role ?? "");
         set("[data-group]", d.group ?? "");
 
         // EVERY membership of this kind, one row each — a dialog that named

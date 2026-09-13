@@ -13,14 +13,12 @@ interface Props {
   /** Under the name on the CARD. Categories for an athlete, role for a body
    *  member — whichever the section makes sense of. */
   subtitle?: string;
-  /** The badge in the dialog, already in Polish. */
-  role: string;
   /** Heading above the rows in the dialog: "Kadra narodowa" / "Władze". */
   group: string;
   /** Every membership of this KIND that this person holds. */
   rows: DialogRow[];
 }
-const { member, subtitle = "", role, group, rows } = Astro.props;
+const { member, subtitle = "", group, rows } = Astro.props;
 
 // Initials from whatever name we were given. Built from display_name rather
 // than first/last, because those are not public fields — the API sends one
@@ -38,7 +36,6 @@ const initials = member.display_name
   data-name={member.display_name}
   data-image={member.image_url ?? ""}
   data-initials={initials}
-  data-role={role}
   data-group={group}
   data-rows={JSON.stringify(rows)}
 >
