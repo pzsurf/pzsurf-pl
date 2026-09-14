@@ -111,6 +111,17 @@ export interface OrgSocial {
   url: string;
 }
 
+/** The organisation's MAIN bank account — the only one the API publishes. */
+export interface OrgBankAccount {
+  /** Canonical, no spaces. */
+  iban: string;
+  /** Grouped for reading: PL25 1090 1694 0000 0001 4658 2135. */
+  iban_formatted: string;
+  /** Derived from the number; null when the platform does not know the bank. */
+  bank_name: string | null;
+  currency: string;
+}
+
 export interface Organisation {
   slug: string;
   name: string;
@@ -124,6 +135,12 @@ export interface Organisation {
   addresses: OrgAddress[];
   socials: OrgSocial[];
   disciplines: string[];
+  // Optional, not just nullable: an API older than these fields omits them,
+  // and the footer must then render as it did rather than break the build.
+  krs?: string | null;
+  nip?: string | null;
+  regon?: string | null;
+  bank_account?: OrgBankAccount | null;
 }
 
 export async function getOrganisation(): Promise<Organisation> {
