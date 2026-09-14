@@ -188,6 +188,8 @@ export function socialLinks(org: Organisation): { label: string; url: string }[]
       : host.includes("instagram") ? "Instagram"
       : host.includes("youtube") ? "YouTube"
       : host.includes("linkedin") ? "LinkedIn"
+      : host.includes("tiktok") ? "TikTok"
+      : /^(www\.)?(x|twitter)\.com$/.test(host) ? "X"
       : host.replace(/^www\./, "") || s.platform;
     out.push({ label, url: s.url });
   }
