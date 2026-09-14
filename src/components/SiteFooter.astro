@@ -4,6 +4,12 @@ interface Props { org: Organisation }
 const { org } = Astro.props;
 const address = primaryAddress(org);
 const socials = socialLinks(org);
+// KRS, NIP and REGON on one line, each only when the record has it.
+const registry = ([["KRS", org.krs], ["NIP", org.nip], ["REGON", org.regon]] as const)
+  .filter(([, value]) => value)
+  .map(([label, value]) => `${label} ${value}`)
+  .join(" · ");
+const account = org.bank_account ?? null;
 ---
 <footer class="foot on-dark" id="kontakt">
   <div class="foot__inner">
@@ -14,6 +20,13 @@ const socials = socialLinks(org);
         <p class="foot__line"><a href={`mailto:${org.email}`}>{org.email}</a></p>
       )}
       {org.phone && <p class="foot__line">{org.phone}</p>}
+      {registry && <p class="foot__line foot__registry">{registry}</p>}
+      {account && (
+        <p class="foot__line">
+          Rachunek bankowy: <span class="foot__account">{account.iban_formatted}</span>
+          {account.currency !== "PLN" && ` (${account.currency})`}
+        </p>
+      )}
     </div>
 
     <div class="foot__right">
@@ -50,6 +63,10 @@ const socials = socialLinks(org);
     text-transform: uppercase;
   }
   .foot__line { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+  .foot__registry { margin-top: var(--space-2); }
+  /* Tabular figures so the groups line up, and never split mid-number: the
+     account wraps below its label as a whole instead. */
+  .foot__account { font-variant-numeric: tabular-nums; white-space: nowrap; }
   .foot__right { text-align: right; }
   .foot__socials { display: flex; gap: var(--space-3); justify-content: flex-end; margin: 0 0 var(--space-2); }
   .foot a { color: inherit; }
