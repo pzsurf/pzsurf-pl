@@ -141,6 +141,10 @@ export interface Organisation {
   nip?: string | null;
   regon?: string | null;
   bank_account?: OrgBankAccount | null;
+  /** The organisation's introduction, in Markdown — written in the platform's
+   *  editor, rendered by lib/intro.ts as the hero. Optional for the same reason
+   *  as the fields above. */
+  intro_md?: string | null;
 }
 
 export async function getOrganisation(): Promise<Organisation> {

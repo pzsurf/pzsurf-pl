@@ -10,7 +10,9 @@
     "check": "astro check"
   },
   "dependencies": {
-    "astro": "^7.3.2"
+    "astro": "^7.3.2",
+    "micromark": "^4.0.2",
+    "micromark-extension-gfm": "^3.0.0"
   },
   "engines": {
     "node": ">=22.12.0"

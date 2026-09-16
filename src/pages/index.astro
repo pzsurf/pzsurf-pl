@@ -16,6 +16,7 @@ import {
   bodyTypeLabel, documentsOfType, getDocuments, getOrganisation, getPartners,
   getResolutions, getStatute, latestYear, orderBodies, roleLabel, teamTitle,
 } from "../lib/api";
+import { renderIntro } from "../lib/intro";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
 // single always-on container serves nobody's page views.
@@ -23,6 +24,11 @@ const [teams, org, bodies, statute, documents, resolutions, partners] = await Pr
   getNationalTeams(), getOrganisation(), getBodies(), getStatute(),
   getDocuments(), getResolutions(), getPartners(),
 ]);
+
+// The federation's introduction, written in the platform. When there is one it
+// IS the hero — it takes the place of the name and the fixed strapline passed
+// below, which stay as the fallback for as long as nobody has written one.
+const intro = org.intro_md?.trim() ? renderIntro(org.intro_md) : null;
 
 // The three shelves. `documentsOfType` matches on the API's own `doc_type`,
 // which ships with surfpoland#33 — until then every document has none and the
@@ -77,6 +83,7 @@ const bodyRows = bodiesByPerson(bodies);
     <Hero
       title="Polski Związek Surfingu"
       lede="Krajowa federacja surfingu — kadra narodowa, zawody i kluby zrzeszone w całej Polsce."
+      intro={intro}
     />
   </div>
 

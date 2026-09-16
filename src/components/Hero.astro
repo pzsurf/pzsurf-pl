@@ -1,8 +1,16 @@
 ---
-interface Props { title: string; lede: string }
-const { title, lede } = Astro.props;
+import type { RenderedIntro } from "../lib/intro";
+
+interface Props {
+  title: string;
+  lede: string;
+  /** The federation's introduction from the platform. When present it takes the
+   *  place of the title and the lede. */
+  intro?: RenderedIntro | null;
+}
+const { title, lede, intro = null } = Astro.props;
 ---
-<section class="hero on-dark">
+<section class:list={["hero on-dark", { "hero--intro": intro }]}>
   {/* autoplay needs muted AND playsInline or iOS refuses and shows the poster
       — which is why the poster is worth having rather than a black rectangle.
       The video is decorative, so it is aria-hidden and the page reads fine
@@ -20,8 +28,17 @@ const { title, lede } = Astro.props;
   <div class="hero__scrim" aria-hidden="true"></div>
 
   <div class="hero__inner">
-    <h1 class="hero__title">{title}</h1>
-    <p class="hero__lede">{lede}</p>
+    {/* The page keeps exactly one h1. An introduction with its own `# ` title
+        supplies it; one without keeps the federation's name in the outline for
+        screen readers and search engines, without printing it over the text
+        that replaced it. The introduction's HTML is safe for set:html — see
+        lib/intro.ts. */}
+    {intro?.titleHtml
+      ? <h1 class="hero__title" set:html={intro.titleHtml} />
+      : <h1 class={intro ? "visually-hidden" : "hero__title"}>{title}</h1>}
+    {intro
+      ? <div class="hero__intro" set:html={intro.html} />
+      : <p class="hero__lede">{lede}</p>}
     {/* A BUTTON, not a link: it opens a dialog on this page rather than going
         anywhere, and a link that navigates nowhere is a lie to a screen reader
         and to anyone who middle-clicks it. StatuteDialog binds every
@@ -139,6 +156,74 @@ const { title, lede } = Astro.props;
     color: var(--color-text-muted);
     font-size: var(--text-lg);
     line-height: var(--leading-lg);
+  }
+
+  /* An introduction can run longer than a lede, so the hero grows with it rather
+     than clipping it at the fold — still at least a full screen. The extra
+     padding keeps the last line clear of the scroll indicator. */
+  .hero--intro {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+  .hero--intro .hero__inner {
+    padding-block: calc(var(--space-6) + var(--space-5));
+  }
+  .hero__intro {
+    max-width: var(--measure);
+    margin: var(--space-3) 0 var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--text-lg);
+    line-height: 1.5;
+  }
+  /* `:global`, because this content is injected with set:html and carries none
+     of the scoped attributes Astro adds to markup it writes itself. */
+  .hero__intro > :global(:first-child) { margin-top: 0; }
+  .hero__intro > :global(:last-child) { margin-bottom: 0; }
+  .hero__intro :global(p),
+  .hero__intro :global(ul),
+  .hero__intro :global(ol),
+  .hero__intro :global(table) { margin: 0 0 var(--space-3); }
+  .hero__intro :global(ul),
+  .hero__intro :global(ol) { padding-left: 1.2em; }
+  .hero__intro :global(h2),
+  .hero__intro :global(h3),
+  .hero__intro :global(h4),
+  .hero__intro :global(h5),
+  .hero__intro :global(h6) {
+    margin: var(--space-4) 0 var(--space-2);
+    color: var(--color-text);
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
+    font-weight: var(--weight-subhead);
+  }
+  .hero__intro :global(strong),
+  .hero__intro :global(a) { color: var(--color-text); }
+  .hero__intro :global(a:hover) { color: var(--color-accent); }
+  .hero__intro :global(img) {
+    display: block;
+    max-width: 100%;
+    max-height: 40vh;
+    height: auto;
+    margin: var(--space-3) 0;
+    border-radius: var(--radius);
+  }
+  .hero__intro :global(th),
+  .hero__intro :global(td) {
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border);
+    text-align: left;
+  }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   /* Styles a <button> as well as an <a> now, hence the four resets: a button
