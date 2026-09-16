@@ -39,16 +39,21 @@ const { title, lede, intro = null } = Astro.props;
     {intro
       ? <div class="hero__intro" set:html={intro.html} />
       : <p class="hero__lede">{lede}</p>}
-    {/* A BUTTON, not a link: it opens a dialog on this page rather than going
-        anywhere, and a link that navigates nowhere is a lie to a screen reader
-        and to anyone who middle-clicks it. StatuteDialog binds every
-        `[data-open-statute]` on the page, so the hero does not need to know
-        the dialog exists.
+  </div>
 
-        The scroll indicator below still points at #kadra, so the way down that
-        "Zobacz kadrę" used to offer has not been taken away — it was always
-        the more discoverable of the two. */}
-    <button class="btn btn--outline" type="button" data-open-statute>Statut</button>
+  {/* Out of the wording and down at the foot of the hero, directly above the
+      scroll indicator: the button is not part of what the hero SAYS. It stays
+      IN FLOW — its own bottom padding clears the indicator — because an
+      absolute offset would sooner or later land it on top of a long
+      introduction.
+
+      A BUTTON, not a link: it opens a dialog on this page rather than going
+      anywhere, and a link that navigates nowhere is a lie to a screen reader
+      and to anyone who middle-clicks it. StatuteDialog binds every
+      `[data-open-statute]` on the page, so the hero does not need to know the
+      dialog exists. */}
+  <div class="hero__cta">
+    <button class="btn" type="button" data-open-statute>Statut Związku</button>
   </div>
 
   {/* A LINK, not an ornament. It points at the same place the button does, so
@@ -63,9 +68,11 @@ const { title, lede, intro = null } = Astro.props;
   .hero {
     position: relative;
     display: flex;
-    /* Centred rather than bottom-aligned now the hero is full height: at 100vh
-       bottom-aligned text sits on the very edge, and it would collide with the
-       scroll indicator. Horizontally it stays left, as pzsurf.pl has it. */
+    /* A COLUMN: the wording takes the space above and centres itself within it
+       (see .hero__inner), while the Statut button sits in its own row at the
+       foot. Centred horizontally too, so the title and the introduction read as
+       one stack over the middle of the footage. */
+    flex-direction: column;
     align-items: center;
     /* Full height, matching surfpoland.com. `svh` is the small-viewport height
        — the area visible while a mobile browser's address bar is showing — so
@@ -138,21 +145,49 @@ const { title, lede, intro = null } = Astro.props;
   .hero__inner {
     position: relative;
     z-index: 1;
+    /* Takes whatever height is left once the foot row has its own, and centres
+       the wording inside that — so the text still reads as vertically centred
+       while the button has left the stack. */
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     width: 100%;
     max-width: var(--page-max);
     margin-inline: auto;
     padding-inline: var(--space-3);
     padding-block: var(--space-6);
+    text-align: center;
   }
+
+  /* The foot of the hero. The bottom padding is the scroll indicator's own
+     space — its 28px offset plus its 38px glyph — and a gap on top of that, so
+     the button sits ABOVE the animation rather than over it. The top margin is
+     a floor for the case where the wording above runs long: the two must never
+     meet. */
+  .hero__cta {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: var(--space-5);
+    padding-inline: var(--space-3);
+    padding-bottom: calc(28px + 38px + var(--space-4));
+  }
+  /* The measures stay: centred text still needs a line length somebody can
+     read, so each block keeps its cap and is centred in the gutter rather than
+     stretched to the width of the page. */
   .hero__title {
     max-width: 18ch;
+    margin-inline: auto;
     font-size: var(--text-hero);
     line-height: var(--leading-2xl);
     font-weight: var(--weight-display);
   }
   .hero__lede {
     max-width: 46ch;
-    margin: var(--space-3) 0 var(--space-4);
+    margin: var(--space-3) auto var(--space-4);
     color: var(--color-text-muted);
     font-size: var(--text-lg);
     line-height: var(--leading-lg);
@@ -171,7 +206,7 @@ const { title, lede, intro = null } = Astro.props;
   }
   .hero__intro {
     max-width: var(--measure);
-    margin: var(--space-3) 0 var(--space-4);
+    margin: var(--space-3) auto var(--space-4);
     color: var(--color-text-muted);
     font-size: var(--text-lg);
     line-height: 1.5;
@@ -184,8 +219,20 @@ const { title, lede, intro = null } = Astro.props;
   .hero__intro :global(ul),
   .hero__intro :global(ol),
   .hero__intro :global(table) { margin: 0 0 var(--space-3); }
+  /* A centred bullet list is unreadable — the markers scatter down the middle —
+     so a list keeps its left alignment inside a block that is itself centred.
+     Same for a table, whose columns mean nothing centred. */
   .hero__intro :global(ul),
-  .hero__intro :global(ol) { padding-left: 1.2em; }
+  .hero__intro :global(ol) {
+    width: fit-content;
+    margin-inline: auto;
+    padding-left: 1.2em;
+    text-align: left;
+  }
+  .hero__intro :global(table) {
+    margin-inline: auto;
+    text-align: left;
+  }
   .hero__intro :global(h2),
   .hero__intro :global(h3),
   .hero__intro :global(h4),
@@ -205,7 +252,7 @@ const { title, lede, intro = null } = Astro.props;
     max-width: 100%;
     max-height: 40vh;
     height: auto;
-    margin: var(--space-3) 0;
+    margin: var(--space-3) auto;
     border-radius: var(--radius);
   }
   .hero__intro :global(th),
@@ -226,26 +273,39 @@ const { title, lede, intro = null } = Astro.props;
     border: 0;
   }
 
-  /* Styles a <button> as well as an <a> now, hence the four resets: a button
-     carries the UA's own font, background and border and inherits none of the
-     page's. */
+  /* Styles a <button> as well as an <a>, hence the resets: a button carries the
+     UA's own font, background and border and inherits none of the page's.
+     FILLED in the federation's red rather than outlined, and larger than the
+     page's other controls: over moving footage an outline reads as decoration,
+     and this is the one thing the hero actually asks anybody to do. */
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
-    padding: 0 var(--space-4);
-    border: 2px solid currentColor;
+    min-height: 56px;
+    padding: 0 var(--space-5);
+    border: 2px solid var(--color-accent);
     border-radius: var(--radius-pill);
     font-family: inherit;
-    font-size: var(--text-sm);
-    font-weight: var(--weight-button);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-subhead);
     text-decoration: none;
-    background: none;
-    color: var(--color-text);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
     cursor: pointer;
+    /* Lifts it off footage, which is busy in a way flat colour is not. */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
   }
-  .btn--outline:hover { color: var(--color-accent); }
+  .btn:hover {
+    background: var(--color-accent-strong);
+    border-color: var(--color-accent-strong);
+  }
+  /* A default focus ring would sit red-on-red over dark footage, so it is white
+     with an offset — the keyboard path to the statute has to be visible. */
+  .btn:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+  }
 
   /* The footage is motion nobody asked for. Honour the preference by showing
      the poster instead — the scrim and the wording are unaffected. */
