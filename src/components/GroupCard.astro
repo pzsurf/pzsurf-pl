@@ -1,0 +1,147 @@
+---
+// A GROUP OF PEOPLE, as a card: a national-team division, or the board, or a
+// komisja. The thing a visitor is choosing between — not the people in it.
+//
+// One component for all three sections, because they are the same object three
+// times over: a name, a headcount, and something worth opening. No crests and no
+// icons — in a grid, a badge per card reads as decoration and competes with the
+// one thing somebody is actually choosing between, which is the name.
+//
+// The card carries four faces and a tally rather than the roster. The roster is
+// what the dialog is for, and a card trying to show it would be a worse version
+// of the dialog — every name too small to read.
+//
+// A BUTTON, not an article with a click handler: focusable, driven by Enter and
+// Space, announced as something that can be activated. `aria-haspopup` says
+// what activating it does, and `data-open-group` names the dialog — rendered
+// separately, with its roster inside it (see GroupDialog).
+
+interface Props {
+  /** The id of the dialog this card opens. */
+  dialogId: string;
+  /** "Shortboard Junior", "Zarząd", "Komisja Sportowa". */
+  title: string;
+  count: number;
+  /** Up to four of these are drawn as the face stack. Empty for a shelf of
+   *  documents, which has no people: that card is its name and its tally. */
+  faces: { name: string; image: string | null }[];
+}
+const { dialogId, title, count, faces } = Astro.props;
+
+// Initials from the display name rather than first/last: those are not public
+// fields — the API sends one already-formatted string and nothing else.
+const initials = (name: string) =>
+  name.split(/\s+/).map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+
+const STACK = 4;
+const shown = faces.slice(0, STACK);
+const rest = faces.length - shown.length;
+---
+<button
+  type="button"
+  class="group"
+  data-open-group={dialogId}
+  aria-haspopup="dialog"
+>
+  {/* Decorative: every one of these faces is named in the dialog this opens, so
+      announcing them here would read the roster twice. */}
+  {faces.length > 0 && (
+  <span class="group__faces" aria-hidden="true">
+    {shown.map((f) => (
+      <span class="group__face">
+        {f.image
+          ? <img src={f.image} alt="" loading="lazy" width="96" height="96" />
+          : <span class="group__monogram">{initials(f.name)}</span>}
+      </span>
+    ))}
+    {rest > 0 && <span class="group__face group__face--rest">+{rest}</span>}
+  </span>
+  )}
+
+  <span class="group__body">
+    <span class="group__name">{title}</span>
+    <span class="group__count">{count}</span>
+  </span>
+</button>
+
+<style>
+  .group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+    height: 100%;
+    padding: var(--space-3);
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius);
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .group:hover { border-color: var(--color-accent); }
+  .group:hover .group__name { color: var(--color-accent); }
+  .group:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-color: var(--color-accent);
+  }
+
+  /* Overlapping, so four faces read as a group rather than a row of thumbnails.
+     The ring is what separates each face from the one it overlaps. */
+  .group__faces { display: flex; align-items: center; }
+  .group__face {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    overflow: hidden;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--color-bg-raised);
+    background: linear-gradient(160deg, #1f2a36, #0d1116);
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 13px;
+    font-weight: var(--weight-subhead);
+  }
+  .group__face + .group__face { margin-left: -12px; }
+  .group__face img {
+    /* Absolute, or the picture resolves its height against a content-sized grid
+       track and spills out of the circle — the trap PersonCard documents. */
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+  .group__face--rest {
+    background: var(--color-bg);
+    color: var(--color-text-faint);
+    box-shadow: 0 0 0 1px var(--color-border-strong), 0 0 0 2px var(--color-bg-raised);
+    font-size: var(--text-xs);
+  }
+
+  .group__body {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: auto;
+  }
+  .group__name {
+    flex: 1 1 auto;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-subhead);
+    line-height: 1.25;
+    transition: color 0.15s ease;
+  }
+  .group__count {
+    flex: 0 0 auto;
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+  }
+</style>
