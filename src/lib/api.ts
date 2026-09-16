@@ -361,6 +361,42 @@ export interface PublicResolution {
   adopted_on: string | null;
 }
 
+/**
+ * A shareable slug per uchwała, keyed by id.
+ *
+ * Built from the RESOLUTION NUMBER — "U-01/NWZC/08/2026" becomes
+ * `u-01-nwzc-08-2026` — because that is how the federation refers to them and
+ * it is what somebody pasting a link will recognise. The id is the fallback for
+ * an uchwała with no number, and the tie-break when two share one: numbers come
+ * from a human and are not guaranteed unique, and two pages cannot have one
+ * address.
+ *
+ * One map for the whole set rather than a slug function per row: the tie-break
+ * can only be decided by looking at every number at once, and both the listing
+ * and the generated pages must agree on the answer.
+ */
+export function resolutionSlugs(resolutions: PublicResolution[]): Map<string, string> {
+  const base = (r: PublicResolution): string =>
+    (r.resolution_number || r.id)
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || r.id;
+
+  const seen = new Map<string, number>();
+  for (const r of resolutions) {
+    const b = base(r);
+    seen.set(b, (seen.get(b) ?? 0) + 1);
+  }
+  const out = new Map<string, string>();
+  for (const r of resolutions) {
+    const b = base(r);
+    out.set(r.id, (seen.get(b) ?? 0) > 1 ? `${b}-${r.id.slice(0, 8)}` : b);
+  }
+  return out;
+}
+
 export async function getDocuments(): Promise<PublicDocument[]> {
   const { data } = await fetchJson<PublicDocument[]>(`/orgs/${ORG_SLUG}/documents`);
   return data;

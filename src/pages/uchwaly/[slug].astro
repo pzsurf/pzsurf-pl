@@ -1,0 +1,128 @@
+---
+// ONE uchwała, as its own page.
+//
+// Why a page rather than the dialog this used to be: an uchwała is a document
+// somebody wants to SEND to somebody. A dialog has no address, so there was
+// nothing to copy out of the address bar and nothing for Messenger or WhatsApp
+// to preview. The other three document shelves are files with their own URLs
+// and always behaved this way; this makes uchwały behave the same.
+//
+// The whole set is generated at build time — the same rule as every other page
+// here — so a link keeps working whether or not anybody is running JavaScript,
+// and the text is in the markup for crawlers and link previews.
+//
+// NO WAY BACK on the page, deliberately. It is opened in a tab of its own, so
+// there is nothing behind it to return to: a "← Dokumenty" link would not go
+// back, it would navigate a tab somebody opened for one document onto the front
+// page. The browser's own back button is the reader's, and a page has no
+// business interfering with it. The footer still links onward.
+import Base from "../../layouts/Base.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import type { PublicResolution } from "../../lib/api";
+import { getOrganisation, getResolutions, resolutionSlugs } from "../../lib/api";
+
+export async function getStaticPaths() {
+  const resolutions = await getResolutions();
+  // The SAME map the index builds its links from, so a row and its page can
+  // never disagree about an address.
+  const slugs = resolutionSlugs(resolutions);
+  return resolutions.map((resolution) => ({
+    params: { slug: slugs.get(resolution.id) },
+    props: { resolution },
+  }));
+}
+
+interface Props { resolution: PublicResolution }
+const { resolution } = Astro.props;
+const org = await getOrganisation();
+
+const day = (resolution.adopted_on ?? "").slice(0, 10) || null;
+const meta = [resolution.meeting_title, day].filter(Boolean).join(" · ");
+// The share title names the uchwała by its number where it has one — that is
+// how the federation refers to them — and always says what it is about.
+const shareTitle = resolution.resolution_number
+  ? `${resolution.resolution_number} — ${resolution.title}`
+  : resolution.title;
+// First line or two of the text, for the link preview. The body is plain text,
+// so this is a cut rather than a summary; it stops on a word.
+const excerpt = (resolution.content ?? "").replace(/\s+/g, " ").trim();
+const description = excerpt.length > 180
+  ? `${excerpt.slice(0, 180).replace(/\s+\S*$/, "")}…`
+  : excerpt || `Uchwała ${org.name}${meta ? ` — ${meta}` : ""}.`;
+---
+<Base title={`${shareTitle} — ${org.name}`} description={description}>
+  <main class="page uchwala">
+    <article class="uchwala__doc">
+      {resolution.resolution_number && (
+        <p class="uchwala__number">{resolution.resolution_number}</p>
+      )}
+      <h1 class="uchwala__title">{resolution.title}</h1>
+      {meta && <p class="uchwala__meta">{meta}</p>}
+
+      {/* `pre-wrap`: the API sends the body as plain text carrying its own line
+          breaks, and this shows it as written. Deliberately NOT run through the
+          Markdown renderer that draws the hero — an uchwała's numbering is part
+          of what it SAYS, and a Markdown pass would renumber a legal document's
+          clauses. The statute's own converter exists for exactly that reason. */}
+      {resolution.content
+        ? <div class="uchwala__body">{resolution.content}</div>
+        : <p class="uchwala__empty">Treść tej uchwały nie została opublikowana.</p>}
+    </article>
+  </main>
+
+  <SiteFooter org={org} />
+</Base>
+
+<style>
+  .uchwala {
+    /* A measure, not the page width: this is a document to read. */
+    max-width: 72ch;
+    padding-block: var(--space-6);
+  }
+  .uchwala__doc {
+    padding: var(--space-5) var(--space-4);
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+  }
+  /* The number is how the federation cites an uchwała — "U-01/NWZC/08/2026" is
+     its name — so it leads in the accent red rather than sitting above the
+     title as grey small print.
+     20px at display weight is also what keeps it legible: at that size and
+     weight it counts as LARGE text, where the accent clears the 3:1 contrast
+     floor over both the light and the dark ground. The same red at 16px would
+     be normal text, need 4.5:1, and miss it on white. */
+  .uchwala__number {
+    margin: 0 0 var(--space-1);
+    color: var(--color-accent);
+    font-size: var(--text-lg);
+    line-height: 1.2;
+    font-weight: var(--weight-display);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .uchwala__title {
+    margin: 0;
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
+    font-weight: var(--weight-display);
+  }
+  .uchwala__meta {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+  .uchwala__body {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+    white-space: pre-wrap;
+  }
+  .uchwala__empty {
+    margin: var(--space-4) 0 0;
+    color: var(--color-text-faint);
+    font-size: var(--text-sm);
+  }
+</style>

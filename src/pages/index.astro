@@ -3,18 +3,17 @@ import Base from "../layouts/Base.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import Hero from "../components/Hero.astro";
-import PersonCard from "../components/PersonCard.astro";
-import Carousel from "../components/Carousel.astro";
-import PersonDialog from "../components/PersonDialog.astro";
-import BodyDialog from "../components/BodyDialog.astro";
+import GroupCard from "../components/GroupCard.astro";
+import GroupDialog from "../components/GroupDialog.astro";
+import ShelfDialog from "../components/ShelfDialog.astro";
 import StatuteDialog from "../components/StatuteDialog.astro";
-import ResolutionDialog from "../components/ResolutionDialog.astro";
-import DocCard from "../components/DocCard.astro";
 import PartnersStrip from "../components/PartnersStrip.astro";
+import type { NationalTeam } from "../lib/api";
 import {
-  assignmentsByPerson, bodiesByPerson, getBodies, getNationalTeams,
+  getBodies, getNationalTeams,
   bodyTypeLabel, documentsOfType, getDocuments, getOrganisation, getPartners,
-  getResolutions, getStatute, latestYear, orderBodies, roleLabel, teamTitle,
+  getResolutions, getStatute, latestYear, orderBodies, resolutionSlugs,
+  roleLabel, teamTitle,
 } from "../lib/api";
 import { renderIntro } from "../lib/intro";
 
@@ -65,14 +64,64 @@ const season = teams
 // longer prints a tally under the heading.
 const athletes = season.reduce((n, t) => n + t.member_count, 0);
 
-// Built from ALL teams, not just the season on show, so a dialog lists every
-// squad a person belongs to — which for nine of the twenty-six is more than one.
-const assignments = assignmentsByPerson(teams);
+// A dialog per group, so each needs an id its card can point at. Derived from
+// the words the reader sees on the card rather than from an index, so an anchor
+// survives a squad or a komisja being added, renamed or reordered.
+const groupId = (prefix: string, label: string) =>
+  prefix + "-" + label
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+const divisionId = (team: NationalTeam) => groupId("kadra", teamTitle(team));
+
+// Every shelf in Dokumenty, as one list: a card and a dialog each, whatever the
+// rows point at. Uchwały are a shelf like the others now — each one has a page
+// of its own (src/pages/uchwaly/[slug].astro), so a row is an address to share
+// rather than a dialog to read, which is what the three file shelves always
+// were.
+const resSlugs = resolutionSlugs(resolutions);
+const shelves = [
+  ...(resolutions.length > 0
+    ? [{
+        id: "dokumenty-uchwaly",
+        label: "Uchwały",
+        // The eyebrow is the uchwała's number — what it is cited by.
+        accentEyebrow: true,
+        rows: resolutions.map((r) => ({
+          title: r.title,
+          eyebrow: r.resolution_number,
+          footnote: [r.meeting_title, dayOf(r.adopted_on)].filter(Boolean).join(" · "),
+          href: `/uchwaly/${resSlugs.get(r.id)}/`,
+        })),
+      }]
+    : []),
+  ...docShelves.map((shelf) => ({
+    id: groupId("dokumenty", shelf.label),
+    label: shelf.label,
+    // A date, not a name: it stays small print.
+    accentEyebrow: false,
+    rows: shelf.docs.map((d) => ({
+      title: d.title,
+      eyebrow: dayOf(d.doc_date),
+      footnote: d.file_name,
+      href: d.file_url,
+    })),
+  })),
+];
+
+
+// The face stack on a card, and the people a dialog lists. Both read the same
+// member rows; only the line under each name differs — age categories for an
+// athlete, a governance role for a body's member.
+const facesOf = (members: { display_name: string; image_url: string | null }[]) =>
+  members.map((m) => ({ name: m.display_name, image: m.image_url }));
 
 // The federation's board and its committees. Board first — it is the body a
 // visitor is looking for — then the komisje alphabetically.
 const orderedBodies = orderBodies(bodies);
-const bodyRows = bodiesByPerson(bodies);
 ---
 <Base
   title="Polski Związek Surfingu"
@@ -106,27 +155,23 @@ const bodyRows = bodiesByPerson(bodies);
       </a>
     </div>
 
-    {season.map((team) => (
-      <section class="squad">
-        <h3 class="squad__name">
-          {teamTitle(team)}
-          <span class="squad__count">{team.member_count}</span>
-        </h3>
-        <Carousel label={`Kadra ${teamTitle(team)}`}>
-          {team.members.map((m) => (
-            <PersonCard
-              member={m}
-              subtitle={m.categories.join(" · ")}
-              group="Kadra narodowa"
-              rows={(assignments.get(m.display_name) ?? []).map((a) => ({
-                label: `${a.year} — ${a.team}`,
-                detail: a.categories,
-              }))}
-            />
-          ))}
-        </Carousel>
-      </section>
-    ))}
+    {/* One card per DIVISION, not twenty-six athletes in four carousels: the
+        squads are what a visitor is choosing between, and the roster of the one
+        they choose is what they came to read. Every name is still in this
+        page's HTML — inside that division's own dialog — so link previews and
+        crawlers see the full roster exactly as they did before. */}
+    <ul class="groups">
+      {season.map((team) => (
+        <li>
+          <GroupCard
+            dialogId={divisionId(team)}
+            title={teamTitle(team)}
+            count={team.member_count}
+            faces={facesOf(team.members)}
+          />
+        </li>
+      ))}
+    </ul>
   </main>
 
   {/* A sunken band, so the governance section reads as a different part of the
@@ -156,58 +201,25 @@ const bodyRows = bodiesByPerson(bodies);
         </a>
       </div>
 
-      {orderedBodies.map((body) => {
-        /* The BODY's own crest, falling back to the federation's mark only
-           when a body has none. It was the federation's mark unconditionally,
-           which made all eight komisje look identical — the crests existed all
-           along, the public API just did not return them (surfpoland#31). The
-           fallback stays because the field is genuinely optional, and because
-           it is what renders until that change is deployed. */
-        const crest = body.image_url || org.image_url || "";
-        return (
-        <section class="squad">
-          {/* A BUTTON only when there is something to open. Zarząd currently
-              has no description, and a control that opens an empty dialog is
-              worse than no control — it teaches people the row does nothing.
-              Give it a description in the admin and it becomes clickable with
-              no change here. */}
-          <h3 class="squad__name">
-            {body.description ? (
-              <button
-                type="button"
-                class="squad__row"
-                data-body
-                data-body-name={body.name}
-                data-body-type={bodyTypeLabel(body.body_type)}
-                data-body-count={`${body.member_count} ${body.member_count === 1 ? "osoba" : "osób"}`}
-                data-body-desc={body.description}
-                data-body-crest={crest}
-              >
-                {crest && <img class="squad__crest" src={crest} alt="" width="28" height="28" />}
-                <span class="squad__label">{body.name}</span>
-                <span class="squad__count">{body.member_count}</span>
-              </button>
-            ) : (
-              <span class="squad__row squad__row--static">
-                {crest && <img class="squad__crest" src={crest} alt="" width="28" height="28" />}
-                <span class="squad__label">{body.name}</span>
-                <span class="squad__count">{body.member_count}</span>
-              </span>
-            )}
-          </h3>
-          <Carousel label={body.name}>
-            {body.members.map((m) => (
-              <PersonCard
-                member={m}
-                subtitle={roleLabel(m.role)}
-                  group="Władze"
-                rows={bodyRows.get(m.display_name) ?? []}
-              />
-            ))}
-          </Carousel>
-        </section>
-        );
-      })}
+      {/* One card per body, opening its own dialog — the same shape the roster
+          above uses, because a komisja and a squad are the same kind of thing to
+          a reader: a name, a headcount, and a list of people worth opening.
+
+          Every body is openable now. The dialog carries the remit AND the
+          membership, so one without a description still has something to show —
+          which is why the old "no description, no button" rule is gone. */}
+      <ul class="groups">
+        {orderedBodies.map((body) => (
+          <li>
+            <GroupCard
+              dialogId={groupId("organ", body.name)}
+              title={body.name}
+              count={body.member_count}
+              faces={facesOf(body.members)}
+            />
+          </li>
+        ))}
+      </ul>
     </div>
   </section>
 
@@ -227,44 +239,22 @@ const bodyRows = bodiesByPerson(bodies);
         <h2 class="section__title">Dokumenty</h2>
       </div>
 
-      {resolutions.length > 0 && (
-        <section class="squad">
-          <h3 class="squad__name">
-            <span class="squad__label">Uchwały</span>
-            <span class="squad__count">{resolutions.length}</span>
-          </h3>
-          <Carousel label="Uchwały">
-            {resolutions.map((r) => (
-              <DocCard
-                title={r.title}
-                eyebrow={r.resolution_number}
-                footnote={dayOf(r.adopted_on)}
-                resolution={{
-                  number: r.resolution_number,
-                  title: r.title,
-                  meta: [r.meeting_title, dayOf(r.adopted_on)].filter(Boolean).join(" · "),
-                  body: r.content ?? "",
-                }}
-              />
-            ))}
-          </Carousel>
-        </section>
-      )}
-
-      {docShelves.map((shelf) => (
-        <section class="squad">
-          <h3 class="squad__name">
-            <span class="squad__label">{shelf.label}</span>
-            <span class="squad__count">{shelf.docs.length}</span>
-          </h3>
-          <Carousel label={shelf.label}>
-            {shelf.docs.map((d) => (
-              <DocCard title={d.title} eyebrow={dayOf(d.doc_date)}
-                footnote={d.file_name} href={d.file_url} />
-            ))}
-          </Carousel>
-        </section>
-      ))}
+      {/* One card per shelf, opening a list of its documents — the same shape
+          the roster and the komisje use above. A row in that list is a LINK to
+          the document itself, so it opens in its own tab and the address can be
+          shared. */}
+      <ul class="groups">
+        {shelves.map((shelf) => (
+          <li>
+            <GroupCard
+              dialogId={shelf.id}
+              title={shelf.label}
+              count={shelf.rows.length}
+              faces={[]}
+            />
+          </li>
+        ))}
+      </ul>
     </section>
   )}
 
@@ -282,11 +272,53 @@ const bodyRows = bodiesByPerson(bodies);
 
   <SiteFooter org={org} />
 
-  {/* One dialog for every card on the page. */}
-  <PersonDialog />
-  <BodyDialog />
+  {/* A dialog per group, each rendered with its own roster inside it: the
+      season's divisions, then the board and its komisje. */}
+  {season.map((team) => (
+    <GroupDialog
+      id={divisionId(team)}
+      title={teamTitle(team)}
+      count={team.member_count}
+      meta={year !== null ? [`Kadra Narodowa ${year}`] : []}
+      people={team.members.map((m) => ({
+        name: m.display_name,
+        image: m.image_url,
+        subtitle: m.categories.join(" · "),
+      }))}
+    />
+  ))}
+  {orderedBodies.map((body) => (
+    <GroupDialog
+      id={groupId("organ", body.name)}
+      title={body.name}
+      count={body.member_count}
+      meta={[bodyTypeLabel(body.body_type)]}
+      description={body.description}
+      people={body.members.map((m) => ({
+        name: m.display_name,
+        image: m.image_url,
+        // "Członek" under two names in every three is noise: it is the default
+        // and says nothing about the person. A role that DISTINGUISHES somebody
+        // — Prezes, Przewodniczący, Wiceprzewodniczący — is the part worth
+        // printing, so only the plain MEMBER code is dropped. Matched on the
+        // CODE, never the label: the label is wording and may change.
+        subtitle: m.role === "MEMBER" ? "" : roleLabel(m.role),
+      }))}
+    />
+  ))}
+
+  {/* A dialog per document shelf, each listing its own rows. */}
+  {shelves.map((shelf) => (
+    <ShelfDialog
+      id={shelf.id}
+      title={shelf.label}
+      count={shelf.rows.length}
+      rows={shelf.rows}
+      accentEyebrow={shelf.accentEyebrow}
+    />
+  ))}
+
   <StatuteDialog statute={statute} />
-  <ResolutionDialog />
 </Base>
 
 <style>
@@ -344,6 +376,18 @@ const bodyRows = bodiesByPerson(bodies);
     border-radius: 2px;
   }
 
+  /* One card per GROUP — a national-team division above, a governance body
+     below. `auto-fill` with a 240px floor puts four across on a desktop, two on
+     a tablet and one on a phone, without a breakpoint for each. */
+  .groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
   /* space-4, not space-6. At 64px the squads read as four separate sections
      that happen to share a page; at 24px they read as one roster in four
      parts, which is what they are. The heading's own top margin does the rest
@@ -363,43 +407,5 @@ const bodyRows = bodiesByPerson(bodies);
     font-weight: var(--weight-body);
   }
 
-  /* The whole row — crest, name and count — is the target, so the thing you
-     aim at is the thing you read. */
-  .squad__row {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: 0;
-    border: 0;
-    background: none;
-    font: inherit;
-    color: inherit;
-    text-align: left;
-    cursor: pointer;
-  }
-  .squad__row--static { cursor: default; }
-  .squad__row:not(.squad__row--static):hover .squad__label { color: var(--color-accent); }
-  .squad__row:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 3px;
-    border-radius: 4px;
-  }
-  .squad__crest {
-    width: 28px;
-    height: 28px;
-    /* A rounded rectangle rather than a circle. These crests are shields and
-       wordmarks drawn to square edges, and a circular mask clipped the corners
-       off every one of them — the shield's own outline is the thing that
-       distinguishes one komisja's badge from the next. */
-    border-radius: 6px;
-    border: 1px solid var(--color-border-strong);
-    background: var(--color-bg-raised);
-    /* `contain`, not cover: a crest cropped to fill the box loses its edges,
-       which is the part that makes it recognisable. */
-    object-fit: contain;
-    padding: 3px;
-    flex: 0 0 auto;
-  }
-  .squad__label { transition: color 0.15s ease; }
 
 </style>
