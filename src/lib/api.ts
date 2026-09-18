@@ -341,6 +341,96 @@ export async function getStatute(): Promise<Statute> {
 
 // ── Documents and resolutions ───────────────────────────────────────────────
 
+export interface PublicOrgEvent {
+  id: string;
+  name: string;
+  /** `competition` | `camp` | `course` — the contract's closed set (§4.6). */
+  event_type: string;
+  description: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  all_day: boolean;
+  location_name: string | null;
+  external_url: string | null;
+  image_url: string | null;
+}
+
+/** Everything this organisation runs, hosts or patronises. */
+export async function getEvents(): Promise<PublicOrgEvent[]> {
+  const { data } = await fetchJson<PublicOrgEvent[]>(`/orgs/${ORG_SLUG}/events`);
+  return data;
+}
+
+/** Polish for the event kinds the API returns as codes — the same split as the
+ *  disciplines and the body types: it serves data, this page owns the wording. */
+const EVENT_TYPE_PL: Record<string, string> = {
+  competition: "Zawody",
+  camp: "Obóz",
+  course: "Kurs",
+};
+export const eventTypeLabel = (type: string): string => EVENT_TYPE_PL[type] ?? type;
+
+/** The last day an event covers: its end, or its start when it has no end. */
+const lastDay = (ev: PublicOrgEvent): string =>
+  ((ev.end_time ?? ev.start_time) ?? "").slice(0, 10);
+
+/**
+ * Whether an event is over.
+ *
+ * "Today" is the day of the BUILD, which is the only today a static page has.
+ * The scheduled republish (every six hours) is therefore what moves an event
+ * from upcoming to past — good enough for a calendar measured in days, and
+ * honest about it rather than pretending to a live clock.
+ */
+export const isPastEvent = (
+  ev: PublicOrgEvent,
+  today: string = new Date().toISOString().slice(0, 10),
+): boolean => {
+  const day = lastDay(ev);
+  return Boolean(day) && day < today;
+};
+
+/**
+ * Upcoming first, soonest at the front; then the past, most recent of those
+ * first. Strictly chronological would bury the next event behind every edition
+ * that has already happened, which is the opposite of what a visitor wants.
+ */
+export function orderEvents(
+  events: PublicOrgEvent[],
+  today: string = new Date().toISOString().slice(0, 10),
+): PublicOrgEvent[] {
+  const byStart = (a: PublicOrgEvent, b: PublicOrgEvent) =>
+    (a.start_time ?? "").localeCompare(b.start_time ?? "");
+  const upcoming = events.filter((e) => !isPastEvent(e, today)).sort(byStart);
+  const past = events.filter((e) => isPastEvent(e, today)).sort((a, b) => byStart(b, a));
+  return [...upcoming, ...past];
+}
+
+/**
+ * A date or a date range, written the way Polish writes them: `26.09.2026`,
+ * `26–27.09.2026` inside one month, `25.07 – 15.09.2026` across two.
+ *
+ * Dates only, never times: every event the federation publishes is all-day, and
+ * a "00:00" on a card would be noise pretending to be information.
+ */
+export function eventDates(ev: PublicOrgEvent): string {
+  const start = (ev.start_time ?? "").slice(0, 10);
+  if (!start) return "";
+  const end = (ev.end_time ?? "").slice(0, 10);
+  const day = (iso: string) => iso.slice(8, 10);
+  const month = (iso: string) => iso.slice(5, 7);
+  const year = (iso: string) => iso.slice(0, 4);
+
+  if (!end || end === start) return `${day(start)}.${month(start)}.${year(start)}`;
+  if (year(start) === year(end) && month(start) === month(end)) {
+    return `${day(start)}–${day(end)}.${month(end)}.${year(end)}`;
+  }
+  if (year(start) === year(end)) {
+    return `${day(start)}.${month(start)} – ${day(end)}.${month(end)}.${year(end)}`;
+  }
+  return `${day(start)}.${month(start)}.${year(start)} – ${day(end)}.${month(end)}.${year(end)}`;
+}
+
 export interface PublicDocument {
   title: string;
   /** Optional ONLY because this page builds against the live API, which lags

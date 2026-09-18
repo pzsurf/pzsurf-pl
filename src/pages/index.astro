@@ -8,21 +8,25 @@ import GroupDialog from "../components/GroupDialog.astro";
 import ShelfDialog from "../components/ShelfDialog.astro";
 import StatuteDialog from "../components/StatuteDialog.astro";
 import PartnersStrip from "../components/PartnersStrip.astro";
+import EventCard from "../components/EventCard.astro";
 import type { NationalTeam } from "../lib/api";
 import {
   getBodies, getNationalTeams,
-  bodyTypeLabel, documentsOfType, getDocuments, getOrganisation, getPartners,
-  getResolutions, getStatute, latestYear, orderBodies, resolutionSlugs,
-  roleLabel, teamTitle,
+  bodyTypeLabel, documentsOfType, getDocuments, getEvents, getOrganisation,
+  getPartners, getResolutions, getStatute, latestYear, orderBodies, orderEvents,
+  resolutionSlugs, roleLabel, teamTitle,
 } from "../lib/api";
 import { renderIntro } from "../lib/intro";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
 // single always-on container serves nobody's page views.
-const [teams, org, bodies, statute, documents, resolutions, partners] = await Promise.all([
+const [teams, org, bodies, statute, documents, resolutions, partners, events] = await Promise.all([
   getNationalTeams(), getOrganisation(), getBodies(), getStatute(),
-  getDocuments(), getResolutions(), getPartners(),
+  getDocuments(), getResolutions(), getPartners(), getEvents(),
 ]);
+
+// What the federation runs. Upcoming first, then what is over — see orderEvents.
+const calendar = orderEvents(events);
 
 // The federation's introduction, written in the platform. When there is one it
 // IS the hero — it takes the place of the name and the fixed strapline passed
@@ -128,7 +132,7 @@ const orderedBodies = orderBodies(bodies);
   description={`Oficjalna strona Polskiego Związku Surfingu. Kadra narodowa ${year ?? ""}: ${athletes} zawodniczek i zawodników w ${season.length} kadrach.`}
 >
   <div class="hero-wrap">
-    <SiteHeader hasDocuments={hasDocuments} />
+    <SiteHeader hasDocuments={hasDocuments} hasEvents={calendar.length > 0} />
     <Hero
       title="Polski Związek Surfingu"
       lede="Krajowa federacja surfingu — kadra narodowa, zawody i kluby zrzeszone w całej Polsce."
@@ -173,6 +177,38 @@ const orderedBodies = orderBodies(bodies);
       ))}
     </ul>
   </main>
+
+  {/* ── Wydarzenia ────────────────────────────────────────────────────────
+      The federation's calendar: what is coming, then what has happened, the
+      latter dimmed but still followable.
+
+      Each card LINKS OUT — to the event's own site where it has one, to the
+      platform's page otherwise — because that is where an event's details and
+      its entry form live. Left out entirely when there is nothing to list, so
+      the page never grows a heading that says "no events". ── */}
+  {calendar.length > 0 && (
+    <section class="page" id="wydarzenia">
+      <div class="section__head">
+        <h2 class="section__title">Wydarzenia</h2>
+        {/* The platform's own calendar, which carries what this section does
+            not: descriptions, locations, startlists and registration. Same
+            treatment as the other sections' links, deliberately. */}
+        <a class="section__more" href="https://surfpoland.com/events"
+           target="_blank" rel="noopener noreferrer">
+          Więcej na surfpoland.com
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 17L17 7M17 7H9M17 7v8" />
+          </svg>
+        </a>
+      </div>
+      <ul class="groups">
+        {calendar.map((ev) => (
+          <li><EventCard event={ev} /></li>
+        ))}
+      </ul>
+    </section>
+  )}
 
   {/* A sunken band, so the governance section reads as a different part of the
       record rather than more of the same list. Full-bleed like the hero: it
