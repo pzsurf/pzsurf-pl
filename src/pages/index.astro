@@ -150,7 +150,8 @@ const orderedBodies = orderBodies(bodies);
   description={`Oficjalna strona Polskiego Związku Surfingu. Kadra narodowa ${year ?? ""}: ${athletes} zawodniczek i zawodników w ${season.length} kadrach.`}
 >
   <div class="hero-wrap">
-    <SiteHeader hasDocuments={hasDocuments} hasEvents={calendar.length > 0} />
+    <SiteHeader hasDocuments={hasDocuments} hasEvents={calendar.length > 0}
+                hasAffiliates={members.length > 0} />
     <Hero
       title="Polski Związek Surfingu"
       lede="Krajowa federacja surfingu — kadra narodowa, zawody i kluby zrzeszone w całej Polsce."
@@ -231,6 +232,47 @@ const orderedBodies = orderBodies(bodies);
   {/* A sunken band, so the governance section reads as a different part of the
       record rather than more of the same list. Full-bleed like the hero: it
       sits OUTSIDE .page and re-centres its own content. */}
+  {/* ── Zrzeszeni ─────────────────────────────────────────────────────────
+      "Zrzeszeni", the federation's own word for who belongs to it — the same
+      word its association card uses on surfpoland.com. Not "Zrzeszone
+      organizacje": the section is plainly a grid of crests, so naming the kind
+      of thing in it was the heading describing what the reader can already see.
+
+      Directly after Wydarzenia, because who belongs to the federation is
+      closer to what it IS than the paperwork that follows — and a register at
+      the very bottom, under the documents, read as an appendix.
+
+      A LIGHT band on purpose. The crests come from fourteen different
+      designers and many are black on transparent; a black band would swallow
+      them, which is the whole reason surfpoland.com gives each crest a light
+      tile. Here the band is light already and the tile only evens them out.
+
+      Not rendered at all when the register is empty — an empty section teaches
+      people the page is broken, the same rule the document shelves follow. */}
+  {members.length > 0 && (
+    <section class="page" id="zrzeszeni">
+      <div class="section__head">
+        <h2 class="section__title">Zrzeszeni</h2>
+        <a class="section__more" href="https://surfpoland.com/organisations/"
+           target="_blank" rel="noopener noreferrer">
+          Więcej na surfpoland.com
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 17L17 7M17 7H9M17 7v8" />
+          </svg>
+        </a>
+      </div>
+
+      <ul class="orgs">
+        {members.map((o) => (
+          <li>
+            <OrgCard dialogId={memberDialogId(o.slug)} name={o.name} crest={o.image_url} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
   <section class="band band--sunken" id="wladze">
     <div class="band__inner">
       <div class="section__head">
@@ -306,38 +348,6 @@ const orderedBodies = orderBodies(bodies);
               count={shelf.rows.length}
               faces={[]}
             />
-          </li>
-        ))}
-      </ul>
-    </section>
-  )}
-
-  {/* ── Zrzeszone organizacje ─────────────────────────────────────────────
-      A LIGHT band on purpose. The crests come from fourteen different
-      designers and many are black on transparent; a black band would swallow
-      them, which is the whole reason surfpoland.com gives each crest a light
-      tile. Here the band is light already and the tile only evens them out.
-
-      Not rendered at all when the register is empty — an empty section teaches
-      people the page is broken, the same rule the document shelves follow. */}
-  {members.length > 0 && (
-    <section class="page" id="organizacje">
-      <div class="section__head">
-        <h2 class="section__title">Zrzeszone organizacje</h2>
-        <a class="section__more" href="https://surfpoland.com/organisations/"
-           target="_blank" rel="noopener noreferrer">
-          Więcej na surfpoland.com
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M7 17L17 7M17 7H9M17 7v8" />
-          </svg>
-        </a>
-      </div>
-
-      <ul class="orgs">
-        {members.map((o) => (
-          <li>
-            <OrgCard dialogId={memberDialogId(o.slug)} name={o.name} crest={o.image_url} />
           </li>
         ))}
       </ul>

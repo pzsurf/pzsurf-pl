@@ -11,8 +11,8 @@
 // Dokumenty section renders only when the API has something to put in it, and
 // a menu entry pointing at an anchor that is not on the page is exactly the
 // dead link this comment is about.
-interface Props { hasDocuments?: boolean; hasEvents?: boolean }
-const { hasDocuments = false, hasEvents = false } = Astro.props;
+interface Props { hasDocuments?: boolean; hasEvents?: boolean; hasAffiliates?: boolean }
+const { hasDocuments = false, hasEvents = false, hasAffiliates = false } = Astro.props;
 
 // In the order the sections appear down the page, so the menu reads as a map of
 // it rather than as its own arrangement. Each entry is conditional on its
@@ -20,6 +20,7 @@ const { hasDocuments = false, hasEvents = false } = Astro.props;
 const links = [
   { label: "Kadra", href: "#kadra" },
   ...(hasEvents ? [{ label: "Wydarzenia", href: "#wydarzenia" }] : []),
+  ...(hasAffiliates ? [{ label: "Zrzeszeni", href: "#zrzeszeni" }] : []),
   { label: "Władze", href: "#wladze" },
   ...(hasDocuments ? [{ label: "Dokumenty", href: "#dokumenty" }] : []),
   { label: "Kontakt", href: "#kontakt" },
