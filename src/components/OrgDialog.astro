@@ -155,8 +155,8 @@ const credentials = [...org.qualifications].sort((a, b) => {
   }
   .org-dialog__heading { min-width: 0; }
 
-  /* The same fixed light ground the card gives the crest, for the same reason:
-     a club's logo is routinely black on transparent. */
+  /* No ground of its own, matching the card: the dialog is light too, so a
+     tint only drew a grey box around the logos that carry their own white. */
   .org-dialog__crest {
     display: grid;
     place-items: center;
@@ -165,8 +165,6 @@ const credentials = [...org.qualifications].sort((a, b) => {
     flex: 0 0 auto;
     padding: 8px;
     box-sizing: border-box;
-    background: #f4f6f8;
-    border-radius: 12px;
   }
   .org-dialog__crest img {
     max-width: 100%;
@@ -176,7 +174,7 @@ const credentials = [...org.qualifications].sort((a, b) => {
     object-fit: contain;
   }
   .org-dialog__initial {
-    color: #5a6472;
+    color: var(--color-text-faint);
     font-size: var(--text-xl);
     font-weight: var(--weight-subhead);
   }

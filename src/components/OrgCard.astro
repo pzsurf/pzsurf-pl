@@ -1,14 +1,14 @@
 ---
 // AN AFFILIATED ORGANISATION, as a tile: crest and name, opening its own dialog.
 //
-// The same treatment surfpoland.com gives its affiliate grid, deliberately — a
-// visitor moving between the two sites should recognise the same record. The
-// crest sits on a fixed LIGHT tile there for a reason worth repeating here: a
-// club's logo is routinely black on transparent, and black needs a light
-// backdrop rather than a merely less-dark one. Here the whole section is on a
-// light band, so the tile is doing less work, but it still gives every crest
-// the same ground whatever it was drawn against — and a logo with its own white
-// background no longer reads as a brighter square than its neighbours.
+// The same shape surfpoland.com gives its affiliate grid — a visitor moving
+// between the two sites should recognise the same record — but NOT the tinted
+// tile behind the crest. That tile earns its place over there because the card
+// is dark and a club's logo is routinely black on transparent; here the band is
+// light and the card is white already, so black reads without help. Tinting it
+// only drew a grey box around the many logos that ship with their own white
+// background. So the crest sits straight on the card, the way an event card's
+// media sits straight in its own frame.
 //
 // A BUTTON, not an article with a click handler: focusable, driven by Enter and
 // Space, announced as something that can be activated. `aria-haspopup` says what
@@ -72,7 +72,9 @@ const initial = (name.trim()[0] ?? "?").toUpperCase();
     border-color: var(--color-accent);
   }
 
-  /* The fixed light ground every crest is drawn on — see the note above. */
+  /* No ground of its own: the card's white is the ground — see the note above.
+     The padding stays, so a logo drawn to its own edges is not touching the
+     name below it. */
   .org__crest {
     display: grid;
     place-items: center;
@@ -81,8 +83,6 @@ const initial = (name.trim()[0] ?? "?").toUpperCase();
     flex: 0 0 auto;
     padding: 6px;
     box-sizing: border-box;
-    background: #f4f6f8;
-    border-radius: 10px;
   }
   .org__crest img {
     max-width: 100%;
@@ -91,9 +91,10 @@ const initial = (name.trim()[0] ?? "?").toUpperCase();
     height: auto;
     object-fit: contain;
   }
-  /* Fixed dark ink, because the tile under it is fixed light. */
+  /* The card is light on this site, so the themed muted ink reads on it — no
+     need for the fixed dark one surfpoland.com's dark card forces. */
   .org__initial {
-    color: #5a6472;
+    color: var(--color-text-faint);
     font-size: var(--text-lg);
     font-weight: var(--weight-subhead);
   }
