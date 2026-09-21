@@ -15,8 +15,9 @@ import type { NationalTeam } from "../lib/api";
 import {
   getAffiliates, getBodies, getNationalTeams,
   bodyTypeLabel, documentsOfType, getDocuments, getEvents, getOrganisation,
-  getPartners, getResolutions, getStatute, latestYear, orderAffiliates,
-  orderBodies, orderEvents, resolutionSlugs, roleLabel, teamTitle,
+  getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
+  orderAffiliates, orderBodies, orderEvents, resolutionSlugs, roleLabel,
+  teamTitle,
 } from "../lib/api";
 import { renderIntro } from "../lib/intro";
 
@@ -33,6 +34,14 @@ const [teams, org, bodies, statute, documents, resolutions, partners, events, af
 // guarantees is unique and stable.
 const members = orderAffiliates(affiliates);
 const memberDialogId = (slug: string) => `org-${slug}`;
+
+// The dialogs show a blurb and contact details, and the affiliates LIST carries
+// neither — so each organisation's full record is fetched by slug. Fourteen
+// extra requests at BUILD time and none at read time: the HTML is written once
+// and served as a file. In parallel, because they do not depend on each other.
+const memberDetails = await Promise.all(
+  members.map((m) => getOrganisationDetail(m.slug)),
+);
 
 // What the federation runs. Upcoming first, then what is over — see orderEvents.
 const calendar = orderEvents(events);
@@ -398,7 +407,7 @@ const orderedBodies = orderBodies(bodies);
   {/* A dialog per affiliated organisation, each rendered with its own details
       inside it — so the whole register is in the document for a crawler, not
       just the fourteen crests. */}
-  {members.map((o) => (
+  {memberDetails.map((o) => (
     <OrgDialog id={memberDialogId(o.slug)} org={o} />
   ))}
 

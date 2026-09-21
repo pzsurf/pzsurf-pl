@@ -148,7 +148,18 @@ export interface Organisation {
 }
 
 export async function getOrganisation(): Promise<Organisation> {
-  const { data } = await fetchJson<Organisation>(`/orgs/${ORG_SLUG}`);
+  return getOrganisationDetail(ORG_SLUG);
+}
+
+/** Any organisation's full public record, by slug.
+ *
+ *  The affiliates LIST (§4.1 + §4.3) carries only what a card needs — name,
+ *  crest, types, city, disciplines. The description, the contact details and
+ *  the socials live on the detail endpoint, so a dialog that shows them has to
+ *  ask for each one. That is fourteen extra requests at BUILD time and none at
+ *  read time: the HTML is written once and served as a file. */
+export async function getOrganisationDetail(slug: string): Promise<Organisation> {
+  const { data } = await fetchJson<Organisation>(`/orgs/${slug}`);
   return data;
 }
 
