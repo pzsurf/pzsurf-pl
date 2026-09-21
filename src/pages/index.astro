@@ -492,8 +492,16 @@ const orderedBodies = orderBodies(bodies);
     padding: 0;
     list-style: none;
   }
+  /* 130px, not the 112px this started at, and the difference is THREE columns
+     against two. Measured across real phone widths: at 112px a 390px screen
+     (iPhone 14/15) fits three 114px columns, and six club names are then wider
+     than their line box, so `overflow-wrap: anywhere` chops them mid-word.
+     360px happened to give two columns and look right, which is why it was
+     easy to miss. 130px holds TWO columns from 320px through 430px with
+     nothing chopped — the same value surfpoland.com's grid uses, for the same
+     reason and against the same names. */
   @media (max-width: 640px) {
-    .orgs { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
+    .orgs { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
   }
 
   /* space-4, not space-6. At 64px the squads read as four separate sections
