@@ -1,0 +1,275 @@
+---
+// ONE affiliated organisation's details, in its own dialog. Opened by its
+// OrgCard.
+//
+// A dialog PER organisation, rendered at build time with its details inside it
+// — the same choice GroupDialog makes and for the same two reasons: every name,
+// city and discipline stays in the document as written, so crawlers and link
+// previews read the whole register; and there is nothing to build at runtime,
+// so a dozen dialogs of real markup cost a few kilobytes and no JavaScript
+// beyond `showModal()`.
+//
+// It shows everything the public contract will tell us about an organisation
+// (§4.1 + §4.3) and nothing more — there is no fuller endpoint to call. `city`
+// in particular is the LOCALITY only; the API withholds the street address
+// deliberately, so this is not an abbreviation we are choosing.
+//
+// The shell comes from `.person` in tokens.css, as GroupDialog's does: Astro
+// scopes styles per component, so a look two dialogs share has to live in the
+// global stylesheet or the second one silently gets none of it.
+
+import { disciplineLabel, orgTypeLabel, type PublicAffiliate } from "../lib/api";
+
+interface Props {
+  /** Matches the `dialogId` of the card that opens it. */
+  id: string;
+  org: PublicAffiliate;
+}
+const { id, org } = Astro.props;
+
+const initial = (org.name.trim()[0] ?? "?").toUpperCase();
+
+// The meta line under the name: what it is, and where. Both are optional — a
+// club with no address and no active type still opens and still shows its
+// credentials, so the line is built from whatever is actually there.
+const metaParts = [
+  ...org.types.map(orgTypeLabel),
+  ...(org.city ? [org.city] : []),
+];
+
+/** A credential's validity as a reader wants it. Null `valid_to` is an
+ *  open-ended qualification, not a missing date — the same three-state rule the
+ *  platform applies to affiliations. */
+const validity = (to: string | null): string =>
+  to ? `do ${to}` : "bezterminowo";
+
+// Deepest-expiring first, so the headline credential leads. Open-ended ones
+// (no end at all) come first of all.
+const credentials = [...org.qualifications].sort((a, b) => {
+  if (!a.valid_to) return -1;
+  if (!b.valid_to) return 1;
+  return b.valid_to.localeCompare(a.valid_to);
+});
+---
+<dialog
+  class="person org-dialog"
+  id={id}
+  data-org-dialog
+  aria-labelledby={`${id}-title`}
+>
+  <form method="dialog" class="person__close-form">
+    {/* `method="dialog"` closes without a line of JavaScript. */}
+    <button class="person__close" aria-label="Zamknij">×</button>
+  </form>
+
+  <div class="person__head org-dialog__head">
+    <span class="org-dialog__crest" aria-hidden="true">
+      {org.image_url
+        ? <img src={org.image_url} alt="" width="160" height="160" />
+        : <span class="org-dialog__initial">{initial}</span>}
+    </span>
+    <div class="org-dialog__heading">
+      <h2 class="person__name" id={`${id}-title`}>{org.name}</h2>
+      {metaParts.length > 0 && (
+        <p class="org-dialog__meta">
+          {metaParts.map((part, i) => (
+            <>
+              {i > 0 && <span aria-hidden="true">·</span>}
+              <span>{part}</span>
+            </>
+          ))}
+        </p>
+      )}
+    </div>
+  </div>
+
+  <div class="org-dialog__scroll">
+    {org.disciplines.length > 0 && (
+      <section class="org-dialog__section">
+        <h3 class="person__section-title">Dyscypliny</h3>
+        <ul class="org-dialog__tags">
+          {org.disciplines.map((d) => <li class="org-dialog__tag">{disciplineLabel(d)}</li>)}
+        </ul>
+      </section>
+    )}
+
+    {credentials.length > 0 && (
+      <section class="org-dialog__section">
+        <h3 class="person__section-title">Licencje</h3>
+        <ul class="org-dialog__creds">
+          {credentials.map((q) => (
+            <li class="org-dialog__cred">
+              <span class="org-dialog__cred-type">{orgTypeLabel(q.type)}</span>
+              <span class="org-dialog__cred-valid">{validity(q.valid_to)}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {/* The fuller record. Trailing slash on purpose — surfpoland.com 301s the
+        bare path, so the canonical form saves every visitor a redirect. Same
+        shape as the section links elsewhere on this page. */}
+    <a
+      class="org-dialog__more"
+      href={`https://surfpoland.com/organisations/${org.slug}/`}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Zobacz na surfpoland.com
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 17L17 7M17 7H9M17 7v8" />
+      </svg>
+    </a>
+  </div>
+</dialog>
+
+<style>
+  .org-dialog {
+    width: min(640px, calc(100vw - 32px));
+    /* `svh`, not `vh`: on mobile `vh` is the viewport with the browser chrome
+       retracted, so a 100vh-tall dialog is taller than what can be seen. */
+    max-height: calc(100svh - var(--space-4) * 2);
+  }
+  /* `[open]`, NEVER the bare class: the UA stylesheet hides a closed dialog
+     with `display: none`, and an unqualified `display: flex` would override it
+     and leave the dialog permanently on the page. */
+  .org-dialog[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* The crest and name stay put while the rest scrolls under them.
+     `text-align: left` undoes `.person__head`'s centring from tokens.css: that
+     is right for a dialog whose head is one centred portrait, and wrong for
+     this one, where the crest sits to the LEFT and a centred name beside it
+     reads as two things that were never aligned to each other. */
+  .org-dialog__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex: none;
+    padding-right: var(--space-5);   /* clear of the close button */
+    text-align: left;
+  }
+  .org-dialog__heading { min-width: 0; }
+
+  /* The same fixed light ground the card gives the crest, for the same reason:
+     a club's logo is routinely black on transparent. */
+  .org-dialog__crest {
+    display: grid;
+    place-items: center;
+    width: 80px;
+    height: 80px;
+    flex: 0 0 auto;
+    padding: 8px;
+    box-sizing: border-box;
+    background: #f4f6f8;
+    border-radius: 12px;
+  }
+  .org-dialog__crest img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+  .org-dialog__initial {
+    color: #5a6472;
+    font-size: var(--text-xl);
+    font-weight: var(--weight-subhead);
+  }
+
+  .org-dialog__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin: var(--space-1) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .org-dialog__scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    margin-top: var(--space-4);
+  }
+  .org-dialog__section + .org-dialog__section { margin-top: var(--space-4); }
+
+  .org-dialog__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .org-dialog__tag {
+    padding: 2px 10px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 999px;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .org-dialog__creds {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .org-dialog__cred {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .org-dialog__cred:last-child { border-bottom: 0; }
+  .org-dialog__cred-type { font-weight: var(--weight-subhead); }
+  .org-dialog__cred-valid {
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .org-dialog__more {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: var(--space-4);
+    color: var(--color-accent);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-subhead);
+    text-decoration: none;
+  }
+  .org-dialog__more:hover { text-decoration: underline; }
+</style>
+
+<script>
+  // Card → dialog, and backdrop → close. The same wiring GroupDialog uses; it
+  // runs once for every dialog on the page because Astro hoists and de-dupes an
+  // identical inline module.
+  const openers = document.querySelectorAll<HTMLElement>("[data-open-org]");
+  for (const card of openers) {
+    card.addEventListener("click", () => {
+      const id = card.dataset.openOrg;
+      const dialog = id ? document.getElementById(id) : null;
+      if (dialog instanceof HTMLDialogElement) dialog.showModal();
+    });
+  }
+
+  // Click outside to close. A dialog element covers the whole viewport
+  // including its backdrop, so a click landing on IT rather than on its
+  // contents is a click on the backdrop.
+  for (const dialog of document.querySelectorAll<HTMLDialogElement>("[data-org-dialog]")) {
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+  }
+</script>

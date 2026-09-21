@@ -361,6 +361,56 @@ export async function getEvents(): Promise<PublicOrgEvent[]> {
   return data;
 }
 
+/** One organisation the federation licenses, as §4.1 + §4.3 of the contract
+ *  describes it. Note `city` is the LOCALITY only, never the street address —
+ *  the API withholds the rest deliberately, so there is nothing fuller to show. */
+export interface PublicAffiliate {
+  slug: string;
+  name: string;
+  /** Active qualification types, derived. What the organisation IS. */
+  types: string[];
+  image_url: string | null;
+  city: string | null;
+  /** Discipline CODES; DISCIPLINE_PL turns them into words. */
+  disciplines: string[];
+  /** The credentials this organisation holds FROM the federation. */
+  qualifications: { type: string; valid_to: string | null }[];
+}
+
+/**
+ * The organisations affiliated with the federation.
+ *
+ * ⚠️ This is the contract's `affiliates` — the organisations the federation
+ * LICENSES, i.e. those holding an active qualification it issued. The platform
+ * also has an `affiliations` table, a separate paid relationship shown on
+ * surfpoland.com under the same word. The two sets coincide today and may not
+ * always; this page reads the one the public contract publishes, which is the
+ * only source it has.
+ */
+export async function getAffiliates(): Promise<PublicAffiliate[]> {
+  const { data } = await fetchJson<PublicAffiliate[]>(`/orgs/${ORG_SLUG}/affiliates`);
+  return data;
+}
+
+/** Polish for the organisation kinds, from the platform's own wording. */
+const ORG_TYPE_PL: Record<string, string> = {
+  CLUB: "Klub",
+  SCHOOL: "Szkoła",
+  ASSOCIATION: "Stowarzyszenie",
+  FEDERATION: "Związek",
+};
+export const orgTypeLabel = (t: string): string => ORG_TYPE_PL[t] ?? t;
+
+/** A discipline code as a word. Exported because the affiliate dialog needs it
+ *  and `teamTitle` was the only reader before. */
+export const disciplineLabel = (code: string): string => DISCIPLINE_PL[code] ?? code;
+
+/** Affiliates in reading order: by name, the way a register is read. The API
+ *  already sorts, so this is what keeps that true if it ever stops. */
+export function orderAffiliates(rows: PublicAffiliate[]): PublicAffiliate[] {
+  return [...rows].sort((a, b) => a.name.localeCompare(b.name, "pl"));
+}
+
 /** Polish for the event kinds the API returns as codes — the same split as the
  *  disciplines and the body types: it serves data, this page owns the wording. */
 const EVENT_TYPE_PL: Record<string, string> = {

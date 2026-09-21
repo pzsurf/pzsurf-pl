@@ -8,22 +8,31 @@ import GroupDialog from "../components/GroupDialog.astro";
 import ShelfDialog from "../components/ShelfDialog.astro";
 import StatuteDialog from "../components/StatuteDialog.astro";
 import PartnersStrip from "../components/PartnersStrip.astro";
+import OrgCard from "../components/OrgCard.astro";
+import OrgDialog from "../components/OrgDialog.astro";
 import EventCard from "../components/EventCard.astro";
 import type { NationalTeam } from "../lib/api";
 import {
-  getBodies, getNationalTeams,
+  getAffiliates, getBodies, getNationalTeams,
   bodyTypeLabel, documentsOfType, getDocuments, getEvents, getOrganisation,
-  getPartners, getResolutions, getStatute, latestYear, orderBodies, orderEvents,
-  resolutionSlugs, roleLabel, teamTitle,
+  getPartners, getResolutions, getStatute, latestYear, orderAffiliates,
+  orderBodies, orderEvents, resolutionSlugs, roleLabel, teamTitle,
 } from "../lib/api";
 import { renderIntro } from "../lib/intro";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
 // single always-on container serves nobody's page views.
-const [teams, org, bodies, statute, documents, resolutions, partners, events] = await Promise.all([
-  getNationalTeams(), getOrganisation(), getBodies(), getStatute(),
-  getDocuments(), getResolutions(), getPartners(), getEvents(),
-]);
+const [teams, org, bodies, statute, documents, resolutions, partners, events, affiliates] =
+  await Promise.all([
+    getNationalTeams(), getOrganisation(), getBodies(), getStatute(),
+    getDocuments(), getResolutions(), getPartners(), getEvents(), getAffiliates(),
+  ]);
+
+// The clubs, schools and associations the federation licenses, in reading
+// order. One dialog id per organisation, derived from the slug the API already
+// guarantees is unique and stable.
+const members = orderAffiliates(affiliates);
+const memberDialogId = (slug: string) => `org-${slug}`;
 
 // What the federation runs. Upcoming first, then what is over — see orderEvents.
 const calendar = orderEvents(events);
@@ -294,6 +303,38 @@ const orderedBodies = orderBodies(bodies);
     </section>
   )}
 
+  {/* ── Zrzeszone organizacje ─────────────────────────────────────────────
+      A LIGHT band on purpose. The crests come from fourteen different
+      designers and many are black on transparent; a black band would swallow
+      them, which is the whole reason surfpoland.com gives each crest a light
+      tile. Here the band is light already and the tile only evens them out.
+
+      Not rendered at all when the register is empty — an empty section teaches
+      people the page is broken, the same rule the document shelves follow. */}
+  {members.length > 0 && (
+    <section class="page" id="organizacje">
+      <div class="section__head">
+        <h2 class="section__title">Zrzeszone organizacje</h2>
+        <a class="section__more" href="https://surfpoland.com/organisations/"
+           target="_blank" rel="noopener noreferrer">
+          Więcej na surfpoland.com
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 17L17 7M17 7H9M17 7v8" />
+          </svg>
+        </a>
+      </div>
+
+      <ul class="orgs">
+        {members.map((o) => (
+          <li>
+            <OrgCard dialogId={memberDialogId(o.slug)} name={o.name} crest={o.image_url} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
   {/* ── Partnerzy ─────────────────────────────────────────────────────────
       NOT a section and NOT in the menu. Partners are an acknowledgement, not
       somewhere a visitor navigates to — so this sits directly on top of the
@@ -352,6 +393,13 @@ const orderedBodies = orderBodies(bodies);
       rows={shelf.rows}
       accentEyebrow={shelf.accentEyebrow}
     />
+  ))}
+
+  {/* A dialog per affiliated organisation, each rendered with its own details
+      inside it — so the whole register is in the document for a crawler, not
+      just the fourteen crests. */}
+  {members.map((o) => (
+    <OrgDialog id={memberDialogId(o.slug)} org={o} />
   ))}
 
   <StatuteDialog statute={statute} />
@@ -422,6 +470,21 @@ const orderedBodies = orderBodies(bodies);
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  /* Denser than .groups: a crest and a name need far less room than a name,
+     a headcount and a stack of four faces, and fourteen of them read as a
+     register rather than as a list of choices. */
+  .orgs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (max-width: 640px) {
+    .orgs { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
   }
 
   /* space-4, not space-6. At 64px the squads read as four separate sections
