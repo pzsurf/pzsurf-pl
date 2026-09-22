@@ -26,7 +26,10 @@ const links = [
   { label: "Kontakt", href: "#kontakt" },
 ];
 ---
-<header class="masthead on-dark">
+{/* DOM order is brand, button, nav — the button BEFORE the menu it opens, so a
+    keyboard reaches the toggle first and then what it revealed. In the wide
+    layout the button is display:none and the row reads brand | nav as written. */}
+<header class="masthead on-dark" data-masthead>
   {/* The federation's own horizontal logotype — shield, PZS and the full name
       are all INSIDE the image, so there is no HTML wordmark beside it to keep
       in step, and no risk of the two disagreeing at a breakpoint.
@@ -38,11 +41,15 @@ const links = [
 
       `alt` carries the name because the image IS the name here; a decorative
       empty alt would leave the site's own title unreadable to a screen reader. */}
-  <a class="masthead__brand" href="/">
+  <a class="masthead__brand" href="/" data-brand>
     <img src="/pzs-logotype.png" alt="Polski Związek Surfingu"
          width="330" height="178" />
   </a>
-  <nav class="masthead__nav" aria-label="Główne">
+  <button type="button" class="masthead__toggle" data-toggle
+          aria-controls="masthead-nav" aria-expanded="false" aria-label="Menu">
+    <span class="masthead__bars" aria-hidden="true"></span>
+  </button>
+  <nav class="masthead__nav" id="masthead-nav" aria-label="Główne" data-nav>
     {links.map((l) => <a href={l.href}>{l.label}</a>)}
   </nav>
 </header>
@@ -55,6 +62,13 @@ const links = [
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* WRAP is the no-JavaScript floor. Neither side shrinks any more (see
+       below), so a menu with no room would otherwise run off the right of the
+       window and give the whole page a horizontal scrollbar — measured at
+       375px: 191px of it. Wrapping drops the menu onto a second line instead,
+       which is what a visitor without scripts gets, and what is on screen for
+       the frame before the script folds it. */
+    flex-wrap: wrap;
     gap: var(--space-3);
     max-width: var(--page-max);
     margin-inline: auto;
@@ -67,6 +81,12 @@ const links = [
     display: flex;
     align-items: center;
     text-decoration: none;
+    /* NEITHER SIDE SHRINKS. That is what makes the fold measurable: with the
+       flex default (shrink: 1) a menu too wide for the window quietly stole
+       width from the logo instead of overflowing, so nothing ever "did not
+       fit" — it just got worse. Refusing to shrink turns a squeeze into a
+       measurable overflow, which the script below reads and folds. */
+    flex: 0 0 auto;
   }
   /* Height-driven: the intrinsic width/height on the <img> gives the browser the
      aspect ratio up front, so the row does not jump as the logo loads.
@@ -82,7 +102,16 @@ const links = [
   }
   .masthead__nav {
     display: flex;
-    gap: var(--space-4);
+    flex: 0 0 auto;
+    /* The other half of the no-JavaScript floor: on its own wrapped line the
+       menu may still be wider than a phone, so it is allowed to break across
+       lines rather than run off the window. It never does this once the script
+       has folded it, and it cannot confuse the measurement — see `is-measuring`
+       below, which reads the menu's width out of flow at max-content. */
+    flex-wrap: wrap;
+    max-width: 100%;
+    row-gap: var(--space-2);
+    column-gap: var(--space-4);
     font-size: var(--text-xs);
     font-weight: var(--weight-subhead);
     letter-spacing: 0.14em;
@@ -91,15 +120,194 @@ const links = [
   .masthead__nav a {
     color: var(--color-text);
     text-decoration: none;
+    /* A label broken mid-word is another way of not fitting while pretending
+       to. Each entry stays whole; it is the MENU that breaks, onto another
+       line or into the panel. */
+    white-space: nowrap;
     padding-block: var(--space-1);
     border-bottom: 2px solid transparent;
   }
   .masthead__nav a:hover { border-bottom-color: var(--color-accent); }
 
+  /* ── The fold ─────────────────────────────────────────────────────────────
+     Not a breakpoint. The menu is between three and five entries depending on
+     what the API returned (see `links` above), so the width at which it stops
+     fitting is not a number that can be written here — a 560px rule would fold
+     a three-entry menu that had room to spare and leave a five-entry one
+     overflowing at 700px. The script measures the row instead and sets
+     `is-compact`, which is also what makes this work when the window is
+     narrowed by a side panel rather than by the device. */
+  .masthead__toggle {
+    display: none;
+    position: relative;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+    /* The same lift the logo gets, for the same reason: this sits on footage. */
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
+  }
+  .masthead.is-compact .masthead__toggle { display: grid; }
+  .masthead__toggle:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* One element, three bars: the span is the middle one and its two pseudo
+     elements are the others, so the whole icon is a single node to animate. */
+  .masthead__bars {
+    position: relative;
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 2px;
+    transition: background-color 0.18s ease;
+  }
+  .masthead__bars::before,
+  .masthead__bars::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    border-radius: inherit;
+    transition: transform 0.18s ease;
+  }
+  .masthead__bars::before { transform: translateY(-7px); }
+  .masthead__bars::after  { transform: translateY(7px); }
+  /* Open: the middle bar goes, the outer two cross where it was. */
+  .masthead.is-open .masthead__bars { background: transparent; }
+  .masthead.is-open .masthead__bars::before { transform: rotate(45deg); }
+  .masthead.is-open .masthead__bars::after  { transform: rotate(-45deg); }
+
+  /* The menu becomes a panel hanging under the button. ABSOLUTE, so it leaves
+     the row entirely — a folded menu that still occupied flex space would go
+     on pushing the logo, which is the whole complaint. */
+  .masthead.is-compact:not(.is-measuring) .masthead__nav {
+    display: none;
+    position: absolute;
+    top: calc(100% - var(--space-2));
+    right: var(--space-3);
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    max-width: none;
+    gap: var(--space-3);
+    min-width: 180px;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    /* Not fully opaque: the hero keeps showing through, so the panel reads as
+       part of the masthead rather than a card dropped on top of it. */
+    background: rgba(0, 0, 0, 0.9);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  }
+  .masthead.is-compact.is-open:not(.is-measuring) .masthead__nav { display: flex; }
+
+  /* While the script measures, the menu is taken OUT OF FLOW at its
+     max-content width for one frame, so what gets read is the width it would
+     like to have rather than the width the row is currently allowing it — a
+     menu already folded into the panel, or already wrapped onto two lines,
+     would otherwise report a width that says it fits and the fold would never
+     come back. Nothing paints between the class going on and coming off, and
+     `visibility` is belt and braces for the browser that would. */
+  .masthead.is-measuring .masthead__nav {
+    position: absolute;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: max-content;
+    max-width: none;
+    visibility: hidden;
+  }
+  .masthead.is-measuring .masthead__toggle { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .masthead__bars,
+    .masthead__bars::before,
+    .masthead__bars::after { transition: none; }
+  }
+
   @media (max-width: 560px) {
     .masthead { padding: var(--space-2) var(--space-3); }
-    .masthead__nav { gap: var(--space-3); letter-spacing: 0.08em; }
     /* Smaller, but not so small that the two lines under PZS turn to mush. */
     .masthead__brand img { height: 34px; }
   }
 </style>
+
+<script>
+  // Folding the menu, and nothing else. Without JavaScript the toggle never
+  // appears — it is `display: none` until `is-compact` is set, and only this
+  // file sets it — so a visitor without scripts gets the full menu as written
+  // rather than a hamburger button that does nothing.
+  const root = document.querySelector<HTMLElement>("[data-masthead]");
+  const brand = root?.querySelector<HTMLElement>("[data-brand]");
+  const nav = root?.querySelector<HTMLElement>("[data-nav]");
+  const toggle = root?.querySelector<HTMLButtonElement>("[data-toggle]");
+
+  if (root && brand && nav && toggle) {
+    const setOpen = (open: boolean) => {
+      root.classList.toggle("is-open", open);
+      toggle.setAttribute("aria-expanded", String(open));
+    };
+
+    // Does the menu fit beside the logo?
+    //
+    // Measured, not assumed, because the number of entries varies with what the
+    // API returned. `is-measuring` puts the nav back in the row for the read:
+    // once folded it is absolutely positioned and its width would be the
+    // PANEL's, which has nothing to do with whether the row fits. The class
+    // goes on and off inside one task, so the browser never paints it.
+    const fits = () => {
+      root.classList.add("is-measuring");
+      const style = getComputedStyle(root);
+      const available =
+        root.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight);
+      const needed =
+        brand.offsetWidth + nav.offsetWidth + (parseFloat(style.columnGap) || 0);
+      root.classList.remove("is-measuring");
+      return needed <= available;
+    };
+
+    const sync = () => {
+      const compact = !fits();
+      root.classList.toggle("is-compact", compact);
+      // Widening the window with the panel open would otherwise leave
+      // `is-open` set and the toggle claiming aria-expanded on a button that
+      // is no longer there.
+      if (!compact) setOpen(false);
+    };
+
+    toggle.addEventListener("click", () => {
+      setOpen(!root.classList.contains("is-open"));
+    });
+
+    // Every way out of an open panel: a link taken, Escape, or a click
+    // anywhere else on the page.
+    nav.addEventListener("click", (e) => {
+      if ((e.target as HTMLElement).closest("a")) setOpen(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && root.classList.contains("is-open")) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+    document.addEventListener("click", (e) => {
+      if (!root.contains(e.target as Node)) setOpen(false);
+    });
+
+    sync();
+    // The header's own width is set by the window and the page container, never
+    // by its contents, so folding cannot change what is being observed and this
+    // cannot feed itself.
+    new ResizeObserver(sync).observe(root);
+  }
+</script>
