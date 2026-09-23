@@ -1,0 +1,169 @@
+---
+// ONE ogłoszenie, as its own page.
+//
+// The reason an announcement has an address at all: it is a thing somebody
+// SENDS to somebody. A dialog has no address, so there would be nothing to copy
+// out of the address bar and nothing for Messenger or WhatsApp to preview —
+// which is the same argument that moved uchwały out of a dialog and onto pages.
+//
+// The whole set is generated at build time, like every other page here, so a
+// link keeps working with no JavaScript and the text is in the markup for
+// crawlers and link previews.
+//
+// NO WAY BACK on the page, deliberately — the same rule as an uchwała's. A
+// "← Ogłoszenia" link would not go back; it would navigate onto the front page
+// a reader may never have been on. The browser's own back button is theirs, and
+// the footer still links onward.
+import Base from "../../layouts/Base.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import type { PublicAnnouncement } from "../../lib/api";
+import { announcementSlugs, getAnnouncements, getOrganisation } from "../../lib/api";
+import { renderIntro } from "../../lib/intro";
+
+export async function getStaticPaths() {
+  const announcements = await getAnnouncements();
+  // The SAME map the index builds its links from, so a card and its page can
+  // never disagree about an address.
+  const slugs = announcementSlugs(announcements);
+  return announcements.map((announcement) => ({
+    params: { slug: slugs.get(announcement.id) },
+    props: { announcement },
+  }));
+}
+
+interface Props { announcement: PublicAnnouncement }
+const { announcement } = Astro.props;
+const org = await getOrganisation();
+
+const day = (announcement.published_at ?? "").slice(0, 10) || null;
+
+// The body is Markdown written in the platform's editor, so it gets the
+// editor's own parser — micromark, through the same renderer the hero uses —
+// rather than the hand-rolled converter lib/markdown.ts keeps for the statute.
+// That one is deliberately limited to the five constructs a statute uses; a
+// notice has links, images and whatever else somebody typed.
+//
+// `renderIntro` also steps a leading `# ` heading out of the body and any other
+// `h1` down to `h2`, which is what this page needs: the headline below is the
+// page's one h1, and a body repeating it would give the page two.
+const body = announcement.body_md?.trim() ? renderIntro(announcement.body_md) : null;
+
+// For the link preview: the first line or two of the body as plain text. The
+// body is Markdown, so its syntax is stripped rather than rendered — a preview
+// showing `**bold**` reads as broken.
+const plain = (announcement.body_md ?? "")
+  .replace(/!\[[^\]]*\]\([^)]*\)/g, "")          // images say nothing here
+  .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")       // links keep their text
+  .replace(/[#*_`>~]/g, "")
+  .replace(/\s+/g, " ")
+  .trim();
+const description = plain.length > 180
+  ? `${plain.slice(0, 180).replace(/\s+\S*$/, "")}…`
+  : plain || `Ogłoszenie ${org.name}${day ? ` — ${day}` : ""}.`;
+---
+<Base
+  title={`${announcement.title} — ${org.name}`}
+  description={description}
+  image={announcement.featured_image_url ?? undefined}
+>
+  <main class="page ogloszenie">
+    <article class="ogloszenie__doc">
+      {day && <time class="ogloszenie__when" datetime={day}>{day}</time>}
+      <h1 class="ogloszenie__title">{announcement.title}</h1>
+
+      {/* The picture is decorative here: whatever it shows, the headline above
+          and the text below already say it, so an alt repeating either would be
+          read twice by a screen reader. */}
+      {announcement.featured_image_url && (
+        <img class="ogloszenie__hero" src={announcement.featured_image_url} alt=""
+             loading="lazy" />
+      )}
+
+      {body
+        ? <div class="ogloszenie__body" set:html={body.html} />
+        : <p class="ogloszenie__empty">Treść tego ogłoszenia nie została opublikowana.</p>}
+    </article>
+  </main>
+
+  <SiteFooter org={org} />
+</Base>
+
+<style>
+  .ogloszenie {
+    /* A measure, not the page width: this is a text to read. */
+    max-width: 72ch;
+    padding-block: var(--space-6);
+  }
+  .ogloszenie__doc {
+    padding: var(--space-5) var(--space-4);
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+  }
+  /* The date is small print above the headline — the opposite of an uchwała,
+     whose number leads in the accent colour because that is what it is cited
+     by. A notice is cited by nothing; it is read. */
+  .ogloszenie__when {
+    display: block;
+    margin-bottom: var(--space-1);
+    color: var(--color-text-faint);
+    font-size: var(--text-sm);
+  }
+  .ogloszenie__title {
+    margin: 0;
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
+    font-weight: var(--weight-display);
+  }
+  .ogloszenie__hero {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-top: var(--space-4);
+    border-radius: var(--radius);
+  }
+  .ogloszenie__body {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+  /* `:global`, because this content is injected with set:html and carries none
+     of the scoped attributes Astro adds to markup it writes itself — the same
+     note the hero's rendered intro carries. */
+  .ogloszenie__body > :global(:first-child) { margin-top: 0; }
+  .ogloszenie__body > :global(:last-child) { margin-bottom: 0; }
+  .ogloszenie__body :global(p),
+  .ogloszenie__body :global(ul),
+  .ogloszenie__body :global(ol),
+  .ogloszenie__body :global(table) { margin: 0 0 var(--space-3); }
+  .ogloszenie__body :global(h2),
+  .ogloszenie__body :global(h3) {
+    margin: var(--space-4) 0 var(--space-2);
+    font-size: var(--text-lg);
+    line-height: 1.25;
+    font-weight: var(--weight-subhead);
+  }
+  .ogloszenie__body :global(ul),
+  .ogloszenie__body :global(ol) { padding-left: 1.4em; }
+  .ogloszenie__body :global(li) { margin-bottom: var(--space-1); }
+  .ogloszenie__body :global(a) { color: var(--color-accent); }
+  /* A picture inside the text must not escape the measure it is set in. */
+  .ogloszenie__body :global(img) {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+  }
+  .ogloszenie__body :global(hr) {
+    margin: var(--space-4) 0;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .ogloszenie__empty {
+    margin: var(--space-4) 0 0;
+    color: var(--color-text-faint);
+    font-size: var(--text-sm);
+  }
+</style>
