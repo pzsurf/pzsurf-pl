@@ -24,27 +24,46 @@ interface Props {
     footnote?: string | null;
     /** Where the row goes. Always a real address — see the note above. */
     href: string;
+    /** This site's own page rather than a file elsewhere, so it opens in this
+     *  tab like any other link here. A document keeps the new tab: it is a PDF
+     *  somebody is fetching, not a page they are reading on. */
+    sameTab?: boolean;
   }[];
   /** Draw the eyebrow as an IDENTIFIER in the accent colour rather than as
    *  faint small print. True for uchwały, whose eyebrow is the number they are
    *  cited by; false for the file shelves, whose eyebrow is a date and has no
    *  business shouting. */
   accentEyebrow?: boolean;
+  /** `[mianownik, 2–4, 5+]` for whatever these rows are. See `counted`. */
+  countForms?: [string, string, string];
 }
-const { id, title, count, rows, accentEyebrow = false } = Astro.props;
+const {
+  id, title, count, rows, accentEyebrow = false,
+  countForms = ["dokument", "dokumenty", "dokumentów"],
+} = Astro.props;
 
-// Polish counts three ways: 1 dokument, 2 dokumenty, 5 dokumentów.
-function docCount(n: number): string {
-  if (n === 1) return "1 dokument";
+// Polish counts three ways and the forms are irregular, so they are GIVEN
+// rather than derived: 1 dokument / 2 dokumenty / 5 dokumentów, but
+// 1 ogłoszenie / 2 ogłoszenia / 5 ogłoszeń. Deriving the second from the first
+// is a grammar engine nobody here needs.
+function counted(n: number): string {
+  const [one, few, many] = countForms;
+  if (n === 1) return `1 ${one}`;
   const ten = n % 10;
   const hundred = n % 100;
-  const few = ten >= 2 && ten <= 4 && (hundred < 10 || hundred >= 20);
-  return `${n} ${few ? "dokumenty" : "dokumentów"}`;
+  const isFew = ten >= 2 && ten <= 4 && (hundred < 10 || hundred >= 20);
+  return `${n} ${isFew ? few : many}`;
 }
 
 const EXTERNAL_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
   aria-hidden="true"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg>`;
+// A row that stays on this site gets a chevron, not the arrow that means "this
+// leaves the page". The icon is the only thing telling the two apart, so it has
+// to tell the truth.
+const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+  aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
 ---
 <dialog
   class="person shelf-dialog"
@@ -59,15 +78,18 @@ const EXTERNAL_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="non
 
   <div class="person__head">
     <h2 class="person__name" id={`${id}-title`}>{title}</h2>
-    <p class="shelf-dialog__meta">{docCount(count)}</p>
+    <p class="shelf-dialog__meta">{counted(count)}</p>
   </div>
 
   <ul class="shelf-dialog__list">
     {rows.map((row) => (
       <li>
-        {/* `target="_blank"` with `rel="noopener noreferrer"`: without noopener
-            the opened tab gets a handle on this page through window.opener. */}
-        <a class="docrow" href={row.href} target="_blank" rel="noopener noreferrer">
+        {/* A file elsewhere opens in its own tab; a page on THIS site opens in
+            this one, the way every other link here behaves. `rel="noopener"` is
+            not optional with target=_blank — without it the opened tab gets a
+            handle on this page through window.opener. */}
+        <a class="docrow" href={row.href}
+           {...(row.sameTab ? {} : { target: "_blank", rel: "noopener noreferrer" })}>
           <span class="docrow__text">
             {row.eyebrow && (
               <span class:list={["docrow__eyebrow", { "docrow__eyebrow--accent": accentEyebrow }]}>
@@ -77,7 +99,7 @@ const EXTERNAL_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="non
             <span class="docrow__title">{row.title}</span>
             {row.footnote && <span class="docrow__foot">{row.footnote}</span>}
           </span>
-          <span class="docrow__action" set:html={EXTERNAL_ICON} />
+          <span class="docrow__action" set:html={row.sameTab ? CHEVRON_ICON : EXTERNAL_ICON} />
         </a>
       </li>
     ))}

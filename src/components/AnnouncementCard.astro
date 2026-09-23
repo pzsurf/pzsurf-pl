@@ -1,0 +1,120 @@
+---
+// ONE announcement, as a card in the Ogłoszenia carousel.
+//
+// A LINK to its own page here on this site — unlike an event, whose details
+// live somewhere else. A notice is something somebody SENDS to somebody, so it
+// needs an address of its own, and every one of those pages is written at build
+// time (src/pages/ogloszenia/[slug].astro) for the same reason every other page
+// here is: a shared link has to preview and to work with no JavaScript.
+//
+// The HEADLINE leads, not the date. An event is scanned for when it is; a
+// notice is scanned for what it says, and its date is the footnote that tells
+// you whether you have read it already. That is the one deliberate difference
+// from EventCard, whose date leads in the accent colour.
+import type { PublicAnnouncement } from "../lib/api";
+
+interface Props {
+  announcement: PublicAnnouncement;
+  /** Its address, from the shared slug map — never rebuilt here, or a card and
+   *  its page could disagree about where it lives. */
+  href: string;
+}
+const { announcement, href } = Astro.props;
+
+// The API sends an ISO timestamp; the day is all a reader wants, and slicing
+// the string avoids a timezone shifting the date by one.
+const day = (announcement.published_at ?? "").slice(0, 10);
+---
+<a class="ann" href={href}>
+  <span class="ann__media">
+    {announcement.featured_image_url
+      ? <img src={announcement.featured_image_url} alt="" loading="lazy"
+             width="480" height="270" />
+      : (
+        /* A megaphone — the same glyph the platform uses for this section, so
+           a notice with no picture still reads as a notice rather than as a
+           broken image. */
+        <svg class="ann__mono" width="28" height="28" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+             stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 11l18-5v12L3 15v-4z" /><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+        </svg>
+      )}
+  </span>
+
+  <span class="ann__body">
+    <span class="ann__title">{announcement.title}</span>
+    {day && <time class="ann__when" datetime={day}>{day}</time>}
+  </span>
+</a>
+
+<style>
+  .ann {
+    /* The card IS the carousel's flex item — the same arrangement PersonCard
+       uses — so it carries its own width and snap point rather than sitting in
+       a wrapper. Wider than a roster card because it has a headline to fit:
+       measured, a Polish notice title runs to three lines under 260px. */
+    width: 300px;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.15s ease;
+  }
+  .ann:hover { border-color: var(--color-accent); }
+  .ann:hover .ann__title { color: var(--color-accent); }
+  .ann:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-color: var(--color-accent);
+  }
+
+  .ann__media {
+    position: relative;
+    display: grid;
+    place-items: center;
+    /* A definite box, never `aspect-ratio` alone: a content-sized grid track
+       lets the picture resolve its own height and escape the crop — the trap
+       the roster cards document. 16:9 rather than a square, so the row of
+       notices stays short enough to read as one shelf of news. */
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    overflow: hidden;
+    background: linear-gradient(160deg, #1f2a36, #0d1116);
+  }
+  .ann__media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Stated rather than left to the default, because it is the whole reason
+       this crop is safe: it keeps the MIDDLE of the photograph. */
+    object-position: center;
+  }
+  .ann__mono { color: rgba(255, 255, 255, 0.55); }
+
+  .ann__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+  }
+  .ann__title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-subhead);
+    line-height: 1.25;
+    transition: color 0.15s ease;
+  }
+  /* Small print under the headline: which of these you have already read. */
+  .ann__when {
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+  }
+</style>

@@ -527,23 +527,40 @@ export interface PublicResolution {
  * and the generated pages must agree on the answer.
  */
 export function resolutionSlugs(resolutions: PublicResolution[]): Map<string, string> {
-  const base = (r: PublicResolution): string =>
-    (r.resolution_number || r.id)
+  return slugMap(resolutions, (r) => r.resolution_number || r.id);
+}
+
+/**
+ * `{id → slug}` for a set of rows, from whatever text names each one.
+ *
+ * Shared by uchwały and ogłoszenia because the awkward part is the same for
+ * both and is not the slugifying: it is the TIE-BREAK. Two uchwały can carry
+ * the same number and two announcements the same headline — neither text comes
+ * from a database column with a unique index on it — and two pages cannot have
+ * one address. That can only be decided by looking at the whole set at once,
+ * which is why this returns a map rather than exposing a slug(row) function.
+ *
+ * The id is the fallback when the text slugifies to nothing at all (a headline
+ * written entirely in emoji, say), so every row always has an address.
+ */
+function slugMap<T extends { id: string }>(rows: T[], name: (row: T) => string): Map<string, string> {
+  const base = (row: T): string =>
+    name(row)
       .normalize("NFD")
       .replace(/\p{Diacritic}/gu, "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || r.id;
+      .replace(/^-|-$/g, "") || row.id;
 
   const seen = new Map<string, number>();
-  for (const r of resolutions) {
-    const b = base(r);
+  for (const row of rows) {
+    const b = base(row);
     seen.set(b, (seen.get(b) ?? 0) + 1);
   }
   const out = new Map<string, string>();
-  for (const r of resolutions) {
-    const b = base(r);
-    out.set(r.id, (seen.get(b) ?? 0) > 1 ? `${b}-${r.id.slice(0, 8)}` : b);
+  for (const row of rows) {
+    const b = base(row);
+    out.set(row.id, (seen.get(b) ?? 0) > 1 ? `${b}-${row.id.slice(0, 8)}` : b);
   }
   return out;
 }
@@ -596,6 +613,58 @@ export async function getResolutions(): Promise<PublicResolution[]> {
 /** Documents of one type, in the order the API returned them. */
 export const documentsOfType = (docs: PublicDocument[], type: string): PublicDocument[] =>
   docs.filter((d) => d.doc_type === type);
+
+// ── Ogłoszenia ──────────────────────────────────────────────────────────────
+
+/** What the federation has announced. Drafts never appear here — the API
+ *  filters them in SQL, so an unpublished notice is not merely hidden. */
+export interface PublicAnnouncement {
+  id: string;
+  title: string;
+  /** Markdown, written in the platform's editor. Null when nobody wrote a body
+   *  — a headline and a date is a legitimate notice. */
+  body_md: string | null;
+  featured_image_url: string | null;
+  /** When it was FIRST published, never when it was last edited: a correction
+   *  is not new news, so this is stable and the ordering with it. */
+  published_at: string;
+}
+
+/** How many the carousel shows before the rest go behind "wszystkie". Mirrors
+ *  PUBLIC_PAGE_SIZE in the platform's own announcements module, and the ten its
+ *  organisation pages show. */
+export const ANNOUNCEMENTS_SHOWN = 10;
+
+/**
+ * Every published announcement, newest first — the whole set, not a page.
+ *
+ * This is a STATIC site: there is no runtime to fetch a second page on a click,
+ * so the build takes all of them and the page decides what to show where. The
+ * carousel gets the first `ANNOUNCEMENTS_SHOWN`; the dialog behind "wszystkie"
+ * lists the rest, and each one has a page of its own generated from this list.
+ *
+ * Paged for the same reason `getResolutions` is: the endpoint caps a page, and
+ * a register silently missing its older half looks complete.
+ */
+export async function getAnnouncements(): Promise<PublicAnnouncement[]> {
+  const first = await fetchJson<PublicAnnouncement[]>(
+    `/orgs/${ORG_SLUG}/announcements?limit=100`);
+  const out = [...(first.data ?? [])];
+  const total = first.meta?.total ?? out.length;
+  while (out.length < total) {
+    const page = await fetchJson<PublicAnnouncement[]>(
+      `/orgs/${ORG_SLUG}/announcements?limit=100&offset=${out.length}`);
+    if (!page.data?.length) break;   // never loop on an endpoint that stops moving
+    out.push(...page.data);
+  }
+  return out;
+}
+
+/** `{id → slug}` for the announcements, built from the HEADLINE — that is what
+ *  somebody pasting a link will recognise, and what a preview will repeat. */
+export function announcementSlugs(rows: PublicAnnouncement[]): Map<string, string> {
+  return slugMap(rows, (a) => a.title);
+}
 
 // ── Partners ────────────────────────────────────────────────────────────────
 

@@ -11,9 +11,12 @@ import PartnersStrip from "../components/PartnersStrip.astro";
 import OrgCard from "../components/OrgCard.astro";
 import OrgDialog from "../components/OrgDialog.astro";
 import EventCard from "../components/EventCard.astro";
+import AnnouncementCard from "../components/AnnouncementCard.astro";
+import Carousel from "../components/Carousel.astro";
 import type { NationalTeam } from "../lib/api";
 import {
-  getAffiliates, getBodies, getNationalTeams,
+  ANNOUNCEMENTS_SHOWN, announcementSlugs, getAffiliates, getAnnouncements,
+  getBodies, getNationalTeams,
   bodyTypeLabel, documentsOfType, getDocuments, getEvents, getOrganisation,
   getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
   orderAffiliates, orderBodies, orderEvents, resolutionSlugs, roleLabel,
@@ -23,11 +26,23 @@ import { renderIntro } from "../lib/intro";
 
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
 // single always-on container serves nobody's page views.
-const [teams, org, bodies, statute, documents, resolutions, partners, events, affiliates] =
+const [teams, org, bodies, statute, documents, resolutions, partners, events, affiliates,
+       announcements] =
   await Promise.all([
     getNationalTeams(), getOrganisation(), getBodies(), getStatute(),
     getDocuments(), getResolutions(), getPartners(), getEvents(), getAffiliates(),
+    getAnnouncements(),
   ]);
+
+// What the federation has announced, newest first as the API sends them. The
+// carousel shows the most recent ten and the dialog behind it lists them all —
+// see the section below for why both, rather than one long row.
+const annSlugs = announcementSlugs(announcements);
+const annHref = (id: string) => `/ogloszenia/${annSlugs.get(id)}/`;
+const recentAnnouncements = announcements.slice(0, ANNOUNCEMENTS_SHOWN);
+// Exactly one <main> on the page, and on the FIRST section that renders. With
+// announcements it is theirs; with none, Kadra keeps it as before.
+const KadraTag = announcements.length > 0 ? "section" : "main";
 
 // The clubs, schools and associations the federation licenses, in reading
 // order. One dialog id per organisation, derived from the slug the API already
@@ -151,7 +166,8 @@ const orderedBodies = orderBodies(bodies);
 >
   <div class="hero-wrap">
     <SiteHeader hasDocuments={hasDocuments} hasEvents={calendar.length > 0}
-                hasAffiliates={members.length > 0} />
+                hasAffiliates={members.length > 0}
+                hasAnnouncements={announcements.length > 0} />
     <Hero
       title="Polski Związek Surfingu"
       lede="Krajowa federacja surfingu — kadra narodowa, zawody i kluby zrzeszone w całej Polsce."
@@ -159,7 +175,48 @@ const orderedBodies = orderBodies(bodies);
     />
   </div>
 
-  <main class="page" id="kadra">
+  {/* ── Ogłoszenia ────────────────────────────────────────────────────────
+      What the federation is saying, first thing under the hero: a visitor who
+      has just arrived wants the news before the register.
+
+      A CAROUSEL of the ten most recent, then a door. A federation that has been
+      announcing things for years has hundreds, and a page that rendered them
+      all would be long, unreadable and mostly history. The dialog behind
+      "Wszystkie ogłoszenia" is the archive, and it is the same shape the
+      document shelves use — a list of rows, each one a real address.
+
+      Every headline is in this page's HTML either way, in the carousel or in
+      that dialog, so crawlers and link previews see the whole set rather than
+      the ten on screen.
+
+      This carries <main> when it renders, so the page's primary content starts
+      where the reading does. With nothing announced the section is not drawn at
+      all — the same rule every other section here follows — and Kadra takes
+      <main> back rather than the page having none. ── */}
+  {announcements.length > 0 && (
+    <main class="page" id="ogloszenia">
+      <div class="section__head">
+        <h2 class="section__title">Ogłoszenia</h2>
+        {/* Only when there IS more behind it. A door onto the room you are
+            standing in is worse than no door — the same rule the "see all" on
+            the platform's own announcements follows. */}
+        {announcements.length > recentAnnouncements.length && (
+          <button type="button" class="section__more section__more--btn"
+                  data-open-group="ogloszenia-wszystkie" aria-haspopup="dialog">
+            Wszystkie ogłoszenia ({announcements.length})
+          </button>
+        )}
+      </div>
+
+      <Carousel label="Ogłoszenia">
+        {recentAnnouncements.map((a) => (
+          <AnnouncementCard announcement={a} href={annHref(a.id)} />
+        ))}
+      </Carousel>
+    </main>
+  )}
+
+  <KadraTag class="page" id="kadra">
     <div class="section__head">
       <h2 class="section__title">Kadra Narodowa {year}</h2>
       {/* Opens the platform's own national-team page, which carries what this
@@ -195,7 +252,7 @@ const orderedBodies = orderBodies(bodies);
         </li>
       ))}
     </ul>
-  </main>
+  </KadraTag>
 
   {/* ── Wydarzenia ────────────────────────────────────────────────────────
       The federation's calendar: what is coming, then what has happened, the
@@ -403,6 +460,29 @@ const orderedBodies = orderBodies(bodies);
     />
   ))}
 
+  {/* The announcements archive: every notice, newest first, each row an
+      address. The same ShelfDialog the document shelves use — an announcement
+      and a document are the same thing to a reader here, a titled item with a
+      date that opens somewhere. Only drawn when there is more than the carousel
+      already shows, matching the button that opens it. */}
+  {announcements.length > recentAnnouncements.length && (
+    <ShelfDialog
+      id="ogloszenia-wszystkie"
+      title="Ogłoszenia"
+      count={announcements.length}
+      countForms={["ogłoszenie", "ogłoszenia", "ogłoszeń"]}
+      rows={announcements.map((a) => ({
+        title: a.title,
+        eyebrow: (a.published_at ?? "").slice(0, 10),
+        footnote: null,
+        href: annHref(a.id),
+        /* On this site, not a file somewhere else — so it opens in this tab
+           like any other link on the page. */
+        sameTab: true,
+      }))}
+    />
+  )}
+
   {/* A dialog per document shelf, each listing its own rows. */}
   {shelves.map((shelf) => (
     <ShelfDialog
@@ -471,6 +551,16 @@ const orderedBodies = orderBodies(bodies);
     font-weight: var(--weight-button);
     text-decoration: none;
     white-space: nowrap;
+  }
+  /* The archive door is a BUTTON — it opens a dialog this page already holds,
+     not another address — so it has to shed the browser's button chrome to sit
+     beside the `Więcej na surfpoland.com` links as one kind of control. */
+  .section__more--btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    cursor: pointer;
   }
   .section__more:hover { color: var(--color-accent); }
   .section__more:focus-visible {
