@@ -11,13 +11,15 @@ import PartnersStrip from "../components/PartnersStrip.astro";
 import OrgCard from "../components/OrgCard.astro";
 import OrgDialog from "../components/OrgDialog.astro";
 import EventCard from "../components/EventCard.astro";
+import EventDialog from "../components/EventDialog.astro";
 import AnnouncementCard from "../components/AnnouncementCard.astro";
 import Carousel from "../components/Carousel.astro";
-import type { NationalTeam } from "../lib/api";
+import type { NationalTeam, PublicOrgEvent } from "../lib/api";
 import {
-  ANNOUNCEMENTS_SHOWN, announcementSlugs, getAffiliates, getAnnouncements,
+  CAROUSEL_SHOWN, announcementSlugs, getAffiliates, getAnnouncements,
   getBodies, getNationalTeams,
-  bodyTypeLabel, documentsOfType, getDocuments, getEvents, getOrganisation,
+  bodyTypeLabel, documentsOfType, eventDates, eventTypeLabel, getDocuments,
+  getEvents, getOrganisation,
   getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
   orderAffiliates, orderBodies, orderEvents, resolutionSlugs, roleLabel,
   teamTitle,
@@ -39,7 +41,7 @@ const [teams, org, bodies, statute, documents, resolutions, partners, events, af
 // see the section below for why both, rather than one long row.
 const annSlugs = announcementSlugs(announcements);
 const annHref = (id: string) => `/ogloszenia/${annSlugs.get(id)}/`;
-const recentAnnouncements = announcements.slice(0, ANNOUNCEMENTS_SHOWN);
+const recentAnnouncements = announcements.slice(0, CAROUSEL_SHOWN);
 // Exactly one <main> on the page, and on the FIRST section that renders. With
 // announcements it is theirs; with none, Kadra keeps it as before.
 const KadraTag = announcements.length > 0 ? "section" : "main";
@@ -60,6 +62,11 @@ const memberDetails = await Promise.all(
 
 // What the federation runs. Upcoming first, then what is over — see orderEvents.
 const calendar = orderEvents(events);
+// The carousel shows the front of the calendar and the dialog behind it lists
+// the whole thing. Ten, matching Ogłoszenia: the same shelf shape should hold
+// the same number of cards, or the page reads as two arrangements.
+const shownEvents = calendar.slice(0, CAROUSEL_SHOWN);
+const eventDialogId = (ev: PublicOrgEvent) => `wydarzenie-${ev.id}`;
 
 // The federation's introduction, written in the platform. When there is one it
 // IS the hero — it takes the place of the name and the fixed strapline passed
@@ -258,31 +265,50 @@ const orderedBodies = orderBodies(bodies);
       The federation's calendar: what is coming, then what has happened, the
       latter dimmed but still followable.
 
-      Each card LINKS OUT — to the event's own site where it has one, to the
-      platform's page otherwise — because that is where an event's details and
-      its entry form live. Left out entirely when there is nothing to list, so
-      the page never grows a heading that says "no events". ── */}
+      A carousel of the first ten and a door to the rest, the same shape
+      Ogłoszenia uses above — a federation that has been running events for
+      years has a calendar too long to lay out flat, and the ones a visitor
+      wants are at the front of it.
+
+      A card OPENS ITS OWN DIALOG rather than leaving for the event's site.
+      Finding out what an event is should not cost a trip off the page; the
+      dialog says what the API knows and offers the way out from there. Every
+      event is in this page's HTML either way — in the carousel, in the archive
+      list, and in its own dialog — so crawlers and link previews read the whole
+      calendar rather than the ten on screen.
+
+      Left out entirely when there is nothing to list, so the page never grows a
+      heading that says "no events". ── */}
   {calendar.length > 0 && (
     <section class="page" id="wydarzenia">
       <div class="section__head">
         <h2 class="section__title">Wydarzenia</h2>
-        {/* The platform's own calendar, which carries what this section does
-            not: descriptions, locations, startlists and registration. Same
-            treatment as the other sections' links, deliberately. */}
-        <a class="section__more" href="https://surfpoland.com/events"
-           target="_blank" rel="noopener noreferrer">
-          Więcej na surfpoland.com
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M7 17L17 7M17 7H9M17 7v8" />
-          </svg>
-        </a>
+        {/* Only when there IS more behind it — see the same rule on Ogłoszenia.
+            The link to the platform's calendar moves into that dialog's rows
+            and each event's own dialog, which is where somebody asking for more
+            about ONE event is looking. */}
+        {calendar.length > shownEvents.length ? (
+          <button type="button" class="section__more section__more--btn"
+                  data-open-group="wydarzenia-wszystkie" aria-haspopup="dialog">
+            Wszystkie wydarzenia ({calendar.length})
+          </button>
+        ) : (
+          <a class="section__more" href="https://surfpoland.com/events"
+             target="_blank" rel="noopener noreferrer">
+            Więcej na surfpoland.com
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M7 17L17 7M17 7H9M17 7v8" />
+            </svg>
+          </a>
+        )}
       </div>
-      <ul class="groups">
-        {calendar.map((ev) => (
-          <li><EventCard event={ev} /></li>
+
+      <Carousel label="Wydarzenia">
+        {shownEvents.map((ev) => (
+          <EventCard event={ev} dialogId={eventDialogId(ev)} />
         ))}
-      </ul>
+      </Carousel>
     </section>
   )}
 
@@ -458,6 +484,31 @@ const orderedBodies = orderBodies(bodies);
         subtitle: m.role === "MEMBER" ? "" : roleLabel(m.role),
       }))}
     />
+  ))}
+
+  {/* The whole calendar, when the carousel does not already show it. A row
+      opens that event's dialog rather than going anywhere — an event has no
+      page of its own here, so a link would have nowhere honest to point, and
+      tapping a row should do what tapping a card does. */}
+  {calendar.length > shownEvents.length && (
+    <ShelfDialog
+      id="wydarzenia-wszystkie"
+      title="Wydarzenia"
+      count={calendar.length}
+      countForms={["wydarzenie", "wydarzenia", "wydarzeń"]}
+      rows={calendar.map((ev) => ({
+        title: ev.name,
+        eyebrow: eventDates(ev),
+        footnote: [eventTypeLabel(ev.event_type), ev.location_name].filter(Boolean).join(" · "),
+        opens: eventDialogId(ev),
+      }))}
+    />
+  )}
+
+  {/* A dialog per event, each with its own details inside it — so the whole
+      calendar is in the document for a crawler, not just the ten on screen. */}
+  {calendar.map((ev) => (
+    <EventDialog id={eventDialogId(ev)} event={ev} />
   ))}
 
   {/* The announcements archive: every notice, newest first, each row an
