@@ -1,31 +1,38 @@
 ---
 // ONE event: what it is, when it is, and a way to it.
 //
-// A LINK, not a dialog. Every other card on this page opens something this page
-// already holds; an event's details live somewhere else — its own site where it
-// has one, the platform's page otherwise — so the honest control is an anchor
-// that goes there. This page is a signpost to the federation's calendar, not the
-// entry form.
+// A BUTTON opening the event's own dialog — it used to be an anchor straight
+// out to the event's site, on the reasoning that an event's details live
+// somewhere else. They do, but that made finding out what an event WAS cost a
+// trip off the page and a lost place in the calendar. The few fields the API
+// gives are enough for the dialog to answer the question, and the dialog then
+// offers the way out for whoever wants the entry form. Same bargain OrgCard
+// struck with OrgDialog.
 //
-// A PAST event is dimmed and still a link. Last year's edition is how somebody
+// Focusable, driven by Enter and Space, announced as something that can be
+// activated; `aria-haspopup` says what activating it does and `data-open-event`
+// names the dialog, rendered separately with its details inside it.
+//
+// A PAST event is dimmed and still opens. Last year's edition is how somebody
 // decides whether to enter this year's, so removing it would lose the only
 // evidence that the federation runs these things at all.
 import type { PublicOrgEvent } from "../lib/api";
 import { eventDates, eventTypeLabel, isPastEvent } from "../lib/api";
 
-interface Props { event: PublicOrgEvent }
-const { event } = Astro.props;
+interface Props {
+  event: PublicOrgEvent;
+  /** The id of the dialog this card opens. */
+  dialogId: string;
+}
+const { event, dialogId } = Astro.props;
 
 const past = isPastEvent(event);
-// The event's own site when it has one. Otherwise the platform's page for it,
-// which is where its description, location and registration live.
-const href = event.external_url || `https://surfpoland.com/events/${event.id}`;
 ---
-<a
+<button
+  type="button"
   class:list={["event", { "event--past": past }]}
-  href={href}
-  target="_blank"
-  rel="noopener noreferrer"
+  data-open-event={dialogId}
+  aria-haspopup="dialog"
 >
   <span class="event__media">
     {event.image_url
@@ -41,13 +48,23 @@ const href = event.external_url || `https://surfpoland.com/events/${event.id}`;
       {event.location_name && <span class="event__where">{event.location_name}</span>}
     </span>
   </span>
-</a>
+</button>
 
 <style>
   .event {
+    /* The card IS the carousel's flex item — the arrangement PersonCard and
+       AnnouncementCard use — so it carries its own width and snap point. */
+    width: 300px;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    /* A <button> brings its own font, padding and alignment; none of it is
+       wanted on something drawn as a card. */
+    padding: 0;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
     overflow: hidden;
     background: var(--color-bg-raised);
     border: 1px solid var(--color-border-strong);

@@ -22,8 +22,17 @@ interface Props {
     eyebrow?: string | null;
     /** Small, below: the file name, or which meeting adopted it. */
     footnote?: string | null;
-    /** Where the row goes. Always a real address — see the note above. */
-    href: string;
+    /** Where the row goes. Always a real address — see the note above.
+     *  Omitted only when `opens` names a dialog instead. */
+    href?: string;
+    /** The id of a dialog this row opens, INSTEAD of going anywhere.
+     *
+     *  For a row whose subject has no address to go to: an event's details live
+     *  in a dialog on this page, not on a page of its own, so a link would have
+     *  nowhere honest to point. Everything else here — a document, an uchwała,
+     *  an ogłoszenie — has a real URL and keeps it, which is the whole reason
+     *  this shape is a list of links. */
+    opens?: string;
     /** This site's own page rather than a file elsewhere, so it opens in this
      *  tab like any other link here. A document keeps the new tab: it is a PDF
      *  somebody is fetching, not a page they are reading on. */
@@ -84,23 +93,45 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
   <ul class="shelf-dialog__list">
     {rows.map((row) => (
       <li>
-        {/* A file elsewhere opens in its own tab; a page on THIS site opens in
+        {/* The same row twice, as the element its destination deserves: an
+            anchor where there is an address, a button where the subject only
+            has a dialog. Not one element with a click handler — that would take
+            middle-click, cmd-click and copy-link away from the rows that do
+            have addresses, which is most of them.
+
+            A file elsewhere opens in its own tab; a page on THIS site opens in
             this one, the way every other link here behaves. `rel="noopener"` is
             not optional with target=_blank — without it the opened tab gets a
             handle on this page through window.opener. */}
-        <a class="docrow" href={row.href}
-           {...(row.sameTab ? {} : { target: "_blank", rel: "noopener noreferrer" })}>
-          <span class="docrow__text">
-            {row.eyebrow && (
-              <span class:list={["docrow__eyebrow", { "docrow__eyebrow--accent": accentEyebrow }]}>
-                {row.eyebrow}
-              </span>
-            )}
-            <span class="docrow__title">{row.title}</span>
-            {row.footnote && <span class="docrow__foot">{row.footnote}</span>}
-          </span>
-          <span class="docrow__action" set:html={row.sameTab ? CHEVRON_ICON : EXTERNAL_ICON} />
-        </a>
+        {row.opens ? (
+          <button type="button" class="docrow" data-open-event={row.opens}
+                  aria-haspopup="dialog">
+            <span class="docrow__text">
+              {row.eyebrow && (
+                <span class:list={["docrow__eyebrow", { "docrow__eyebrow--accent": accentEyebrow }]}>
+                  {row.eyebrow}
+                </span>
+              )}
+              <span class="docrow__title">{row.title}</span>
+              {row.footnote && <span class="docrow__foot">{row.footnote}</span>}
+            </span>
+            <span class="docrow__action" set:html={CHEVRON_ICON} />
+          </button>
+        ) : (
+          <a class="docrow" href={row.href}
+             {...(row.sameTab ? {} : { target: "_blank", rel: "noopener noreferrer" })}>
+            <span class="docrow__text">
+              {row.eyebrow && (
+                <span class:list={["docrow__eyebrow", { "docrow__eyebrow--accent": accentEyebrow }]}>
+                  {row.eyebrow}
+                </span>
+              )}
+              <span class="docrow__title">{row.title}</span>
+              {row.footnote && <span class="docrow__foot">{row.footnote}</span>}
+            </span>
+            <span class="docrow__action" set:html={row.sameTab ? CHEVRON_ICON : EXTERNAL_ICON} />
+          </a>
+        )}
       </li>
     ))}
   </ul>
@@ -145,6 +176,9 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
      telling you what it is — while the icon keeps its own column at the end.
      `min-height: 48px` keeps the tap target above the 44px floor even for a
      one-line row. */
+  /* One rule for both elements a row can be — see the note in the markup. The
+     four declarations after `text-decoration` are what a <button> needs to stop
+     looking like one; they are inert on an <a>. */
   .docrow {
     display: flex;
     align-items: center;
@@ -156,6 +190,10 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
     background: var(--color-bg);
     color: var(--color-text);
     text-decoration: none;
+    width: 100%;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
   }
   .docrow:hover {
     border-color: var(--color-accent);
