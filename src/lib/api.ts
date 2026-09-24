@@ -546,6 +546,13 @@ export function resolutionSlugs(resolutions: PublicResolution[]): Map<string, st
 function slugMap<T extends { id: string }>(rows: T[], name: (row: T) => string): Map<string, string> {
   const base = (row: T): string =>
     name(row)
+      // Ł is the one Polish letter NFD cannot help with: ą ć ę ń ó ś ź ż are a
+      // base letter plus a combining mark and decompose, but ł is a letter in
+      // its own right with no decomposition. Left to the strip below it simply
+      // vanished — "powoływania" became "powo-ywania" — which only showed up
+      // once slugs started coming from Polish TITLES rather than from uchwała
+      // numbers, which carry no diacritics at all.
+      .replace(/ł/g, "l").replace(/Ł/g, "L")
       .normalize("NFD")
       .replace(/\p{Diacritic}/gu, "")
       .toLowerCase()
