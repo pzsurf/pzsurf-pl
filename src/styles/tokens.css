@@ -31,14 +31,17 @@
   --palette-slate-soft:   #6b7d92;
   --palette-slate-faint:  #9aa7b6;
   --palette-white:        #ffffff;
-  --palette-paper:        #fafbfc;
-  --palette-paper-shade:  #f2f5f7;
+  /* PAPER, since September 2026 (the federation asked for a subtler, paper-
+     like page). The red and the slate above are the theme and did not move;
+     only the ground did, from a cool blue-grey to warm, uncoated stock. */
+  --palette-paper:        #fdfbf7;  /* a sheet: cards, dialogs */
+  --palette-paper-shade:  #f5f1ea;  /* the desk the sheets lie on: the page */
   /* One step below the page, for a band that should read as set back from it. */
-  --palette-paper-sunken: #e7edf2;
-  --palette-line:         #dfe5ea;
+  --palette-paper-sunken: #ece6dc;
+  --palette-line:         #e7e0d4;
   /* One step stronger than `line`, for a border that has to be SEEN rather
      than merely separate two surfaces — a card sitting on the grey page. */
-  --palette-line-strong:  #d3dce4;
+  --palette-line-strong:  #d9d0c1;
 
   /* ---- roles: light, the default ---------------------------------------- */
   /* The page is GREY and a raised surface is WHITE — the inverse of the
@@ -48,7 +51,7 @@
      means a grey ground with white cards, so a card reads as sitting ON the
      page rather than being a shaded hole in it. */
   --color-bg:             var(--palette-paper-shade);
-  --color-bg-raised:      var(--palette-white);
+  --color-bg-raised:      var(--palette-paper);
   --color-text:           var(--palette-slate);
   --color-text-muted:     var(--palette-slate-soft);
   --color-text-faint:     var(--palette-slate-faint);
@@ -58,17 +61,29 @@
   --color-accent-strong:  var(--palette-red-strong);
   --color-on-accent:      var(--palette-white);
 
+  /* A sheet lying on the desk, and the same sheet picked up a little. Warm,
+     not black, shadows: the ink of the page, not a UI drop shadow. Cards use
+     these INSTEAD of a hard outline or a red border on hover, which is most of
+     what "subtle" meant. */
+  --shadow-paper:      0 1px 1px rgba(71, 56, 33, 0.05), 0 2px 8px rgba(71, 56, 33, 0.06);
+  --shadow-paper-lift: 0 2px 3px rgba(71, 56, 33, 0.06), 0 10px 24px rgba(71, 56, 33, 0.10);
+
   /* ---- type ------------------------------------------------------------- */
   --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-body);
+  /* Headings in a book face, for the paper feel, and still NO webfont: each
+     name below ships with an operating system (Iowan Old Style on Apple,
+     Palatino Linotype on Windows, Noto Serif / Liberation Serif on Linux and
+     Android), so the no-download decision above holds. Body text stays sans. */
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+                  Charter, Georgia, "Noto Serif", "Liberation Serif", serif;
 
   /* Measured from the source: headings 700, subheads 600, buttons 500,
      body 400, and a body line-height near 1.65 that the site reads well at. */
   --weight-body:     400;
   --weight-button:   500;
   --weight-subhead:  600;
-  --weight-display:  700;
+  --weight-display:  600;  /* 700 in a serif reads as shouting */
 
   --text-xs:      12px;   --leading-xs:   1.5;
   --text-sm:      15px;   --leading-sm:   1.65;
@@ -89,13 +104,10 @@
   --space-7: 96px;
 
   /* ---- shape ------------------------------------------------------------ */
-  /* Two, not five. `--radius` is the default for anything with a box; the
+  /* One, not five. `--radius` is the default for anything with a box; the
      source's dominant small value was 2-4px, so a restrained 4px keeps the
      square, sporting feel rather than softening it. */
   --radius:       4px;
-  /* `--radius-pill` is for buttons only, where the source went to 10px and the
-     extra roundness reads as a deliberate call to action. */
-  --radius-pill:  10px;
 
   --page-max: 1180px;
   --measure:  68ch;
@@ -143,7 +155,11 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  background: var(--color-bg);
+  /* A faint grain over the ground, so it reads as paper rather than a flat
+     fill: SVG noise tiled at 3% ink, inline, no request. Barely visible on
+     purpose; take it away and the page only gets flatter. */
+  background-color: var(--color-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.28  0 0 0 0 0.22  0 0 0 0 0.13  0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
   color: var(--color-text);
   font-family: var(--font-body);
   font-size: var(--text-base);
@@ -231,12 +247,16 @@ dialog *::-webkit-scrollbar { display: none; }
 .person {
   width: min(420px, calc(100vw - 32px));
   padding: var(--space-5) var(--space-4) var(--space-4);
-  border: 1px solid var(--color-border-strong);
-  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
   background: var(--color-bg-raised);
   color: var(--color-text);
+  /* A sheet held up over the page. */
+  box-shadow: 0 2px 4px rgba(71, 56, 33, 0.08), 0 24px 60px rgba(40, 30, 15, 0.22);
 }
-.person::backdrop { background: rgba(10, 16, 24, 0.55); }
+/* Warm and lighter than the black it was: the page stays readable behind the
+   sheet, as paper on a desk does. */
+.person::backdrop { background: rgba(40, 32, 22, 0.42); }
 
 .person__close-form { margin: 0; }
 .person__close {

@@ -64,13 +64,14 @@ const day = (announcement.published_at ?? "").slice(0, 10);
     flex-direction: column;
     overflow: hidden;
     background: var(--color-bg-raised);
-    border: 1px solid var(--color-border-strong);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-paper);
     border-radius: var(--radius);
     color: inherit;
     text-decoration: none;
-    transition: border-color 0.15s ease;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
-  .ann:hover { border-color: var(--color-accent); }
+  .ann:hover { box-shadow: var(--shadow-paper-lift); transform: translateY(-1px); }
   .ann:hover .ann__title { color: var(--color-accent); }
   .ann:focus-visible {
     outline: 2px solid var(--color-accent);
