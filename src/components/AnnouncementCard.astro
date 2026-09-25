@@ -11,6 +11,9 @@
 // notice is scanned for what it says, and its date is the footnote that tells
 // you whether you have read it already. That is the one deliberate difference
 // from EventCard, whose date leads in the accent colour.
+//
+// It opens in a NEW TAB, at the federation's request: a reader working through
+// the carousel keeps their place on the front page.
 import type { PublicAnnouncement } from "../lib/api";
 
 interface Props {
@@ -25,7 +28,7 @@ const { announcement, href } = Astro.props;
 // the string avoids a timezone shifting the date by one.
 const day = (announcement.published_at ?? "").slice(0, 10);
 ---
-<a class="ann" href={href}>
+<a class="ann" href={href} target="_blank" rel="noopener noreferrer">
   <span class="ann__media">
     {announcement.featured_image_url
       ? <img src={announcement.featured_image_url} alt="" loading="lazy"

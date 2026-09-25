@@ -526,10 +526,9 @@ const orderedBodies = orderBodies(bodies);
         title: a.title,
         eyebrow: (a.published_at ?? "").slice(0, 10),
         footnote: null,
+        /* A new tab, like the carousel's cards (AnnouncementCard) and the
+           uchwały: a reader working through the list keeps their place. */
         href: annHref(a.id),
-        /* On this site, not a file somewhere else — so it opens in this tab
-           like any other link on the page. */
-        sameTab: true,
       }))}
     />
   )}
