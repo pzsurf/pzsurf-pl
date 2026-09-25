@@ -63,10 +63,6 @@ interface Props {
    *  tile where it has none. For a list of things that have pictures (the
    *  announcements), not for a shelf of files. */
   thumbnails?: boolean;
-  /** Scroll without drawing a scrollbar (the announcements list, at the
-   *  federation's request). The list still scrolls by wheel, touch and keys;
-   *  the half-visible last row is what tells a reader there is more. */
-  hideScrollbar?: boolean;
 }
 import { counted as countedPl, type CountForms } from "../lib/plural";
 
@@ -75,7 +71,6 @@ const {
   countForms = ["dokument", "dokumenty", "dokumentów"],
   batchSize,
   thumbnails = false,
-  hideScrollbar = false,
 } = Astro.props;
 const batched = !!batchSize && rows.length > batchSize;
 
@@ -112,7 +107,7 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
     <p class="shelf-dialog__meta">{counted(count)}</p>
   </div>
 
-  <ul class:list={["shelf-dialog__list", { "shelf-dialog__list--bare": hideScrollbar }]}
+  <ul class="shelf-dialog__list"
       data-shelf-batch={batched ? batchSize : undefined}>
     {rows.map((row) => (
       <li data-shelf-row>
@@ -220,11 +215,6 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
     flex: 1 1 auto;
     overflow-y: auto;
   }
-
-  /* No scrollbar: `scrollbar-width` for Firefox and current Chromium/Safari,
-     the pseudo-element for older WebKit. Scrolling itself is untouched. */
-  .shelf-dialog__list--bare { scrollbar-width: none; }
-  .shelf-dialog__list--bare::-webkit-scrollbar { display: none; }
 
   /* A row, and it has to survive a phone. The text column takes the space and
      WRAPS — nothing is truncated, because a document's title is the only thing

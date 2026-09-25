@@ -216,6 +216,18 @@ html:has(dialog[open]) {
   scrollbar-gutter: stable;
 }
 
+/* No scrollbar is drawn inside any dialog (the federation's choice, September
+   2026). Every dialog here scrolls an inner body — a list, a roster, a statute,
+   an event's details — and still does, by wheel, touch and keyboard; only the
+   bar is gone. On `dialog` and everything in it, so a dialog added later needs
+   nothing to follow suit. `scrollbar-width` covers Firefox and current
+   Chromium/Safari, the pseudo-element older WebKit. The PAGE's own scrollbar is
+   untouched (and hidden anyway while a dialog is open, by the rule above). */
+dialog,
+dialog * { scrollbar-width: none; }
+dialog::-webkit-scrollbar,
+dialog *::-webkit-scrollbar { display: none; }
+
 .person {
   width: min(420px, calc(100vw - 32px));
   padding: var(--space-5) var(--space-4) var(--space-4);
