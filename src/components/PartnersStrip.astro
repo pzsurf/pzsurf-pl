@@ -47,7 +47,7 @@ const { partners } = Astro.props;
     border-top: 1px solid var(--color-border);
     background: var(--color-bg);
   }
-  /* `~`, NOT `+`. Astro emits this component's own <script> as the element
+  /* `~`, NOT `+`. Astro emits this component's own script tag as the element
      immediately after the section, so the adjacent-sibling selector stopped
      matching the moment these styles moved into the component — and the footer
      silently kept its 96px, leaving the strip floating above it. A general
