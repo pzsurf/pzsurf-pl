@@ -14,6 +14,8 @@ import EventCard from "../components/EventCard.astro";
 import EventDialog from "../components/EventDialog.astro";
 import AnnouncementCard from "../components/AnnouncementCard.astro";
 import Carousel from "../components/Carousel.astro";
+import ShowAllCard from "../components/ShowAllCard.astro";
+import { counted } from "../lib/plural";
 import type { NationalTeam, PublicOrgEvent } from "../lib/api";
 import {
   ANNOUNCEMENTS_SHOWN, CAROUSEL_SHOWN, announcementSlugs, getAffiliates, getAnnouncements,
@@ -37,7 +39,8 @@ const [teams, org, bodies, statute, documents, resolutions, partners, events, af
   ]);
 
 // What the federation has announced, newest first as the API sends them. The
-// carousel shows the most recent six and the dialog behind it pages through all —
+// carousel shows the most recent six, and its last card opens a dialog with all
+// of them, loading more as it is scrolled —
 // see the section below for why both, rather than one long row.
 const annSlugs = announcementSlugs(announcements);
 const annHref = (id: string) => `/ogloszenia/${annSlugs.get(id)}/`;
@@ -204,21 +207,20 @@ const orderedBodies = orderBodies(bodies);
     <main class="page" id="ogloszenia">
       <div class="section__head">
         <h2 class="section__title">Ogłoszenia</h2>
-        {/* Only when there IS more behind it. A door onto the room you are
-            standing in is worse than no door — the same rule the "see all" on
-            the platform's own announcements follows. */}
-        {announcements.length > recentAnnouncements.length && (
-          <button type="button" class="section__more section__more--btn"
-                  data-open-group="ogloszenia-wszystkie" aria-haspopup="dialog">
-            Wszystkie ogłoszenia ({announcements.length})
-          </button>
-        )}
       </div>
 
+      {/* "See all" is the LAST CARD, reached by scrolling to the end of the row,
+          not a button in the head (the federation's choice, September 2026).
+          Only when there IS more behind it: a door onto the room you are
+          standing in is worse than no door. */}
       <Carousel label="Ogłoszenia">
         {recentAnnouncements.map((a) => (
           <AnnouncementCard announcement={a} href={annHref(a.id)} />
         ))}
+        {announcements.length > recentAnnouncements.length && (
+          <ShowAllCard dialogId="ogloszenia-wszystkie" label="Wszystkie ogłoszenia"
+                       countText={counted(announcements.length, ["ogłoszenie", "ogłoszenia", "ogłoszeń"])} />
+        )}
       </Carousel>
     </main>
   )}
@@ -522,7 +524,7 @@ const orderedBodies = orderBodies(bodies);
       title="Ogłoszenia"
       count={announcements.length}
       countForms={["ogłoszenie", "ogłoszenia", "ogłoszeń"]}
-      pageSize={ANNOUNCEMENTS_SHOWN}
+      batchSize={ANNOUNCEMENTS_SHOWN}
       rows={announcements.map((a) => ({
         title: a.title,
         eyebrow: (a.published_at ?? "").slice(0, 10),

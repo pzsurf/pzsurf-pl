@@ -1,0 +1,82 @@
+---
+// The LAST card in a carousel that holds only the newest few: "see them all".
+// Reached by scrolling to the end of the row, which is exactly when a reader
+// has run out of cards and wants more; a button in the section head asks
+// before they have looked at any.
+//
+// A BUTTON, not a link: it opens a dialog on this page (the shelf with the
+// whole list) through the same `data-open-group` hook every other card that
+// opens a dialog uses, so the page's one dialog script handles it.
+//
+// Same width, snap point and frame as the cards beside it, so it reads as the
+// end of the shelf rather than as a control stuck onto it.
+interface Props {
+  /** The id of the ShelfDialog it opens. */
+  dialogId: string;
+  label: string;
+  /** e.g. "8 ogłoszeń" — the size of what is behind it. */
+  countText: string;
+}
+const { dialogId, label, countText } = Astro.props;
+---
+<button type="button" class="all-card" data-open-group={dialogId} aria-haspopup="dialog">
+  <span class="all-card__icon" aria-hidden="true">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  </span>
+  <span class="all-card__label">{label}</span>
+  <span class="all-card__count">{countText}</span>
+</button>
+
+<style>
+  .all-card {
+    width: 300px;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    /* Stretches to the height of the cards beside it (the track's default
+       `align-items: stretch`), so the row ends level. */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--color-bg-raised);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius);
+    color: var(--color-text);
+    font: inherit;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .all-card:hover {
+    border-color: var(--color-accent);
+    border-style: solid;
+    color: var(--color-accent);
+  }
+  .all-card:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-color: var(--color-accent);
+  }
+  .all-card__icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+  }
+  .all-card__label {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-subhead);
+    line-height: 1.25;
+  }
+  .all-card__count {
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+  }
+</style>
