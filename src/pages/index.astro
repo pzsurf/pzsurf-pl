@@ -445,7 +445,6 @@ const orderedBodies = orderBodies(bodies);
       countForms={["wydarzenie", "wydarzenia", "wydarzeń"]}
       batchSize={CAROUSEL_SHOWN}
       thumbnails
-      hideScrollbar
       rows={calendar.map((ev) => ({
         title: ev.name,
         eyebrow: eventDates(ev),
@@ -476,7 +475,6 @@ const orderedBodies = orderBodies(bodies);
       countForms={["ogłoszenie", "ogłoszenia", "ogłoszeń"]}
       batchSize={CAROUSEL_SHOWN}
       thumbnails
-      hideScrollbar
       rows={announcements.map((a) => ({
         title: a.title,
         eyebrow: (a.published_at ?? "").slice(0, 10),
