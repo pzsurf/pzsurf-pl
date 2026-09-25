@@ -45,11 +45,19 @@ interface Props {
   accentEyebrow?: boolean;
   /** `[mianownik, 2–4, 5+]` for whatever these rows are. See `counted`. */
   countForms?: [string, string, string];
+  /** Show this many rows at a time, with a pager under the list. Unset: one
+   *  long list, as every shelf was before. Every row is still RENDERED, all
+   *  pages of them, for the reason at the top of this file; the script only
+   *  hides the pages not being read. With no JavaScript the pager stays hidden
+   *  and the whole list shows, which is a fine way for a list to fail. */
+  pageSize?: number;
 }
 const {
   id, title, count, rows, accentEyebrow = false,
   countForms = ["dokument", "dokumenty", "dokumentów"],
+  pageSize,
 } = Astro.props;
+const pages = pageSize ? Math.ceil(rows.length / pageSize) : 1;
 
 // Polish counts three ways and the forms are irregular, so they are GIVEN
 // rather than derived: 1 dokument / 2 dokumenty / 5 dokumentów, but
@@ -91,8 +99,8 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
   </div>
 
   <ul class="shelf-dialog__list">
-    {rows.map((row) => (
-      <li>
+    {rows.map((row, i) => (
+      <li data-shelf-page={pageSize ? Math.floor(i / pageSize) : undefined}>
         {/* The same row twice, as the element its destination deserves: an
             anchor where there is an address, a button where the subject only
             has a dialog. Not one element with a click handler — that would take
@@ -135,6 +143,21 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
       </li>
     ))}
   </ul>
+
+  {pages > 1 && (
+    <nav class="shelf-pager" data-shelf-pager data-pages={pages} hidden
+         aria-label={`${title}: strony`}>
+      <button type="button" class="shelf-pager__btn" data-shelf-prev>
+        <span aria-hidden="true">‹</span> Poprzednie
+      </button>
+      <span class="shelf-pager__status" data-shelf-status aria-live="polite">
+        Strona 1 z {pages}
+      </span>
+      <button type="button" class="shelf-pager__btn" data-shelf-next>
+        Następne <span aria-hidden="true">›</span>
+      </button>
+    </nav>
+  )}
 </dialog>
 
 <style>
@@ -251,6 +274,48 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
     color: var(--color-text-faint);
   }
   .docrow:hover .docrow__action { color: var(--color-accent); }
+
+  /* The pager sits under the list and never scrolls with it, like the head
+     above it: the way to the next page stays in reach however long a page is. */
+  .shelf-pager {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin: var(--space-4) 0 0;
+  }
+  .shelf-pager[hidden] { display: none; }
+  .shelf-pager__status {
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+  }
+  /* The same border and hover as a row, so it reads as part of the list's
+     furniture. 44px tall: a tap target on a phone. */
+  .shelf-pager__btn {
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+  .shelf-pager__btn:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .shelf-pager__btn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .shelf-pager__btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
 </style>
 
 <script>
@@ -280,5 +345,38 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
         if (e.target === dialog) dialog.close();
       });
     }
+  }
+
+  // Paging, for a shelf given `pageSize`. Outside the guard above: that code is
+  // shared with GroupDialog, this is the shelf's own, and Astro hoists a
+  // component's script once however many shelves the page has, so it runs once
+  // and binds every pager it finds.
+  for (const pager of document.querySelectorAll<HTMLElement>("[data-shelf-pager]")) {
+    const dialog = pager.closest("dialog");
+    if (!dialog) continue;
+    const list = dialog.querySelector<HTMLElement>(".shelf-dialog__list");
+    const rows = [...dialog.querySelectorAll<HTMLElement>("[data-shelf-page]")];
+    const prev = pager.querySelector<HTMLButtonElement>("[data-shelf-prev]");
+    const next = pager.querySelector<HTMLButtonElement>("[data-shelf-next]");
+    const status = pager.querySelector<HTMLElement>("[data-shelf-status]");
+    const pages = Number(pager.dataset.pages);
+    let current = 0;
+
+    const show = (page: number) => {
+      current = Math.min(Math.max(page, 0), pages - 1);
+      for (const row of rows) row.hidden = Number(row.dataset.shelfPage) !== current;
+      if (status) status.textContent = `Strona ${current + 1} z ${pages}`;
+      if (prev) prev.disabled = current === 0;
+      if (next) next.disabled = current === pages - 1;
+      if (list) list.scrollTop = 0;
+    };
+    prev?.addEventListener("click", () => show(current - 1));
+    next?.addEventListener("click", () => show(current + 1));
+    // Opened again, it starts from the newest page rather than wherever the
+    // last reader left it.
+    dialog.addEventListener("close", () => show(0));
+
+    pager.hidden = false;
+    show(0);
   }
 </script>

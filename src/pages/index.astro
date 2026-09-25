@@ -16,7 +16,7 @@ import AnnouncementCard from "../components/AnnouncementCard.astro";
 import Carousel from "../components/Carousel.astro";
 import type { NationalTeam, PublicOrgEvent } from "../lib/api";
 import {
-  CAROUSEL_SHOWN, announcementSlugs, getAffiliates, getAnnouncements,
+  ANNOUNCEMENTS_SHOWN, CAROUSEL_SHOWN, announcementSlugs, getAffiliates, getAnnouncements,
   getBodies, getNationalTeams,
   bodyTypeLabel, documentsOfType, eventDates, eventTypeLabel, getDocuments,
   getEvents, getOrganisation,
@@ -37,11 +37,11 @@ const [teams, org, bodies, statute, documents, resolutions, partners, events, af
   ]);
 
 // What the federation has announced, newest first as the API sends them. The
-// carousel shows the most recent ten and the dialog behind it lists them all —
+// carousel shows the most recent six and the dialog behind it pages through all —
 // see the section below for why both, rather than one long row.
 const annSlugs = announcementSlugs(announcements);
 const annHref = (id: string) => `/ogloszenia/${annSlugs.get(id)}/`;
-const recentAnnouncements = announcements.slice(0, CAROUSEL_SHOWN);
+const recentAnnouncements = announcements.slice(0, ANNOUNCEMENTS_SHOWN);
 // Exactly one <main> on the page, and on the FIRST section that renders. With
 // announcements it is theirs; with none, Kadra keeps it as before.
 const KadraTag = announcements.length > 0 ? "section" : "main";
@@ -522,6 +522,7 @@ const orderedBodies = orderBodies(bodies);
       title="Ogłoszenia"
       count={announcements.length}
       countForms={["ogłoszenie", "ogłoszenia", "ogłoszeń"]}
+      pageSize={ANNOUNCEMENTS_SHOWN}
       rows={announcements.map((a) => ({
         title: a.title,
         eyebrow: (a.published_at ?? "").slice(0, 10),
