@@ -25,6 +25,11 @@
   /* ---- palette ---------------------------------------------------------- */
   --palette-red:          #ea3323;  /* the federation's red */
   --palette-red-strong:   #c02415;  /* hover / pressed */
+  /* The same red, softened for a FILLED surface on the paper-like page: less
+     saturated and a touch deeper, a brick rather than a signal. Cream type on
+     it reads 5.2:1, better than on the bright red (4.1:1, under AA). */
+  --palette-red-muted:        #b4483c;
+  --palette-red-muted-strong: #9c3d33;  /* its hover, 6.5:1 */
   --palette-black:        #000000;  /* full-bleed feature sections */
   --palette-near-black:   #1a1a1a;  /* panels inside those sections */
   --palette-slate:        #3a4f66;  /* body text on light — not grey, blue */
@@ -60,6 +65,10 @@
   --color-accent:         var(--palette-red);
   --color-accent-strong:  var(--palette-red-strong);
   --color-on-accent:      var(--palette-white);
+  /* For a filled control that should carry the colour without shouting. */
+  --color-accent-muted:        var(--palette-red-muted);
+  --color-accent-muted-strong: var(--palette-red-muted-strong);
+  --color-on-accent-muted:     var(--palette-paper);
 
   /* A sheet lying on the desk, and the same sheet picked up a little. Warm,
      not black, shadows: the ink of the page, not a UI drop shadow. Cards use
