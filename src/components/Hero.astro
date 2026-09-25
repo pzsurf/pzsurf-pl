@@ -54,6 +54,10 @@ const { title, lede, intro = null } = Astro.props;
       dialog exists. */}
   <div class="hero__cta">
     <button class="btn" type="button" data-open-statute>Statut Związku</button>
+    {/* The second door, to who the federation is (AboutDialog binds every
+        `[data-open-about]`). QUIET beside the statute: an outline, so the two
+        read as a pair with one primary rather than two things shouting. */}
+    <button class="btn btn--quiet" type="button" data-open-about>O Związku</button>
   </div>
 
   {/* A LINK, not an ornament. It points at the same place the button does, so
@@ -169,6 +173,8 @@ const { title, lede, intro = null } = Astro.props;
     position: relative;
     z-index: 1;
     display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
     justify-content: center;
     width: 100%;
     margin-top: var(--space-5);
@@ -305,6 +311,16 @@ const { title, lede, intro = null } = Astro.props;
   .btn:hover {
     background: var(--color-accent-muted-strong);
     transform: translateY(-1px);
+  }
+  /* The same size and type as the statute's, as an outline in the cream the
+     filled one writes in: a companion, not a competitor. The faint wash keeps
+     the label legible over the brightest foam in the footage. */
+  .btn--quiet {
+    background: rgba(20, 16, 12, 0.28);
+    box-shadow: inset 0 0 0 1px rgba(253, 251, 247, 0.75);
+  }
+  .btn--quiet:hover {
+    background: rgba(253, 251, 247, 0.14);
   }
   /* A default focus ring would sit red-on-red over dark footage, so it is white
      with an offset — the keyboard path to the statute has to be visible. */

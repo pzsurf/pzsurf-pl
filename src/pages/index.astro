@@ -7,6 +7,7 @@ import GroupCard from "../components/GroupCard.astro";
 import GroupDialog from "../components/GroupDialog.astro";
 import ShelfDialog from "../components/ShelfDialog.astro";
 import StatuteDialog from "../components/StatuteDialog.astro";
+import AboutDialog from "../components/AboutDialog.astro";
 import PartnersStrip from "../components/PartnersStrip.astro";
 import OrgCard from "../components/OrgCard.astro";
 import OrgDialog from "../components/OrgDialog.astro";
@@ -506,6 +507,7 @@ const orderedBodies = orderBodies(bodies);
   ))}
 
   <StatuteDialog statute={statute} />
+  <AboutDialog />
 </Base>
 
 <style>
