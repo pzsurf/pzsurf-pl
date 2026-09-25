@@ -228,20 +228,6 @@ const orderedBodies = orderBodies(bodies);
   <KadraTag class="page" id="kadra">
     <div class="section__head">
       <h2 class="section__title">Kadra Narodowa {year}</h2>
-      {/* Opens the platform's own national-team page, which carries what this
-          page deliberately does not: earlier seasons, roles and the full card
-          for each athlete. `rel="noopener"` is not optional with target=_blank
-          — without it the opened page gets a handle on this one through
-          window.opener. The label says where it goes, so a screen reader is not
-          left with a bare "more". */}
-      <a class="section__more" href="https://surfpoland.com/national-teams"
-         target="_blank" rel="noopener noreferrer">
-        Więcej na surfpoland.com
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M7 17L17 7M17 7H9M17 7v8" />
-        </svg>
-      </a>
     </div>
 
     {/* One card per DIVISION, not twenty-six athletes in four carousels: the
@@ -285,16 +271,6 @@ const orderedBodies = orderBodies(bodies);
     <section class="page" id="wydarzenia">
       <div class="section__head">
         <h2 class="section__title">Wydarzenia</h2>
-        {/* The platform's calendar, which is somewhere else. "See all of THIS
-            list" is the carousel's last card, as on Ogłoszenia. */}
-        <a class="section__more" href="https://surfpoland.com/events"
-           target="_blank" rel="noopener noreferrer">
-          Więcej na surfpoland.com
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M7 17L17 7M17 7H9M17 7v8" />
-          </svg>
-        </a>
       </div>
 
       <Carousel label="Wydarzenia">
@@ -333,14 +309,6 @@ const orderedBodies = orderBodies(bodies);
     <section class="page" id="zrzeszeni">
       <div class="section__head">
         <h2 class="section__title">Zrzeszeni</h2>
-        <a class="section__more" href="https://surfpoland.com/organisations/"
-           target="_blank" rel="noopener noreferrer">
-          Więcej na surfpoland.com
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M7 17L17 7M17 7H9M17 7v8" />
-          </svg>
-        </a>
       </div>
 
       <ul class="orgs">
@@ -357,24 +325,6 @@ const orderedBodies = orderBodies(bodies);
     <div class="band__inner">
       <div class="section__head">
         <h2 class="section__title">Zarząd i komisje</h2>
-        {/* The federation's own page on the platform, which carries what this
-            section does not: the statute, the documents shelf, the affiliated
-            clubs and each body's full membership over time.
-
-            Trailing slash on purpose — surfpoland.com 301s the bare path to it,
-            so linking the canonical form saves every visitor a redirect.
-
-            Same treatment as the Kadra link above, deliberately: two different
-            shapes for "there is more of this elsewhere" would read as two
-            different kinds of thing. */}
-        <a class="section__more" href="https://surfpoland.com/organisations/polski-zwiazek-surfingu/"
-           target="_blank" rel="noopener noreferrer">
-          Więcej na surfpoland.com
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M7 17L17 7M17 7H9M17 7v8" />
-          </svg>
-        </a>
       </div>
 
       {/* One card per body, opening its own dialog — the same shape the roster
@@ -597,32 +547,6 @@ const orderedBodies = orderBodies(bodies);
     justify-content: space-between;
     gap: var(--space-3);
     margin-bottom: var(--space-5);
-  }
-  .section__more {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--color-text-muted);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-button);
-    text-decoration: none;
-    white-space: nowrap;
-  }
-  /* The archive door is a BUTTON — it opens a dialog this page already holds,
-     not another address — so it has to shed the browser's button chrome to sit
-     beside the `Więcej na surfpoland.com` links as one kind of control. */
-  .section__more--btn {
-    padding: 0;
-    border: 0;
-    background: none;
-    font-family: inherit;
-    cursor: pointer;
-  }
-  .section__more:hover { color: var(--color-accent); }
-  .section__more:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 3px;
-    border-radius: 2px;
   }
 
   /* One card per GROUP — a national-team division above, a governance body
