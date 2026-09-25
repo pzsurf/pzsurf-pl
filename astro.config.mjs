@@ -14,4 +14,12 @@ export default defineConfig({
   output: "static",
   build: { format: "directory" },
   devToolbar: { enabled: false },
+  // Poll for changes when surfpoland's dev-start.sh says the checkout is on a
+  // mount that sends no file-change events (a 9p share from a VM host): without
+  // it an edit never re-renders. Off everywhere else; polling costs CPU.
+  vite: {
+    server: {
+      watch: process.env.DEV_WATCH_POLLING ? { usePolling: true, interval: 300 } : undefined,
+    },
+  },
 });
