@@ -39,11 +39,10 @@ const metaParts = [
   ...(event.location_name ? [event.location_name] : []),
 ].filter(Boolean);
 
-// Its own site where it has one, the platform's page otherwise — that is where
-// the description, the startlist and the entry form live. Identical to the
-// href the card carried before this dialog existed.
-const href = event.external_url || `https://surfpoland.com/events/${event.id}`;
-const external = Boolean(event.external_url);
+// Its own site, where it has one. There is no fallback to the event's page on
+// surfpoland.com any more (the federation's choice, September 2026: the page
+// no longer sends readers to the platform), so an event without a site of its
+// own simply has no link.
 ---
 <dialog
   class="person event-dialog"
@@ -95,18 +94,20 @@ const external = Boolean(event.external_url);
       ? <p class="event-dialog__about">{event.description}</p>
       : <p class="event-dialog__empty">Opis tego wydarzenia nie został opublikowany.</p>}
 
-    <a
-      class="event-dialog__more"
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {external ? "Strona wydarzenia" : "Zobacz na surfpoland.com"}
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M7 17L17 7M17 7H9M17 7v8" />
-      </svg>
-    </a>
+    {event.external_url && (
+      <a
+        class="event-dialog__more"
+        href={event.external_url}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Strona wydarzenia
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 17L17 7M17 7H9M17 7v8" />
+        </svg>
+      </a>
+    )}
   </div>
 </dialog>
 

@@ -20,7 +20,8 @@
 // scopes styles per component, so a look two dialogs share has to live in the
 // global stylesheet or the second one silently gets none of it.
 
-import { disciplineLabel, orgTypeLabel, primaryAddress, type Organisation } from "../lib/api";
+import { disciplineLabel, orgTypeLabel, primaryAddress, socialLinks, type Organisation } from "../lib/api";
+import SocialIcon from "./SocialIcon.astro";
 
 interface Props {
   /** Matches the `dialogId` of the card that opens it. */
@@ -45,6 +46,9 @@ const address = primaryAddress(org);
 const showAddress = Boolean(address && address !== org.city);
 
 const hasContact = Boolean(org.email || org.phone || org.website_url || showAddress);
+// De-duplicated, with the platform read off the URL rather than trusted from
+// the record (see socialLinks), exactly as the footer lists the federation's.
+const socials = socialLinks(org);
 ---
 <dialog
   class="person org-dialog"
@@ -116,21 +120,21 @@ const hasContact = Boolean(org.email || org.phone || org.website_url || showAddr
       </ul>
     )}
 
-    {/* The fuller record. Trailing slash on purpose — surfpoland.com 301s the
-        bare path, so the canonical form saves every visitor a redirect. Same
-        shape as the section links elsewhere on this page. */}
-    <a
-      class="org-dialog__more"
-      href={`https://surfpoland.com/organisations/${org.slug}/`}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Zobacz na surfpoland.com
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M7 17L17 7M17 7H9M17 7v8" />
-      </svg>
-    </a>
+    {/* Its own social accounts, where the link to its record on surfpoland.com
+        used to be (the federation's choice, September 2026: the page no longer
+        sends readers to the platform). The same round buttons as the footer
+        and the roster cards (.person-social in tokens.css); the icon is the
+        label, so the label is the accessible name. None, nothing drawn. */}
+    {socials.length > 0 && (
+      <p class="org-dialog__socials">
+        {socials.map((s) => (
+          <a class="person-social" href={s.url} target="_blank" rel="noopener noreferrer"
+             aria-label={s.label} title={s.label}>
+            <SocialIcon platform={s.label} />
+          </a>
+        ))}
+      </p>
+    )}
   </div>
 </dialog>
 
@@ -251,16 +255,12 @@ const hasContact = Boolean(org.email || org.phone || org.website_url || showAddr
     text-decoration: underline;
   }
 
-  .org-dialog__more {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--color-accent);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-subhead);
-    text-decoration: none;
+  .org-dialog__socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
   }
-  .org-dialog__more:hover { text-decoration: underline; }
 </style>
 
 <script>
