@@ -637,25 +637,20 @@ export interface PublicAnnouncement {
   published_at: string;
 }
 
-/** How many cards a shelf shows before the rest go behind "wszystkie" —
- *  announcements and the calendar both. Mirrors PUBLIC_PAGE_SIZE in the
- *  platform's own announcements module, and the ten its organisation pages
- *  show. One figure, because two shelves of the same shape holding different
- *  numbers of cards reads as two arrangements rather than one. */
-export const CAROUSEL_SHOWN = 10;
-
-/** The Ogłoszenia carousel's own, smaller figure, at the federation's request
- *  (September 2026): six on the front page, then a last "Wszystkie ogłoszenia"
- *  card opening a dialog that loads them six at a time as it is scrolled. The
- *  events carousel keeps CAROUSEL_SHOWN. */
-export const ANNOUNCEMENTS_SHOWN = 6;
+/** How many cards a carousel shows before its last card, "Wszystkie …",
+ *  opens the rest — announcements and the calendar both — and how many rows
+ *  that dialog loads at a time as it is scrolled. Six since September 2026, at
+ *  the federation's request (it was ten). One figure, because two shelves of
+ *  the same shape holding different numbers of cards reads as two
+ *  arrangements rather than one. */
+export const CAROUSEL_SHOWN = 6;
 
 /**
  * Every published announcement, newest first — the whole set, not a page.
  *
  * This is a STATIC site: there is no runtime to fetch a second page on a click,
  * so the build takes all of them and the page decides what to show where. The
- * carousel gets the first `ANNOUNCEMENTS_SHOWN`; the dialog behind its last card
+ * carousel gets the first `CAROUSEL_SHOWN`; the dialog behind its last card
  * lists all of them, and each one has a page of its own generated from this list.
  *
  * Paged for the same reason `getResolutions` is: the endpoint caps a page, and

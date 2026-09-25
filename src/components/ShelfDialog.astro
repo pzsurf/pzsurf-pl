@@ -41,6 +41,9 @@ interface Props {
      *  when the shelf asks for `thumbnails`; null there draws the placeholder,
      *  so every row in the list keeps the same shape. */
     thumb?: string | null;
+    /** What the placeholder tile says when `thumb` is null, e.g. an event's
+     *  type, matching its carousel card. Unset: the announcements' megaphone. */
+    thumbLabel?: string;
   }[];
   /** Draw the eyebrow as an IDENTIFIER in the accent colour rather than as
    *  faint small print. True for uchwały, whose eyebrow is the number they are
@@ -126,6 +129,18 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
         {row.opens ? (
           <button type="button" class="docrow" data-open-event={row.opens}
                   aria-haspopup="dialog">
+            {/* Same thumbnail as the link row below; keep the two identical. */}
+            {thumbnails && (
+              <span class="docrow__thumb">
+                {/* Decorative: the title beside it already says what the row
+                    is, so the picture adds nothing a screen reader needs. */}
+                {row.thumb
+                  ? <img src={row.thumb} alt="" loading="lazy" width="96" height="54" />
+                  : row.thumbLabel
+                    ? <span class="docrow__thumb-label" aria-hidden="true">{row.thumbLabel}</span>
+                    : <span class="docrow__thumb-mono" set:html={MEGAPHONE_ICON} />}
+              </span>
+            )}
             <span class="docrow__text">
               {row.eyebrow && (
                 <span class:list={["docrow__eyebrow", { "docrow__eyebrow--accent": accentEyebrow }]}>
@@ -146,7 +161,9 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
                     is, so the picture adds nothing a screen reader needs. */}
                 {row.thumb
                   ? <img src={row.thumb} alt="" loading="lazy" width="96" height="54" />
-                  : <span class="docrow__thumb-mono" set:html={MEGAPHONE_ICON} />}
+                  : row.thumbLabel
+                    ? <span class="docrow__thumb-label" aria-hidden="true">{row.thumbLabel}</span>
+                    : <span class="docrow__thumb-mono" set:html={MEGAPHONE_ICON} />}
               </span>
             )}
             <span class="docrow__text">
@@ -313,6 +330,16 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
     object-position: center;
   }
   .docrow__thumb-mono { display: grid; color: rgba(255, 255, 255, 0.55); }
+  /* The event cards' own fallback, the type in small caps, at list size. */
+  .docrow__thumb-label {
+    padding: 0 var(--space-1);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 10px;
+    font-weight: var(--weight-subhead);
+    letter-spacing: 0.06em;
+    text-align: center;
+    text-transform: uppercase;
+  }
   /* A phone: smaller, so the title keeps most of a 390px-wide row. */
   @media (max-width: 480px) {
     .docrow__thumb { width: 72px; height: 40px; }
