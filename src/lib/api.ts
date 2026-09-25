@@ -645,8 +645,8 @@ export interface PublicAnnouncement {
 export const CAROUSEL_SHOWN = 10;
 
 /** The Ogłoszenia carousel's own, smaller figure, at the federation's request
- *  (September 2026): six on the front page, the rest behind "Wszystkie
- *  ogłoszenia", whose dialog pages through them the same six at a time. The
+ *  (September 2026): six on the front page, then a last "Wszystkie ogłoszenia"
+ *  card opening a dialog that loads them six at a time as it is scrolled. The
  *  events carousel keeps CAROUSEL_SHOWN. */
 export const ANNOUNCEMENTS_SHOWN = 6;
 
@@ -655,8 +655,8 @@ export const ANNOUNCEMENTS_SHOWN = 6;
  *
  * This is a STATIC site: there is no runtime to fetch a second page on a click,
  * so the build takes all of them and the page decides what to show where. The
- * carousel gets the first `ANNOUNCEMENTS_SHOWN`; the dialog behind "wszystkie"
- * pages through all of them, and each one has a page of its own generated from this list.
+ * carousel gets the first `ANNOUNCEMENTS_SHOWN`; the dialog behind its last card
+ * lists all of them, and each one has a page of its own generated from this list.
  *
  * Paged for the same reason `getResolutions` is: the endpoint caps a page, and
  * a register silently missing its older half looks complete.
