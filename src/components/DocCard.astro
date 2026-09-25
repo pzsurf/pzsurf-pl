@@ -76,7 +76,8 @@ const DOWNLOAD_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="non
     min-height: 168px;
     flex: 0 0 auto;
     padding: var(--space-3);
-    border: 1px solid var(--color-border-strong);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-paper);
     border-radius: var(--radius);
     background: var(--color-bg-raised);
     color: var(--color-text);
@@ -84,11 +85,11 @@ const DOWNLOAD_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="non
     text-align: left;
     text-decoration: none;
     cursor: pointer;
-    transition: border-color 0.15s ease, transform 0.15s ease;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
   .doccard:hover {
-    border-color: var(--color-accent);
-    transform: translateY(-2px);
+    box-shadow: var(--shadow-paper-lift);
+    transform: translateY(-1px);
   }
   .doccard:focus-visible {
     outline: 2px solid var(--color-accent);

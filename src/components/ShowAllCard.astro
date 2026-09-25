@@ -50,11 +50,10 @@ const { dialogId, label, countText } = Astro.props;
     font: inherit;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
+    transition: box-shadow 0.2s ease, color 0.15s ease;
   }
   .all-card:hover {
-    border-color: var(--color-accent);
-    border-style: solid;
+    box-shadow: var(--shadow-paper-lift);
     color: var(--color-accent);
   }
   .all-card:focus-visible {

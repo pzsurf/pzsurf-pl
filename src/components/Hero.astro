@@ -275,30 +275,38 @@ const { title, lede, intro = null } = Astro.props;
 
   /* Styles a <button> as well as an <a>, hence the resets: a button carries the
      UA's own font, background and border and inherits none of the page's.
-     FILLED in the federation's red rather than outlined, and larger than the
-     page's other controls: over moving footage an outline reads as decoration,
-     and this is the one thing the hero actually asks anybody to do. */
+
+     A DOCUMENT TAB, not a red pill (September 2026: the filled red pill read
+     as loud against the subtler, paper-like page). It opens the statute, so it
+     looks like a document's tab: the headings' book face, the page's 4px
+     corner, and a thin red rule on the left edge that keeps the federation's
+     colour without painting the whole thing in it. Its fill is the raised
+     surface of the band it sits in; the hero is `.on-dark`, so that is the
+     near-black ink with white type, which holds its own over footage without
+     shouting. The lift keeps it off the moving picture. */
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 56px;
-    padding: 0 var(--space-5);
-    border: 2px solid var(--color-accent);
-    border-radius: var(--radius-pill);
-    font-family: inherit;
-    font-size: var(--text-lg);
+    min-height: 48px;
+    padding: 0 var(--space-4);
+    border: 0;
+    border-left: 3px solid var(--color-accent);
+    border-radius: var(--radius);
+    font-family: var(--font-display);
+    font-size: var(--text-base);
     font-weight: var(--weight-subhead);
+    letter-spacing: 0.01em;
     text-decoration: none;
-    background: var(--color-accent);
-    color: var(--color-on-accent);
+    background: var(--color-bg-raised);
+    color: var(--color-text);
     cursor: pointer;
-    /* Lifts it off footage, which is busy in a way flat colour is not. */
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.28);
+    transition: color 0.15s ease, transform 0.2s ease;
   }
   .btn:hover {
-    background: var(--color-accent-strong);
-    border-color: var(--color-accent-strong);
+    color: var(--color-accent);
+    transform: translateY(-1px);
   }
   /* A default focus ring would sit red-on-red over dark footage, so it is white
      with an offset — the keyboard path to the statute has to be visible. */
