@@ -18,7 +18,7 @@ import ShowAllCard from "../components/ShowAllCard.astro";
 import { counted } from "../lib/plural";
 import type { NationalTeam, PublicOrgEvent } from "../lib/api";
 import {
-  ANNOUNCEMENTS_SHOWN, CAROUSEL_SHOWN, announcementSlugs, getAffiliates, getAnnouncements,
+  CAROUSEL_SHOWN, announcementSlugs, getAffiliates, getAnnouncements,
   getBodies, getNationalTeams,
   bodyTypeLabel, documentsOfType, eventDates, eventTypeLabel, getDocuments,
   getEvents, getOrganisation,
@@ -44,7 +44,7 @@ const [teams, org, bodies, statute, documents, resolutions, partners, events, af
 // see the section below for why both, rather than one long row.
 const annSlugs = announcementSlugs(announcements);
 const annHref = (id: string) => `/ogloszenia/${annSlugs.get(id)}/`;
-const recentAnnouncements = announcements.slice(0, ANNOUNCEMENTS_SHOWN);
+const recentAnnouncements = announcements.slice(0, CAROUSEL_SHOWN);
 // Exactly one <main> on the page, and on the FIRST section that renders. With
 // announcements it is theirs; with none, Kadra keeps it as before.
 const KadraTag = announcements.length > 0 ? "section" : "main";
@@ -65,9 +65,9 @@ const memberDetails = await Promise.all(
 
 // What the federation runs. Upcoming first, then what is over — see orderEvents.
 const calendar = orderEvents(events);
-// The carousel shows the front of the calendar and the dialog behind it lists
-// the whole thing. Ten, matching Ogłoszenia: the same shelf shape should hold
-// the same number of cards, or the page reads as two arrangements.
+// The carousel shows the front of the calendar, and its last card opens a
+// dialog with the whole thing, loaded as it is scrolled. The same six as
+// Ogłoszenia: the same shelf shape should hold the same number of cards.
 const shownEvents = calendar.slice(0, CAROUSEL_SHOWN);
 const eventDialogId = (ev: PublicOrgEvent) => `wydarzenie-${ev.id}`;
 
@@ -285,31 +285,26 @@ const orderedBodies = orderBodies(bodies);
     <section class="page" id="wydarzenia">
       <div class="section__head">
         <h2 class="section__title">Wydarzenia</h2>
-        {/* Only when there IS more behind it — see the same rule on Ogłoszenia.
-            The link to the platform's calendar moves into that dialog's rows
-            and each event's own dialog, which is where somebody asking for more
-            about ONE event is looking. */}
-        {calendar.length > shownEvents.length ? (
-          <button type="button" class="section__more section__more--btn"
-                  data-open-group="wydarzenia-wszystkie" aria-haspopup="dialog">
-            Wszystkie wydarzenia ({calendar.length})
-          </button>
-        ) : (
-          <a class="section__more" href="https://surfpoland.com/events"
-             target="_blank" rel="noopener noreferrer">
-            Więcej na surfpoland.com
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M7 17L17 7M17 7H9M17 7v8" />
-            </svg>
-          </a>
-        )}
+        {/* The platform's calendar, which is somewhere else. "See all of THIS
+            list" is the carousel's last card, as on Ogłoszenia. */}
+        <a class="section__more" href="https://surfpoland.com/events"
+           target="_blank" rel="noopener noreferrer">
+          Więcej na surfpoland.com
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 17L17 7M17 7H9M17 7v8" />
+          </svg>
+        </a>
       </div>
 
       <Carousel label="Wydarzenia">
         {shownEvents.map((ev) => (
           <EventCard event={ev} dialogId={eventDialogId(ev)} />
         ))}
+        {calendar.length > shownEvents.length && (
+          <ShowAllCard dialogId="wydarzenia-wszystkie" label="Wszystkie wydarzenia"
+                       countText={counted(calendar.length, ["wydarzenie", "wydarzenia", "wydarzeń"])} />
+        )}
       </Carousel>
     </section>
   )}
@@ -498,11 +493,16 @@ const orderedBodies = orderBodies(bodies);
       title="Wydarzenia"
       count={calendar.length}
       countForms={["wydarzenie", "wydarzenia", "wydarzeń"]}
+      batchSize={CAROUSEL_SHOWN}
+      thumbnails
+      hideScrollbar
       rows={calendar.map((ev) => ({
         title: ev.name,
         eyebrow: eventDates(ev),
         footnote: [eventTypeLabel(ev.event_type), ev.location_name].filter(Boolean).join(" · "),
         opens: eventDialogId(ev),
+        thumb: ev.image_url ?? null,
+        thumbLabel: eventTypeLabel(ev.event_type),
       }))}
     />
   )}
@@ -524,7 +524,7 @@ const orderedBodies = orderBodies(bodies);
       title="Ogłoszenia"
       count={announcements.length}
       countForms={["ogłoszenie", "ogłoszenia", "ogłoszeń"]}
-      batchSize={ANNOUNCEMENTS_SHOWN}
+      batchSize={CAROUSEL_SHOWN}
       thumbnails
       hideScrollbar
       rows={announcements.map((a) => ({
