@@ -526,6 +526,7 @@ const orderedBodies = orderBodies(bodies);
       countForms={["ogłoszenie", "ogłoszenia", "ogłoszeń"]}
       batchSize={ANNOUNCEMENTS_SHOWN}
       thumbnails
+      hideScrollbar
       rows={announcements.map((a) => ({
         title: a.title,
         eyebrow: (a.published_at ?? "").slice(0, 10),
