@@ -1,0 +1,382 @@
+---
+// "O Związku": who the federation is and how it came to be, opened by the
+// second button in the hero. The text is in lib/about.ts (taken from the old
+// pzsurf.pl, and not in the API: see the note there).
+//
+// The HISTORY is a timeline that unfolds as it is read: the rail draws itself
+// down in step with the scroll, and each milestone slides in, its dot filling,
+// as it comes into view. A reader moving through forty years of the sport
+// sees the years arrive rather than a wall of dates.
+//
+// Rendered at build time like every dialog here: every milestone is in the
+// HTML, so crawlers and link previews read it, and with no JavaScript (or with
+// reduced motion asked for) it is simply all there, rail drawn, nothing
+// hidden. The script only ARMS the animation; content never depends on it.
+import { ABOUT_FUTURE, ABOUT_HISTORY, ABOUT_INTRO, ABOUT_TIMELINE } from "../lib/about";
+
+// A line break inside a source paragraph ("\n") is kept as one.
+const lines = (text: string) => text.split("\n");
+---
+<dialog class="about" data-about-dialog aria-labelledby="about-title">
+  <div class="about__head">
+    <h2 class="about__title" id="about-title">O Związku</h2>
+    <form method="dialog" class="about__close-form">
+      {/* `method="dialog"` closes without a line of JavaScript. */}
+      <button class="about__close" aria-label="Zamknij">×</button>
+    </form>
+  </div>
+
+  {/* The scroll container, focusable so the arrow keys drive it, as in the
+      statute: it is what the reader is here to move through. */}
+  <div class="about__body" data-about-body tabindex="0">
+    <div class="about__intro">
+      {ABOUT_INTRO.map((p, i) => (
+        <p class:list={["about__lead", { "about__tagline": i === ABOUT_INTRO.length - 1 }]}>
+          {lines(p).map((l, j) => <>{j > 0 && <br />}{l}</>)}
+        </p>
+      ))}
+    </div>
+
+    <h3 class="about__heading">Historia</h3>
+    {ABOUT_HISTORY.map((p) => <p class="about__text">{p}</p>)}
+
+    <div class="timeline" data-timeline>
+      {/* The rail, and the part of it already "travelled". Decorative: the
+          list below carries the order. */}
+      <span class="timeline__rail" aria-hidden="true">
+        <span class="timeline__progress" data-timeline-progress></span>
+      </span>
+      <ol class="timeline__list">
+        {ABOUT_TIMELINE.map((m) => (
+          <li class="timeline__item" data-timeline-item>
+            <span class="timeline__dot" aria-hidden="true"></span>
+            <div class="timeline__card">
+              <p class="timeline__when">{m.when}</p>
+              <p class="timeline__text">{m.text}</p>
+            </div>
+          </li>
+        ))}
+        <li class="timeline__item timeline__item--future" data-timeline-item>
+          <span class="timeline__dot" aria-hidden="true"></span>
+          <div class="timeline__card">
+            <p class="timeline__when">Przyszłość</p>
+            <p class="timeline__text">{ABOUT_FUTURE}</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  /* The statute's shell, in the paper look: a sheet held over the page. */
+  .about {
+    width: min(820px, calc(100vw - 32px));
+    max-height: calc(100svh - var(--space-4) * 2);
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg-raised);
+    color: var(--color-text);
+    box-shadow: 0 2px 4px rgba(71, 56, 33, 0.08), 0 24px 60px rgba(40, 30, 15, 0.22);
+  }
+  /* `[open]`, never the bare class: the UA hides a closed dialog with
+     `display: none`, and an unqualified `display: flex` would beat it. */
+  .about[open] { display: flex; flex-direction: column; }
+  .about::backdrop { background: rgba(40, 32, 22, 0.42); }
+
+  .about__head {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .about__title {
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
+    font-weight: var(--weight-display);
+  }
+  .about__close-form { margin: 0; flex: 0 0 auto; }
+  .about__close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-faint);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .about__close:hover { color: var(--color-accent); }
+
+  .about__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-4) var(--space-4) var(--space-6);
+  }
+  .about__body:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+  }
+
+  .about__intro { max-width: var(--measure); margin-bottom: var(--space-5); }
+  .about__lead {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+  .about__tagline {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-accent-muted);
+  }
+  .about__heading {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-display);
+  }
+  .about__text {
+    max-width: var(--measure);
+    margin: 0 0 var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  /* ── The timeline ──────────────────────────────────────────────────────
+     A PHONE first: the rail down the left, every milestone to its right. At
+     760px and up the rail moves to the centre and the milestones alternate
+     sides, which is what makes forty years read as a road rather than a list. */
+  .timeline {
+    --rail-x: 11px;          /* where the rail sits, from the left */
+    --dot: 14px;
+    position: relative;
+    margin-top: var(--space-5);
+  }
+  .timeline__rail {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--rail-x) - 1px);
+    width: 2px;
+    background: var(--color-border);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  /* The travelled part: scaled from the top by the script as the body
+     scrolls. Full length by default, so without the script it is simply drawn. */
+  .timeline__progress {
+    position: absolute;
+    inset: 0;
+    background: var(--color-accent-muted);
+    transform-origin: top;
+    transform: scaleY(1);
+  }
+  .timeline__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .timeline__item {
+    position: relative;
+    padding-left: calc(var(--rail-x) * 2 + var(--space-3));
+  }
+  .timeline__dot {
+    position: absolute;
+    top: 18px;
+    left: calc(var(--rail-x) - var(--dot) / 2);
+    width: var(--dot);
+    height: var(--dot);
+    border-radius: 50%;
+    border: 2px solid var(--color-accent-muted);
+    background: var(--color-accent-muted);
+    box-shadow: 0 0 0 4px var(--color-bg-raised);
+  }
+  .timeline__card {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+    box-shadow: var(--shadow-paper);
+  }
+  .timeline__when {
+    margin: 0 0 2px;
+    color: var(--color-accent-muted);
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    font-weight: var(--weight-display);
+  }
+  .timeline__text {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+  /* Where it is heading: the one milestone without a date, set apart. */
+  .timeline__item--future .timeline__card {
+    border-style: dashed;
+    border-color: var(--color-accent-muted);
+    background: var(--color-bg-raised);
+    box-shadow: none;
+  }
+  .timeline__item--future .timeline__text {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
+  .timeline__item--future .timeline__dot {
+    --dot: 18px;
+    background: var(--color-bg-raised);
+  }
+
+  @media (min-width: 760px) {
+    .timeline { --rail-x: 50%; }
+    .timeline__item {
+      width: 50%;
+      padding-left: 0;
+      padding-right: calc(var(--space-4) + var(--dot) / 2);
+    }
+    .timeline__item:nth-child(even) {
+      align-self: flex-end;
+      padding-right: 0;
+      padding-left: calc(var(--space-4) + var(--dot) / 2);
+    }
+    .timeline__item:nth-child(odd) .timeline__card { text-align: right; }
+    .timeline__item .timeline__dot { left: auto; right: calc(var(--dot) / -2); }
+    .timeline__item:nth-child(even) .timeline__dot { right: auto; left: calc(var(--dot) / -2); }
+    .timeline__list { gap: var(--space-2); }
+    /* The future sits on the rail itself, centred below the last milestone.
+       `.timeline__item.timeline__item--future` rather than !important: the
+       same weight as the :nth-child rules above and later, so it wins by
+       order whichever parity it lands on. */
+    .timeline__item.timeline__item--future {
+      align-self: center;
+      width: min(420px, 90%);
+      padding: var(--space-6) 0 0;
+    }
+    .timeline__item.timeline__item--future .timeline__card { text-align: center; }
+    .timeline__item.timeline__item--future .timeline__dot {
+      top: calc(var(--space-6) - var(--dot) - 6px);
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+    }
+  }
+
+  /* ── The unfolding ─────────────────────────────────────────────────────
+     Only once the script has ARMED the timeline (and only where motion is
+     welcome): until then everything above is simply visible. */
+  .timeline.is-armed .timeline__item .timeline__card {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .timeline.is-armed .timeline__item .timeline__dot {
+    background: var(--color-bg-raised);
+    transform: scale(0.4);
+    transition: transform 0.4s cubic-bezier(0.3, 1.6, 0.5, 1), background-color 0.4s ease;
+  }
+  @media (min-width: 760px) {
+    .timeline.is-armed .timeline__item:nth-child(odd) .timeline__card { transform: translateX(-24px); }
+    .timeline.is-armed .timeline__item:nth-child(even) .timeline__card { transform: translateX(24px); }
+    .timeline.is-armed .timeline__item.timeline__item--future .timeline__card { transform: translateY(18px); }
+  }
+  .timeline.is-armed .timeline__item.is-in .timeline__card { opacity: 1; transform: none; }
+  .timeline.is-armed .timeline__item.is-in .timeline__dot { background: var(--color-accent-muted); transform: scale(1); }
+  .timeline.is-armed .timeline__item.timeline__item--future.is-in .timeline__dot { background: var(--color-bg-raised); }
+  /* The centred future dot keeps its centring through the pop: the reveal's
+     `scale()` would otherwise replace the translate that centres it. */
+  @media (min-width: 760px) {
+    .timeline.is-armed .timeline__item.timeline__item--future .timeline__dot { transform: translateX(-50%) scale(0.4); }
+    .timeline.is-armed .timeline__item.timeline__item--future.is-in .timeline__dot { transform: translateX(-50%) scale(1); }
+  }
+  .timeline.is-armed .timeline__progress { transition: transform 0.12s linear; }
+
+  @media (max-width: 600px) {
+    .about__title { font-size: var(--text-lg); }
+  }
+</style>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>("[data-about-dialog]");
+  if (dialog) {
+    const body = dialog.querySelector<HTMLElement>("[data-about-body]");
+    const timeline = dialog.querySelector<HTMLElement>("[data-timeline]");
+    const progress = dialog.querySelector<HTMLElement>("[data-timeline-progress]");
+    const items = [...dialog.querySelectorAll<HTMLElement>("[data-timeline-item]")];
+
+    for (const opener of document.querySelectorAll<HTMLElement>("[data-open-about]")) {
+      opener.addEventListener("click", (e) => {
+        e.preventDefault();
+        dialog.showModal();
+        body?.focus();
+      });
+    }
+    // Backdrop click closes, as every dialog here does.
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+
+    // The animation is a convenience, so it only arms where motion is welcome;
+    // otherwise the CSS default, everything shown and the rail drawn, stands.
+    const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (body && timeline && progress && motionOk && "IntersectionObserver" in window) {
+      timeline.classList.add("is-armed");
+
+      // Each milestone slides in once as it enters the body's view. The body,
+      // not the window, is the scroller, so it is the observer's root.
+      const reveal = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add("is-in");
+            reveal.unobserve(e.target);
+          }
+        }
+      }, { root: body, rootMargin: "0px 0px -12% 0px", threshold: 0.15 });
+
+      // The rail's travelled part follows the reading position: the point 70%
+      // down the visible body, measured against the timeline's own extent.
+      let queued = false;
+      const draw = () => {
+        queued = false;
+        const b = body.getBoundingClientRect();
+        const t = timeline.getBoundingClientRect();
+        const reading = b.top + b.height * 0.7;
+        let share = Math.min(1, Math.max(0, (reading - t.top) / t.height));
+        // At the very end the last milestones sit in the bottom strip the
+        // observer ignores (its -12% margin) and the body cannot scroll them
+        // any higher, so they would never arrive. Reaching the end finishes the
+        // road: every milestone in, the rail drawn to the bottom.
+        if (body.scrollTop + body.clientHeight >= body.scrollHeight - 2) {
+          share = 1;
+          for (const item of items) item.classList.add("is-in");
+        }
+        progress.style.transform = `scaleY(${share})`;
+      };
+      body.addEventListener("scroll", () => {
+        if (!queued) { queued = true; requestAnimationFrame(draw); }
+      }, { passive: true });
+
+      // Every opening starts at the top and plays the history again. There is
+      // no "open" event, so watch the attribute.
+      const start = () => {
+        body.scrollTop = 0;
+        for (const item of items) {
+          item.classList.remove("is-in");
+          reveal.observe(item);
+        }
+        requestAnimationFrame(draw);
+      };
+      new MutationObserver(() => { if (dialog.open) start(); })
+        .observe(dialog, { attributes: true, attributeFilter: ["open"] });
+    }
+  }
+</script>

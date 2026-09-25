@@ -48,16 +48,19 @@ const heading = statute.title?.trim() || title || "Statut";
     width: min(820px, calc(100vw - 32px));
     max-height: calc(100svh - var(--space-4) * 2);
     padding: 0;
-    border: 1px solid var(--color-border-strong);
-    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
     background: var(--color-bg-raised);
     color: var(--color-text);
+    /* A sheet held over the page, as every dialog here is since the paper-like
+       restyle (tokens.css .person, AboutDialog). */
+    box-shadow: 0 2px 4px rgba(71, 56, 33, 0.08), 0 24px 60px rgba(40, 30, 15, 0.22);
   }
   .statute[open] {
     display: flex;
     flex-direction: column;
   }
-  .statute::backdrop { background: rgba(10, 16, 24, 0.55); }
+  .statute::backdrop { background: rgba(40, 32, 22, 0.42); }
 
   /* Fixed rather than scrolling away: in a 42k-character document the close
      button has to stay reachable from clause 200. */
@@ -70,7 +73,7 @@ const heading = statute.title?.trim() || title || "Statut";
     padding: var(--space-4);
     border-bottom: 1px solid var(--color-border);
     background: var(--color-bg-raised);
-    border-radius: 12px 12px 0 0;
+    border-radius: 6px 6px 0 0;
   }
   .statute__title {
     margin: 0;
