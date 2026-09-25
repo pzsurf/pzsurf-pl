@@ -525,6 +525,7 @@ const orderedBodies = orderBodies(bodies);
       count={announcements.length}
       countForms={["ogłoszenie", "ogłoszenia", "ogłoszeń"]}
       batchSize={ANNOUNCEMENTS_SHOWN}
+      thumbnails
       rows={announcements.map((a) => ({
         title: a.title,
         eyebrow: (a.published_at ?? "").slice(0, 10),
@@ -532,6 +533,7 @@ const orderedBodies = orderBodies(bodies);
         /* A new tab, like the carousel's cards (AnnouncementCard) and the
            uchwały: a reader working through the list keeps their place. */
         href: annHref(a.id),
+        thumb: a.featured_image_url ?? null,
       }))}
     />
   )}

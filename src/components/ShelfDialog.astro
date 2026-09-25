@@ -37,6 +37,10 @@ interface Props {
      *  tab like any other link here. A document keeps the new tab: it is a PDF
      *  somebody is fetching, not a page they are reading on. */
     sameTab?: boolean;
+    /** A picture for the row, shown as a thumbnail on its right. Only drawn
+     *  when the shelf asks for `thumbnails`; null there draws the placeholder,
+     *  so every row in the list keeps the same shape. */
+    thumb?: string | null;
   }[];
   /** Draw the eyebrow as an IDENTIFIER in the accent colour rather than as
    *  faint small print. True for uchwały, whose eyebrow is the number they are
@@ -52,6 +56,10 @@ interface Props {
    *  to. With no JavaScript the whole list shows, which is a fine way for a
    *  list to fail. */
   batchSize?: number;
+  /** Give every row a thumbnail on the right: its `thumb`, or a placeholder
+   *  tile where it has none. For a list of things that have pictures (the
+   *  announcements), not for a shelf of files. */
+  thumbnails?: boolean;
 }
 import { counted as countedPl, type CountForms } from "../lib/plural";
 
@@ -59,6 +67,7 @@ const {
   id, title, count, rows, accentEyebrow = false,
   countForms = ["dokument", "dokumenty", "dokumentów"],
   batchSize,
+  thumbnails = false,
 } = Astro.props;
 const batched = !!batchSize && rows.length > batchSize;
 
@@ -71,6 +80,10 @@ const EXTERNAL_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="non
 // A row that stays on this site gets a chevron, not the arrow that means "this
 // leaves the page". The icon is the only thing telling the two apart, so it has
 // to tell the truth.
+// The same megaphone AnnouncementCard draws for a notice with no picture.
+const MEGAPHONE_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+  aria-hidden="true"><path d="M3 11l18-5v12L3 15v-4z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>`;
 const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
   aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
@@ -130,6 +143,15 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
               <span class="docrow__title">{row.title}</span>
               {row.footnote && <span class="docrow__foot">{row.footnote}</span>}
             </span>
+            {thumbnails && (
+              <span class="docrow__thumb">
+                {/* Decorative: the title beside it already says what the row
+                    is, so the picture adds nothing a screen reader needs. */}
+                {row.thumb
+                  ? <img src={row.thumb} alt="" loading="lazy" width="96" height="54" />
+                  : <span class="docrow__thumb-mono" set:html={MEGAPHONE_ICON} />}
+              </span>
+            )}
             <span class="docrow__action" set:html={row.sameTab ? CHEVRON_ICON : EXTERNAL_ICON} />
           </a>
         )}
@@ -256,6 +278,34 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
     color: var(--color-text-faint);
   }
   .docrow:hover .docrow__action { color: var(--color-accent); }
+
+  /* A thumbnail at the carousel card's own 16:9, so a row and its card are
+     recognisably the same notice. A definite box, never aspect-ratio alone:
+     the picture must not be able to size its own row. */
+  .docrow__thumb {
+    position: relative;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 96px;
+    height: 54px;
+    overflow: hidden;
+    border-radius: calc(var(--radius) / 2);
+    background: linear-gradient(160deg, #1f2a36, #0d1116);
+  }
+  .docrow__thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+  .docrow__thumb-mono { display: grid; color: rgba(255, 255, 255, 0.55); }
+  /* A phone: smaller, so the title keeps most of a 390px-wide row. */
+  @media (max-width: 480px) {
+    .docrow__thumb { width: 72px; height: 40px; }
+  }
 
   /* The end-of-list marker the script watches. A few pixels, not zero: an
      element with no height can be skipped over by a fast scroll. */
