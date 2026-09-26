@@ -196,6 +196,21 @@ body {
 h1, h2, h3 { margin: 0; font-family: var(--font-display); }
 img { max-width: 100%; }
 
+/* Read by a screen reader, not shown: e.g. "(otwiera się w nowej karcie)" on
+   a link that opens a new tab, which a sighted reader sees happen but a
+   screen-reader user would otherwise not be told. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* The skip link (SiteHeader): off-screen until it has focus, then a plain,
    unmissable tab over the top-left of the page. Off-screen rather than
    display:none, which would take it out of the tab order entirely. */
