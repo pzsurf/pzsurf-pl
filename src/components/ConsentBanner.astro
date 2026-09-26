@@ -1,0 +1,137 @@
+---
+// The cookie question, asked once, at the very top of every page until it is
+// answered. Modelled on the GOV.UK Design System's cookie banner, the most
+// tested accessible pattern there is:
+//
+// - IN THE FLOW, first thing in <body>, not a fixed overlay. Nothing is ever
+//   covered by it (WCAG 2.4.11 Focus Not Obscured), it does not fight the
+//   accessibility button for a corner, and a screen reader meets it first.
+// - Not modal and does not grab focus: the page stays fully usable unanswered,
+//   and NOTHING is tracked until "Akceptuję" (lib/analytics.ts).
+// - Accept and reject are the same kind of button, side by side, on the first
+//   screen: refusing is exactly as easy as agreeing, as the EDPB's cookie
+//   banner taskforce requires. No pre-ticked boxes, no "by continuing to
+//   browse you agree".
+// - After a choice, the question is replaced by a one-line confirmation that
+//   takes focus (the button just pressed has gone), saying where to change it.
+//
+// Hidden in the markup and revealed by the script, so without JavaScript there
+// is no question — and no analytics either, since that needs the script too.
+// Not shown on /pliki-cookies/ itself, which carries the full settings.
+---
+<div class="consent" data-consent hidden>
+  <section class="consent__inner" data-consent-ask aria-labelledby="consent-title">
+    <h2 class="consent__title" id="consent-title">Pliki cookies na&nbsp;pzsurf.pl</h2>
+    <p class="consent__text">
+      Chcemy wiedzieć, jak korzystasz ze&nbsp;strony, żeby ją ulepszać. Za&nbsp;Twoją
+      zgodą użyjemy Google Analytics, które zapisuje pliki cookies i&nbsp;zlicza
+      odwiedziny. Nie używamy ich do&nbsp;reklam.
+    </p>
+    <div class="consent__actions">
+      <button type="button" class="consent__btn" data-consent-choice="yes">Akceptuję analityczne pliki cookies</button>
+      <button type="button" class="consent__btn" data-consent-choice="no">Odrzucam analityczne pliki cookies</button>
+      <a class="consent__link" href="/pliki-cookies/">Więcej o&nbsp;plikach cookies</a>
+    </div>
+  </section>
+
+  <div class="consent__inner consent__done" data-consent-done tabindex="-1" hidden
+       role="region" aria-label="Pliki cookies">
+    <p class="consent__text" data-consent-message></p>
+    <button type="button" class="consent__btn" data-consent-hide>Ukryj komunikat</button>
+  </div>
+</div>
+
+<style>
+  .consent {
+    background: var(--color-bg-raised);
+    border-bottom: 2px solid var(--color-border-strong);
+    color: var(--color-text);
+  }
+  .consent[hidden] { display: none; }
+  .consent__inner {
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding: var(--space-3) var(--space-4);
+  }
+  .consent__inner[hidden] { display: none; }
+  .consent__done { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+  .consent__done:focus { outline: none; }
+  .consent__done:focus-visible { outline: 3px solid var(--color-accent); outline-offset: -3px; }
+  .consent__title {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-display);
+  }
+  .consent__text {
+    max-width: 72ch;
+    margin: 0;
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+  .consent__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    margin-top: var(--space-3);
+  }
+  /* Both choices share ONE style: neither is the "primary" answer. */
+  .consent__btn {
+    min-height: 44px;
+    padding: var(--space-1) var(--space-3);
+    border: 2px solid var(--palette-slate);
+    border-radius: var(--radius);
+    background: var(--palette-slate);
+    color: #ffffff;
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-subhead);
+    cursor: pointer;
+  }
+  .consent__btn:hover { background: #2a3b4e; border-color: #2a3b4e; }
+  .consent__btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+  .consent__link { color: var(--color-accent); font-size: var(--text-sm); }
+  /* :global because the confirmation's link is written by the script, so it
+     carries no scoped-style attribute. */
+  .consent :global(a) { color: var(--color-accent); }
+  @media print { .consent { display: none; } }
+</style>
+
+<script>
+  import { GA_ID, applyConsent, readConsent, saveConsent } from "../lib/analytics";
+
+  const root = document.querySelector<HTMLElement>("[data-consent]");
+  const current = readConsent();
+  // Every page applies a decision already made: that is what loads analytics
+  // on the second page a consenting reader opens.
+  if (current) applyConsent(current.analytics);
+
+  const onSettingsPage = location.pathname.startsWith("/pliki-cookies");
+  if (GA_ID && root && !current && !onSettingsPage) {
+    const ask = root.querySelector<HTMLElement>("[data-consent-ask]")!;
+    const done = root.querySelector<HTMLElement>("[data-consent-done]")!;
+    const message = root.querySelector<HTMLElement>("[data-consent-message]")!;
+    root.hidden = false;
+
+    for (const b of root.querySelectorAll<HTMLButtonElement>("[data-consent-choice]")) {
+      b.addEventListener("click", () => {
+        const yes = b.dataset.consentChoice === "yes";
+        saveConsent(yes);
+        message.innerHTML = `${yes ? "Zaakceptowano" : "Odrzucono"} analityczne pliki cookies. `
+          + `Możesz zmienić decyzję w&nbsp;każdej chwili na&nbsp;stronie `
+          + `<a href="/pliki-cookies/">Pliki cookies</a> (link w&nbsp;stopce).`;
+        ask.hidden = true;
+        done.hidden = false;
+        done.focus();
+      });
+    }
+    root.querySelector("[data-consent-hide]")?.addEventListener("click", () => {
+      root.hidden = true;
+      // Focus would otherwise fall back to <body>; the skip link is the
+      // natural next stop, and where it is missing, the page's first heading.
+      const next = document.querySelector<HTMLElement>(".skip-link, h1");
+      if (next && !next.matches("a, button")) next.tabIndex = -1;
+      next?.focus();
+    });
+  }
+</script>
