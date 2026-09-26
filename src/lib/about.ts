@@ -52,6 +52,11 @@ export const ABOUT_TIMELINE: Milestone[] = [
   { when: "2024", text: "Polski Związek Surfingu realizuje pierwszy program szkoleniowy dla Kadry Narodowej Juniorów przy wsparciu środków publicznych z\u00a0Ministerstwa Sportu i\u00a0Turystyki" },
   { when: "2024", text: "Reprezentacja Polski złożona z\u00a0zawodników Kadry Narodowej 8-ym zespołem z\u00a0Europy na\u00a0Mistrzostwach Świata w\u00a0Surfingu w\u00a0Portoryko!" },
   { when: "2024", text: "Reprezentantka Polski Emma Ridolfini zajmuje 7-me miejsce na\u00a0Mistrzostwach Europy U14 w\u00a0Hiszpanii!" },
+  { when: "08.2025", text: "Mistrzostwa Polski w\u00a0Surfingu 2025 w\u00a0Chałupach: mistrzami Polski w\u00a0shortboardzie zostają Jakub Kuzia i\u00a0Julia Szulikowska, a\u00a0Emma Ridolfini wygrywa kategorie U16 i\u00a0U18 dziewcząt." },
+  { when: "09.2025", text: "Reprezentacja Polski startuje w\u00a0Mistrzostwach Świata ISA World Surfing Games 2025 w\u00a0Salwadorze, wśród 61\u00a0krajów." },
+  { when: "12.2025", text: "Polish SUP Tour zostaje oficjalnym Pucharem Polski SUP pod egidą Polskiego Związku Surfingu – pierwszy od\u00a0lat spójny, ogólnopolski cykl zawodów SUP." },
+  { when: "09.2026", text: "Mistrzostwa Polski w\u00a0Surfingu 2026 w\u00a0Chałupach: Emma Ridolfini potrójną mistrzynią Polski – wygrywa shortboard open kobiet oraz kategorie U18 i\u00a0U16 dziewcząt!" },
+  { when: "09.2026", text: "Zawodnicy RTW Racibórz na\u00a0podium klasyfikacji generalnej Pucharu Europy SUP w\u00a0kategorii U16: Lena Nowak – 1. miejsce, Maja Bauerek – 2. miejsce, Mikołaj Milczek – 3. miejsce!" },
 ];
 
 /** Where the timeline ends: not a date but a direction. */
