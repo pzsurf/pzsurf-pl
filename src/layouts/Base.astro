@@ -69,7 +69,9 @@ const shareImage = new URL(image ?? "/hero-poster.jpg", Astro.site);
         question is answered once and then gone, and a screen reader should
         meet it before the page rather than after. Only when analytics is
         configured — no analytics, nothing to ask. */}
-    {GA_ID && <ConsentBanner />}
+    {/* In `astro dev` it is always in the markup (hidden) so `?consent` can
+        show it for work on the banner itself — see ConsentBanner. */}
+    {(GA_ID || import.meta.env.DEV) && <ConsentBanner />}
     <slot />
     {/* Last in the document, so it is the last tab stop: it never stands
         between a keyboard and the content. */}
