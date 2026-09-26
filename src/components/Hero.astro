@@ -9,6 +9,36 @@ interface Props {
   intro?: RenderedIntro | null;
 }
 const { title, lede, intro = null } = Astro.props;
+
+// The federation's name is ALWAYS the h1 (the federation's choice, September
+// 2026) — it used to give way to the introduction's own `# ` heading. That
+// heading, where there is one, now sits under the name as a subtitle; when it
+// merely repeats the name it is dropped rather than printed twice.
+const plain = (html: string) => html.replace(/<[^>]*>/g, "").trim().toLowerCase();
+const subtitleHtml =
+  intro?.titleHtml && plain(intro.titleHtml) !== title.trim().toLowerCase()
+    ? intro.titleHtml
+    : null;
+
+// A link in the introduction to ANOTHER site (results, a registration form)
+// opens in a new tab (the federation's choice, September 2026): the reader
+// keeps the federation's page. Links within this site stay in this tab. Each
+// new-tab link says so to a screen reader and carries the same ↗ the event
+// dialog's "Strona wydarzenia" uses. Rewriting the HTML by string is sound
+// only because micromark escaped any raw HTML in the source (lib/intro.ts):
+// every `<a href="…">` left is one it wrote, with the href already escaped.
+const EXTERNAL_ICON =
+  `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" ` +
+  `stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
+  `<path d="M7 17L17 7M17 7H9M17 7v8" /></svg>`;
+const isExternal = (href: string) => /^https?:\/\//i.test(href) && !/^https?:\/\/(www\.)?pzsurf\.pl(\/|$)/i.test(href);
+const introHtml = intro?.html.replace(
+  /<a href="([^"]*)"((?: title="[^"]*")?)>([\s\S]*?)<\/a>/g,
+  (whole, href: string, title: string, text: string) => isExternal(href)
+    ? `<a href="${href}"${title} target="_blank" rel="noopener noreferrer">${text}` +
+      `<span class="visually-hidden"> (otwiera się w nowej karcie)</span>${EXTERNAL_ICON}</a>`
+    : whole,
+);
 ---
 {/* `id="tresc"`: where the skip link lands (SiteHeader). tabindex -1 so focus
     can be moved here without adding a tab stop. Named by its h1, which makes
@@ -33,16 +63,12 @@ const { title, lede, intro = null } = Astro.props;
   <div class="hero__scrim" aria-hidden="true"></div>
 
   <div class="hero__inner">
-    {/* The page keeps exactly one h1. An introduction with its own `# ` title
-        supplies it; one without keeps the federation's name in the outline for
-        screen readers and search engines, without printing it over the text
-        that replaced it. The introduction's HTML is safe for set:html — see
-        lib/intro.ts. */}
-    {intro?.titleHtml
-      ? <h1 class="hero__title" id="hero-title" set:html={intro.titleHtml} />
-      : <h1 class={intro ? "visually-hidden" : "hero__title"} id="hero-title">{title}</h1>}
+    {/* The page keeps exactly one h1, and it is the federation's name. The
+        introduction's HTML is safe for set:html — see lib/intro.ts. */}
+    <h1 class="hero__title" id="hero-title">{title}</h1>
+    {subtitleHtml && <p class="hero__subtitle" set:html={subtitleHtml} />}
     {intro
-      ? <div class="hero__intro" set:html={intro.html} />
+      ? <div class="hero__intro" set:html={introHtml} />
       : <p class="hero__lede">{lede}</p>}
   </div>
 
@@ -266,8 +292,9 @@ const { title, lede, intro = null } = Astro.props;
     max-width: 46ch;
     margin: var(--space-3) auto var(--space-4);
     color: var(--color-text-muted);
-    font-size: var(--text-lg);
-    line-height: var(--leading-lg);
+    /* The same step down as the introduction it stands in for. */
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
   }
 
   /* An introduction can run longer than a lede, so the hero grows with it rather
@@ -281,12 +308,25 @@ const { title, lede, intro = null } = Astro.props;
   .hero--intro .hero__inner {
     padding-block: calc(var(--space-6) + var(--space-5));
   }
+  /* A step down from the lede's size (September 2026): under the federation's
+     name, now always printed, the introduction is the supporting text, not a
+     second headline. */
   .hero__intro {
     max-width: var(--measure);
     margin: var(--space-3) auto var(--space-4);
     color: var(--color-text-muted);
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+  .hero__subtitle {
+    max-width: 30ch;
+    margin: var(--space-2) auto 0;
+    color: rgba(255, 255, 255, 0.92);
+    font-family: var(--font-display);
     font-size: var(--text-lg);
-    line-height: 1.5;
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-subhead);
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55);
   }
   /* `:global`, because this content is injected with set:html and carries none
      of the scoped attributes Astro adds to markup it writes itself. */
@@ -321,9 +361,42 @@ const { title, lede, intro = null } = Astro.props;
     line-height: var(--leading-xl);
     font-weight: var(--weight-subhead);
   }
-  .hero__intro :global(strong),
-  .hero__intro :global(a) { color: var(--color-text); }
-  .hero__intro :global(a:hover) { color: var(--color-accent); }
+  .hero__intro :global(strong) { color: var(--color-text); }
+  /* A LINK IN THE INTRODUCTION IS A BUTTON (September 2026): the hero's own
+     quiet outline (`.btn--quiet` below), smaller, so a "Zapisz się" or
+     "Regulamin" written in the platform reads as something to press rather
+     than as underlined words in a paragraph over moving footage. Inline-flex
+     with a margin, so a line of several links wraps into a row of buttons; a
+     paragraph holding only links is centred like the rest of the hero. */
+  .hero__intro :global(a) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    margin: var(--space-1);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius);
+    background: rgba(20, 16, 12, 0.28);
+    box-shadow: inset 0 0 0 1px rgba(253, 251, 247, 0.75);
+    color: #fdfbf7;
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-subhead);
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+    text-decoration: none;
+    text-shadow: none;
+    vertical-align: middle;
+    transition: background-color 0.15s ease, transform 0.2s ease;
+  }
+  .hero__intro :global(a:hover) {
+    background: rgba(253, 251, 247, 0.14);
+    transform: translateY(-1px);
+  }
+  .hero__intro :global(a:focus-visible) {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+  }
   .hero__intro :global(img) {
     display: block;
     max-width: 100%;
@@ -403,6 +476,7 @@ const { title, lede, intro = null } = Astro.props;
   /* The footage is motion nobody asked for. Honour the preference by showing
      the poster instead — the scrim and the wording are unaffected. */
   @media (prefers-reduced-motion: reduce) {
+    .hero__intro :global(a:hover) { transform: none; }
     .hero__video { display: none; }
     .hero { background: #000 url("/hero-poster.jpg") center / cover no-repeat; }
     /* The dot stops, the mouse stays. The animation is decoration; the
