@@ -40,7 +40,7 @@ const TILES: Tile[] = [
     icon: svg('<path d="M4 19 9 5l5 14M6 14h6"/><path d="M15 15a3 3 0 1 0 6 0v4M21 15a3 3 0 0 0-6 0"/>') },
 ];
 ---
-<button type="button" class="a11y-fab" data-a11y-open aria-haspopup="dialog"
+<button type="button" class="a11y-fab" data-a11y-open data-a11y-fab aria-haspopup="dialog"
         aria-label="Ułatwienia dostępu" title="Ułatwienia dostępu">
   {/* The international symbol of accessibility (the "accessible icon" figure). */}
   <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -97,6 +97,23 @@ const TILES: Tile[] = [
     color: #ffffff;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  /* AWAY while the footer is on screen (see the script): the footer carries
+     its own labelled "Ułatwienia dostępu" button, and the floating one sat
+     over the footer's links. `visibility` as well as opacity, so an invisible
+     button is not a tab stop either; it switches only AFTER the fade out and
+     at once on the way back in. */
+  .a11y-fab {
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0s;
+  }
+  .a11y-fab.is-away {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .a11y-fab, .a11y-fab.is-away { transform: none; transition: none; }
   }
   .a11y-fab:hover { background: #2a3b4e; }
   .a11y-fab:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
@@ -220,8 +237,10 @@ const TILES: Tile[] = [
   import { A11Y_KEYS, writeSetting, readSettings, type A11yKey } from "../lib/a11y";
 
   const dialog = document.querySelector<HTMLDialogElement>("[data-a11y-dialog]");
-  const opener = document.querySelector<HTMLButtonElement>("[data-a11y-open]");
-  if (dialog && opener) {
+  // Every opener: the floating button, and the footer's labelled one.
+  const openers = [...document.querySelectorAll<HTMLButtonElement>("[data-a11y-open]")];
+  const fab = document.querySelector<HTMLButtonElement>("[data-a11y-fab]");
+  if (dialog && openers.length) {
     const tiles = [...dialog.querySelectorAll<HTMLButtonElement>("[data-a11y-key]")];
     const level = dialog.querySelector<HTMLElement>("[data-a11y-level]");
     const TEXT_LEVELS = ["", "1", "2"];
@@ -258,10 +277,26 @@ const TILES: Tile[] = [
       sync();
     });
 
-    opener.addEventListener("click", () => {
-      sync();
-      dialog.showModal();
-    });
+    for (const opener of openers) {
+      opener.addEventListener("click", () => {
+        sync();
+        dialog.showModal();
+      });
+    }
+
+    // The floating button steps aside while the footer is in view: the footer
+    // has the same control, labelled, beside the accessibility links. If it
+    // had focus as it went, focus follows to the footer's button, never to
+    // <body>.
+    const footer = document.querySelector<HTMLElement>(".foot");
+    const inFooter = footer?.querySelector<HTMLButtonElement>("[data-a11y-open]");
+    if (fab && footer && "IntersectionObserver" in window) {
+      new IntersectionObserver(([entry]) => {
+        const away = entry.isIntersecting;
+        if (away && document.activeElement === fab) inFooter?.focus({ preventScroll: true });
+        fab.classList.toggle("is-away", away);
+      }).observe(footer);
+    }
     // Backdrop click closes, as every dialog here does.
     dialog.addEventListener("click", (e) => {
       if (e.target === dialog) dialog.close();

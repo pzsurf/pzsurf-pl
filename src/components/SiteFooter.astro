@@ -30,6 +30,10 @@ const account = org.bank_account ?? null;
       )}
     </div>
 
+    {/* Three groups, each one thing: contact (left), then the social icons,
+        the site's own links, and where the data comes from. On a phone they
+        stack in one LEFT-aligned column split by hairlines — the GOV.UK and
+        gov.pl footer — and on a desktop they are the right-hand column. */}
     <div class="foot__right">
       {socials.length > 0 && (
         <p class="foot__socials">
@@ -44,16 +48,32 @@ const account = org.bank_account ?? null;
           ))}
         </p>
       )}
+
+      <div class="foot__group">
+        {/* The accessibility panel, as a labelled button among the
+            accessibility links. The floating round button (A11yPanel) steps
+            aside while the footer is on screen, so this is the one in reach
+            here — a word is clearer than an icon, and nothing floats over the
+            links. Opened by A11yPanel's script through `data-a11y-open`. */}
+        <button type="button" class="foot__a11y" data-a11y-open aria-haspopup="dialog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="12" cy="4" r="2" />
+            <path d="M19 8.5c-2.2.6-4.4.9-7 .9s-4.8-.3-7-.9l-.5 1.9c1.8.5 3.7.8 5.5.9V14l-2 7h2.1l1.9-6 1.9 6h2.1l-2-7v-2.7c1.8-.1 3.7-.4 5.5-.9z" />
+          </svg>
+          Ułatwienia dostępu
+        </button>
+        {/* A list, not links strung together with "·": Astro's HTML
+            compression drops the spaces around such separators, and on a phone
+            the row ran together into one tiny tap target. */}
+        <ul class="foot__links" aria-label="Informacje o stronie">
+          <li><a href="/deklaracja-dostepnosci/">Deklaracja dostępności</a></li>
+          <li><a href="/tekst-latwy-do-czytania/">Tekst łatwy do czytania</a></li>
+          <li><a href="/pliki-cookies/">Pliki cookies</a></li>
+        </ul>
+      </div>
+
       {/* Said plainly rather than buried: this page is generated from the
           federation's own record on the platform, so the two cannot disagree. */}
-      {/* A list, not links strung together with "·": Astro's HTML
-          compression drops the spaces around such separators, and on a phone
-          the row ran together into one tiny tap target. */}
-      <ul class="foot__links" aria-label="Informacje o stronie">
-        <li><a href="/deklaracja-dostepnosci/">Deklaracja dostępności</a></li>
-        <li><a href="/tekst-latwy-do-czytania/">Tekst łatwy do czytania</a></li>
-        <li><a href="/pliki-cookies/">Pliki cookies</a></li>
-      </ul>
       <p class="foot__line foot__credit">
         Dane z platformy <a href="https://surfpoland.com">surfpoland.com</a>
       </p>
@@ -63,15 +83,22 @@ const account = org.bank_account ?? null;
 
 <style>
   .foot { margin-top: var(--space-7); padding-block: var(--space-5); }
+  /* Two columns that NEVER wrap. Left to wrap, the right column dropped under
+     the contact details at in-between widths and kept its flush-right
+     alignment, so it floated in the middle of the row. Now it is either two
+     columns side by side (the right one's links wrap inside it if need be) or,
+     below the breakpoint further down, the phone's single stack. */
   .foot__inner {
     display: flex;
-    flex-wrap: wrap;
     gap: var(--space-4);
     justify-content: space-between;
     max-width: var(--page-max);
     margin-inline: auto;
     padding-inline: var(--space-3);
   }
+  /* The contact column keeps its natural width (the account number must not
+     be squeezed); the right-hand column takes what is left. */
+  .foot__inner > :first-child { flex: none; }
   .foot__name {
     margin: 0 0 var(--space-2);
     font-size: var(--text-xs);
@@ -84,18 +111,51 @@ const account = org.bank_account ?? null;
   /* Tabular figures so the groups line up, and never split mid-number: the
      account wraps below its label as a whole instead. */
   .foot__account { font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .foot__right { text-align: right; }
-  .foot__socials { display: flex; gap: var(--space-2); justify-content: flex-end; margin: 0 0 var(--space-3); }
+  /* DESKTOP: the right-hand column, every group flush right. */
+  .foot__right {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-3);
+    text-align: right;
+  }
+  .foot__socials { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; }
   .foot a { color: inherit; }
   .foot a:hover { color: var(--color-accent); }
   /* The round button itself is the global .person-social; `.foot a` above
      outranks its muted colour, so it is restated here. Hover still wins. */
   .foot__socials a { color: var(--color-text-muted); }
+
+  .foot__group { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-1); }
+  /* A quiet outlined pill: a control, so it looks pressable, but no louder
+     than the links it sits with. */
+  .foot__a11y {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 40px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-subhead);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .foot__a11y:hover { color: var(--color-accent); border-color: var(--color-accent); }
+  .foot__a11y:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+
   .foot__links {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-1) var(--space-4);
-    margin: var(--space-3) 0 0;
+    justify-content: flex-end;
+    gap: 0 var(--space-4);
+    margin: 0;
     padding: 0;
     list-style: none;
     font-size: var(--text-sm);
@@ -108,12 +168,26 @@ const account = org.bank_account ?? null;
     color: var(--color-text-muted);
   }
   .foot__links a:hover { color: var(--color-accent); }
-  .foot__credit { margin-top: var(--space-2); color: var(--color-text-faint); font-size: var(--text-xs); }
-  @media (max-width: 560px) {
-    .foot__links { flex-direction: column; gap: 0; }
-  }
+  .foot__credit { color: var(--color-text-faint); font-size: var(--text-xs); }
 
-  @media (max-width: 560px) {
-    .foot__right, .foot__socials { text-align: left; justify-content: flex-start; }
+  /* PHONE AND TABLET: one left-aligned column, the way GOV.UK and gov.pl
+     stack theirs — every group starts at the same edge as the address above
+     it, and a hairline between groups does the work the second column did.
+     768px, not the phone's 560: between the two, the columns no longer sat
+     comfortably side by side (the bank account alone is ~330px unbroken). */
+  @media (max-width: 768px) {
+    .foot__inner { flex-direction: column; }
+    .foot__right {
+      width: 100%;
+      align-items: stretch;
+      gap: 0;
+      text-align: left;
+    }
+    .foot__right > * { padding-block: var(--space-3); }
+    .foot__right > * + * { border-top: 1px solid var(--color-border); }
+    .foot__right > :first-child { padding-top: 0; }
+    .foot__group { align-items: flex-start; }
+    .foot__links { flex-direction: column; justify-content: flex-start; }
+    .foot__credit { padding-bottom: 0; }
   }
 </style>
