@@ -11,13 +11,11 @@
 // here — so a link keeps working whether or not anybody is running JavaScript,
 // and the text is in the markup for crawlers and link previews.
 //
-// NO WAY BACK on the page, deliberately. It is opened in a tab of its own, so
-// there is nothing behind it to return to: a "← Dokumenty" link would not go
-// back, it would navigate a tab somebody opened for one document onto the front
-// page. The browser's own back button is the reader's, and a page has no
-// business interfering with it. The footer still links onward.
+// A BACK ARROW in the top-left corner (BackButton): the browser's own back
+// when the reader came from this site, a link to the front page when not.
 import Base from "../../layouts/Base.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
+import BackButton from "../../components/BackButton.astro";
 import type { PublicResolution } from "../../lib/api";
 import { getOrganisation, getResolutions, resolutionSlugs } from "../../lib/api";
 
@@ -51,6 +49,7 @@ const description = excerpt.length > 180
   : excerpt || `Uchwała ${org.name}${meta ? ` — ${meta}` : ""}.`;
 ---
 <Base title={`${shareTitle} — ${org.name}`} description={description}>
+  <BackButton />
   <main class="page uchwala">
     <article class="uchwala__doc">
       {resolution.resolution_number && (

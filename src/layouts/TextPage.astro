@@ -5,6 +5,7 @@
 // lists that those pages do not need.
 import Base from "./Base.astro";
 import SiteFooter from "../components/SiteFooter.astro";
+import BackButton from "../components/BackButton.astro";
 import type { Organisation } from "../lib/api";
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
 const { title, description, org } = Astro.props;
 ---
 <Base title={`${title} — ${org.name}`} description={description}>
+  <BackButton />
   <main class="page textpage">
     <article class="textpage__doc">
       <slot />

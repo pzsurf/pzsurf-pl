@@ -1,0 +1,49 @@
+---
+// The way back from a subpage (an ogłoszenie, an uchwała, the text pages): a
+// round arrow pinned to the top-left corner of the window.
+//
+// It IS the browser's back button when there is somewhere on this site to go
+// back to: `history.back()` returns the reader to the page as they left it —
+// scrolled where it was, the carousel where it was, from the back/forward
+// cache where the browser has it — where a link to "/" would load the front
+// page afresh at the top.
+//
+// When there is nothing behind it on this site (a shared link, a page opened in
+// a new tab, a reader who came from a search engine) it is a plain link to the
+// front page. That is also what it is with no JavaScript at all.
+---
+<a class="dialog-close back" href="/" data-back aria-label="Wstecz">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M19 12H5M11 18l-6-6 6-6" />
+  </svg>
+</a>
+
+<style>
+  /* Pinned to the window, not the page: on a long text it stays in reach
+     wherever the reader has scrolled. The disc is the dialogs' × (tokens.css
+     `.dialog-close`), so it reads on paper and on a picture alike. */
+  .back {
+    position: fixed;
+    top: var(--space-3);
+    left: var(--space-3);
+    z-index: 10;
+    text-decoration: none;
+  }
+</style>
+
+<script>
+  for (const back of document.querySelectorAll<HTMLAnchorElement>("[data-back]")) {
+    back.addEventListener("click", (e) => {
+      let fromHere = false;
+      try {
+        fromHere = new URL(document.referrer).origin === location.origin;
+      } catch { /* no referrer */ }
+      // `history.length > 1` as well: a page opened into a new tab from this
+      // site has a referrer here but no history to go back through.
+      if (!fromHere || history.length <= 1) return;   // the plain link home
+      e.preventDefault();
+      history.back();
+    });
+  }
+</script>
