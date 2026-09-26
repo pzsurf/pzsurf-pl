@@ -1,0 +1,166 @@
+---
+// Pliki cookies: what this site stores in the reader's browser, why, and the
+// place to change the analytics decision at any time — withdrawing consent
+// must be as easy as giving it (GDPR art. 7(3)), so it is one form on one page
+// linked from every footer, not a support e-mail.
+//
+// The GOV.UK pattern again: the banner asks, this page explains and changes.
+// The banner is not shown here (ConsentBanner.astro checks the path).
+//
+// Keep the lists TRUE: a new cookie or storage key on the site means a new row
+// here, and a new PURPOSE means bumping VERSION in lib/analytics.ts so every
+// reader is asked again.
+import TextPage from "../layouts/TextPage.astro";
+import { getOrganisation, primaryAddress } from "../lib/api";
+import { GA_ID } from "../lib/analytics";
+
+const org = await getOrganisation();
+const address = primaryAddress(org);
+---
+<TextPage
+  title="Pliki cookies"
+  description={`Pliki cookies i ustawienia prywatności na stronie ${org.name}.`}
+  org={org}
+>
+  <h1>Pliki cookies</h1>
+
+  {GA_ID ? (
+    <>
+      <p>
+        Pliki cookies to małe pliki zapisywane w&nbsp;Twojej przeglądarce. Ta strona
+        używa ich <strong>tylko za&nbsp;Twoją zgodą</strong> i&nbsp;tylko do&nbsp;statystyk
+        odwiedzin (Google Analytics). Bez zgody nie łączymy się z&nbsp;Google.
+      </p>
+
+      <h2>Twoje ustawienia</h2>
+      <form class="cookie-form" data-cookie-form>
+        <fieldset>
+          <legend>Czy zgadzasz się na&nbsp;analityczne pliki cookies Google Analytics?</legend>
+          <label><input type="radio" name="analytics" value="yes" /> Tak, zgadzam się</label>
+          <label><input type="radio" name="analytics" value="no" /> Nie zgadzam się</label>
+        </fieldset>
+        <button type="submit" class="cookie-form__save">Zapisz ustawienia</button>
+        {/* Announced when the choice is saved; role=status is a polite live
+            region, so it does not interrupt the reader. */}
+        <p class="cookie-form__status" role="status" data-cookie-status></p>
+      </form>
+      <noscript>
+        <p>Twoja przeglądarka ma wyłączony JavaScript, więc Google Analytics nie działa
+        i&nbsp;żadne pliki cookies nie są zapisywane.</p>
+      </noscript>
+
+      <h2>Jakie pliki cookies zapisuje Google Analytics</h2>
+      <ul>
+        <li><code>_ga</code> &ndash; rozróżnia odwiedzających, żeby policzyć ich liczbę. Wygasa po&nbsp;13&nbsp;miesiącach.</li>
+        <li><code>_ga_{GA_ID.slice(2)}</code> &ndash; zapamiętuje stan bieżącej wizyty. Wygasa po&nbsp;13&nbsp;miesiącach.</li>
+      </ul>
+      <p>
+        Po&nbsp;wycofaniu zgody usuwamy te pliki od&nbsp;razu. O&nbsp;zgodę zapytamy ponownie
+        po&nbsp;12&nbsp;miesiącach.
+      </p>
+
+      <h2>Kto przetwarza dane i&nbsp;na&nbsp;jakiej podstawie</h2>
+      <ul>
+        <li>
+          Administratorem danych jest {org.name}{address ? `, ${address}` : ""}
+          {org.email && <>, e-mail: <a href={`mailto:${org.email}`}>{org.email}</a></>}.
+        </li>
+        <li>
+          Cel: statystyki odwiedzin strony, na&nbsp;przykład które strony są czytane
+          i&nbsp;skąd przychodzą odwiedzający. Nie tworzymy profili reklamowych,
+          a&nbsp;sygnały Google do&nbsp;reklam i&nbsp;personalizacji są wyłączone.
+        </li>
+        <li>
+          Podstawa prawna: Twoja zgoda (art.&nbsp;6 ust.&nbsp;1 lit.&nbsp;a RODO oraz
+          art.&nbsp;399 ustawy Prawo komunikacji elektronicznej). Możesz ją wycofać
+          w&nbsp;każdej chwili powyżej; wycofanie nie wpływa na&nbsp;zgodność z&nbsp;prawem
+          wcześniejszego przetwarzania.
+        </li>
+        <li>
+          Odbiorca: Google Ireland Limited, jako podmiot przetwarzający dane
+          w&nbsp;naszym imieniu. Dane mogą być przekazywane do&nbsp;Google LLC w&nbsp;USA
+          na&nbsp;podstawie decyzji Komisji Europejskiej w&nbsp;sprawie Ram ochrony
+          danych UE-USA (EU-US Data Privacy Framework).
+        </li>
+        <li>Okres przechowywania danych w&nbsp;Google Analytics: 14&nbsp;miesięcy.</li>
+        <li>
+          Masz prawo dostępu do&nbsp;danych, ich sprostowania, usunięcia, ograniczenia
+          przetwarzania i&nbsp;przenoszenia, a&nbsp;także prawo wniesienia skargi
+          do&nbsp;Prezesa Urzędu Ochrony Danych Osobowych.
+        </li>
+      </ul>
+    </>
+  ) : (
+    <p>Ta strona nie używa plików cookies ani narzędzi analitycznych.</p>
+  )}
+
+  <h2>Inne dane zapisywane w&nbsp;przeglądarce</h2>
+  <p>
+    Te dane nie są plikami cookies, nie są wysyłane do&nbsp;nikogo i&nbsp;nie wymagają
+    zgody, bo&nbsp;służą wyłącznie temu, o&nbsp;co prosisz:
+  </p>
+  <ul>
+    <li><code>pzsurf-a11y</code> &ndash; Twoje ustawienia z&nbsp;panelu „Ułatwienia dostępu”.</li>
+    {GA_ID && <li><code>pzsurf-consent</code> &ndash; Twoja decyzja w&nbsp;sprawie plików cookies i&nbsp;jej data.</li>}
+  </ul>
+</TextPage>
+
+<style>
+  .cookie-form fieldset {
+    margin: 0 0 var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius);
+  }
+  .cookie-form legend { padding: 0 var(--space-1); font-weight: var(--weight-subhead); }
+  .cookie-form label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .cookie-form input { width: 20px; height: 20px; margin: 0; accent-color: var(--palette-slate); }
+  .cookie-form__save {
+    min-height: 44px;
+    padding: var(--space-1) var(--space-3);
+    border: 2px solid var(--palette-slate);
+    border-radius: var(--radius);
+    background: var(--palette-slate);
+    color: #ffffff;
+    font: inherit;
+    font-weight: var(--weight-subhead);
+    cursor: pointer;
+  }
+  .cookie-form__save:hover { background: #2a3b4e; }
+  .cookie-form__save:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+  .cookie-form__status { margin-top: var(--space-2); font-weight: var(--weight-subhead); }
+  .cookie-form__status:empty { display: none; }
+</style>
+
+<script>
+  import { readConsent, saveConsent } from "../lib/analytics";
+
+  const form = document.querySelector<HTMLFormElement>("[data-cookie-form]");
+  const status = document.querySelector<HTMLElement>("[data-cookie-status]");
+  if (form && status) {
+    // Show the decision in force; with none made, neither option is ticked —
+    // a pre-selected answer would not be the reader's own.
+    const current = readConsent();
+    if (current) {
+      form.querySelector<HTMLInputElement>(`input[value="${current.analytics ? "yes" : "no"}"]`)!.checked = true;
+    }
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const choice = new FormData(form).get("analytics");
+      if (!choice) {
+        status.textContent = "Wybierz jedną z odpowiedzi.";
+        return;
+      }
+      saveConsent(choice === "yes");
+      status.textContent = choice === "yes"
+        ? "Zapisano. Zgoda na analityczne pliki cookies została udzielona."
+        : "Zapisano. Analityczne pliki cookies są wyłączone i zostały usunięte.";
+    });
+  }
+</script>

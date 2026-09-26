@@ -2,6 +2,8 @@
 import "../styles/tokens.css";
 import "../styles/a11y.css";
 import A11yPanel from "../components/A11yPanel.astro";
+import ConsentBanner from "../components/ConsentBanner.astro";
+import { GA_ID } from "../lib/analytics";
 
 interface Props {
   /** The browser tab, and the default for the share title. */
@@ -63,6 +65,11 @@ const shareImage = new URL(image ?? "/hero-poster.jpg", Astro.site);
     </script>
   </head>
   <body>
+    {/* FIRST in the body, before even the skip link, as GOV.UK places it: the
+        question is answered once and then gone, and a screen reader should
+        meet it before the page rather than after. Only when analytics is
+        configured — no analytics, nothing to ask. */}
+    {GA_ID && <ConsentBanner />}
     <slot />
     {/* Last in the document, so it is the last tab stop: it never stands
         between a keyboard and the content. */}
