@@ -58,7 +58,7 @@ const socials = socialLinks(org);
 >
   <form method="dialog" class="person__close-form">
     {/* `method="dialog"` closes without a line of JavaScript. */}
-    <button class="person__close" aria-label="Zamknij">×</button>
+    <button class="person__close dialog-close" aria-label="Zamknij">×</button>
   </form>
 
   <div class="person__head org-dialog__head">
@@ -68,7 +68,7 @@ const socials = socialLinks(org);
         : <span class="org-dialog__initial">{initial}</span>}
     </span>
     <div class="org-dialog__heading">
-      <h2 class="person__name" id={`${id}-title`}>{org.name}</h2>
+      <h2 class="person__name dialog-title" id={`${id}-title`}>{org.name}</h2>
       {metaParts.length > 0 && (
         <p class="org-dialog__meta">
           {metaParts.map((part, i) => (

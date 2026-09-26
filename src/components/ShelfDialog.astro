@@ -99,11 +99,11 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
 >
   <form method="dialog" class="person__close-form">
     {/* `method="dialog"` closes without a line of JavaScript. */}
-    <button class="person__close" aria-label="Zamknij">×</button>
+    <button class="person__close dialog-close" aria-label="Zamknij">×</button>
   </form>
 
   <div class="person__head">
-    <h2 class="person__name" id={`${id}-title`}>{title}</h2>
+    <h2 class="person__name dialog-title" id={`${id}-title`}>{title}</h2>
     <p class="shelf-dialog__meta">{counted(count)}</p>
   </div>
 

@@ -8,13 +8,13 @@
 ---
 <dialog class="resolution" data-resolution-dialog aria-labelledby="resolution-title">
   <div class="resolution__head">
-    <div>
+    <div class="dialog-title">
       <p class="resolution__number" data-res-number></p>
       <h2 class="resolution__title" id="resolution-title" data-res-title></h2>
       <p class="resolution__meta" data-res-meta></p>
     </div>
     <form method="dialog" class="resolution__close-form">
-      <button class="resolution__close" aria-label="Zamknij">×</button>
+      <button class="resolution__close dialog-close" aria-label="Zamknij">×</button>
     </form>
   </div>
 
@@ -70,15 +70,6 @@
     font-size: var(--text-xs);
   }
   .resolution__close-form { margin: 0; flex: 0 0 auto; }
-  .resolution__close {
-    width: 32px; height: 32px;
-    border: none; border-radius: 50%;
-    background: transparent;
-    color: var(--color-text-faint);
-    font-size: 22px; line-height: 1;
-    cursor: pointer;
-  }
-  .resolution__close:hover { color: var(--color-accent); }
 
   .resolution__body {
     flex: 0 1 auto;
