@@ -108,7 +108,9 @@ const rest = faces.length - shown.length;
     font-size: 13px;
     font-weight: var(--weight-subhead);
   }
-  .group__face + .group__face { margin-left: -12px; }
+  /* 8px, not more: at 12 the next face's ring cut the second letter of a
+     monogram ("MP" read "M"). */
+  .group__face + .group__face { margin-left: -8px; }
   .group__face img {
     /* Absolute, or the picture resolves its height against a content-sized grid
        track and spills out of the circle — the trap PersonCard documents. */

@@ -537,7 +537,9 @@ const orderedBodies = orderBodies(bodies);
      darker, so nothing needs restating. */
 
   .section__title {
-    font-size: var(--text-2xl);
+    /* 35px on a desktop, down to 28px on a phone, where 35 broke "Kadra
+       Narodowa 2026" over two lines. */
+    font-size: clamp(28px, 7.5vw, var(--text-2xl));
     line-height: var(--leading-2xl);
     font-weight: var(--weight-display);
     color: var(--color-text);
@@ -549,6 +551,9 @@ const orderedBodies = orderBodies(bodies);
     justify-content: space-between;
     gap: var(--space-3);
     margin-bottom: var(--space-5);
+  }
+  @media (max-width: 600px) {
+    .section__head { margin-bottom: var(--space-4); }
   }
 
   /* One card per GROUP — a national-team division above, a governance body
