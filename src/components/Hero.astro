@@ -419,9 +419,9 @@ const { title, lede, intro = null } = Astro.props;
     text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55);
   }
 
-  /* On a phone the scroll hint goes: swiping IS scrolling there, and the hint
-     shared one crowded strip with the pause and accessibility buttons. */
-  @media (max-width: 600px) {
-    .hero__scroll { display: none; }
-  }
+  /* The scroll hint stays on a phone too (the federation's choice, September
+     2026): a full-screen hero hides that there is a page below it on any
+     screen. It fits the strip it shares: the accessibility button holds the
+     bottom-left corner, the pause button the bottom-right, and the hint's
+     40px sits between them even at 320px. */
 </style>
