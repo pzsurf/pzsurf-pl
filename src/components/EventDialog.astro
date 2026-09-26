@@ -52,7 +52,7 @@ const metaParts = [
 >
   <form method="dialog" class="person__close-form">
     {/* `method="dialog"` closes without a line of JavaScript. */}
-    <button class="person__close" aria-label="Zamknij">×</button>
+    <button class="person__close dialog-close" aria-label="Zamknij">×</button>
   </form>
 
   {/* Decorative: the name is right beneath it and an alt repeating the name is
@@ -69,7 +69,7 @@ const metaParts = [
       indented past the line above it. */}
   <div class="event-dialog__body">
     <div class="person__head event-dialog__head">
-      <h2 class="person__name" id={`${id}-title`}>{event.name}</h2>
+      <h2 class="person__name dialog-title" id={`${id}-title`}>{event.name}</h2>
       {(metaParts.length > 0 || past) && (
         <p class="event-dialog__meta">
           {metaParts.map((part, i) => (
@@ -168,6 +168,9 @@ const metaParts = [
     padding-bottom: var(--space-3);
     text-align: left;
   }
+  /* With no picture the title is the first thing in the dialog, level with
+     the ×; keep a lane clear on its right so a long name wraps short of it. */
+  .event-dialog:not(:has(.event-dialog__media)) .event-dialog__head { padding-right: var(--space-5); }
 
   .event-dialog__meta {
     display: flex;

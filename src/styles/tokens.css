@@ -321,17 +321,46 @@ dialog *::-webkit-scrollbar { display: none; }
   position: absolute;
   top: var(--space-2);
   right: var(--space-2);
-  width: 32px;
-  height: 32px;
-  border: none;
+  z-index: 2;
+}
+
+/* The × on every dialog. A DISC, not a bare glyph: on a banner photograph
+   (EventDialog) a faint × on transparent vanished into the picture. The paper
+   colour at 85% with a blur behind it reads on a dark photo, a light one and
+   the plain sheet alike, and follows the theme because it is mixed from the
+   theme's own token. The hairline ring and the soft shadow keep its edge
+   visible when what is under it happens to be paper-coloured too. */
+.dialog-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--color-border);
   border-radius: 50%;
-  background: transparent;
-  color: var(--color-text-faint);
+  background: color-mix(in srgb, var(--color-bg-raised) 85%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 1px 4px rgba(20, 15, 8, 0.18);
+  color: var(--color-text);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
 }
-.person__close:hover { color: var(--color-accent); }
+.dialog-close:hover { color: var(--color-accent); background: var(--color-bg-raised); }
+.dialog-close:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* A dialog title never pushes the × out of its corner: it takes whatever width
+   is left beside the button and wraps, and a word too long for that (a URL, a
+   compound name) breaks rather than overflowing. */
+.dialog-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 
 .person__head { text-align: center; }
 /* A ROUNDED RECTANGLE, not a circle, and in the card's own 3:4 proportion

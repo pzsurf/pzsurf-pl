@@ -19,10 +19,10 @@ const lines = (text: string) => text.split("\n");
 ---
 <dialog class="about" data-about-dialog aria-labelledby="about-title">
   <div class="about__head">
-    <h2 class="about__title" id="about-title">O Związku</h2>
+    <h2 class="about__title dialog-title" id="about-title">O Związku</h2>
     <form method="dialog" class="about__close-form">
       {/* `method="dialog"` closes without a line of JavaScript. */}
-      <button class="about__close" aria-label="Zamknij">×</button>
+      <button class="about__close dialog-close" aria-label="Zamknij">×</button>
     </form>
   </div>
 
@@ -88,7 +88,7 @@ const lines = (text: string) => text.split("\n");
   .about__head {
     flex: none;
     display: flex;
-    align-items: center;
+    align-items: flex-start;   /* the × stays in the corner when the title wraps */
     justify-content: space-between;
     gap: var(--space-3);
     padding: var(--space-4);
@@ -100,18 +100,6 @@ const lines = (text: string) => text.split("\n");
     font-weight: var(--weight-display);
   }
   .about__close-form { margin: 0; flex: 0 0 auto; }
-  .about__close {
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--color-text-faint);
-    font-size: 22px;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .about__close:hover { color: var(--color-accent); }
 
   .about__body {
     flex: 1 1 auto;

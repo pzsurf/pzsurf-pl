@@ -29,9 +29,9 @@ const heading = statute.title?.trim() || title || "Statut";
 ---
 <dialog class="statute" data-statute-dialog aria-labelledby="statute-title">
   <div class="statute__head">
-    <h2 class="statute__title" id="statute-title">{heading}</h2>
+    <h2 class="statute__title dialog-title" id="statute-title">{heading}</h2>
     <form method="dialog" class="statute__close-form">
-      <button class="statute__close" aria-label="Zamknij">×</button>
+      <button class="statute__close dialog-close" aria-label="Zamknij">×</button>
     </form>
   </div>
 
@@ -67,7 +67,7 @@ const heading = statute.title?.trim() || title || "Statut";
   .statute__head {
     flex: none;
     display: flex;
-    align-items: center;
+    align-items: flex-start;   /* the × stays in the corner when the title wraps */
     justify-content: space-between;
     gap: var(--space-3);
     padding: var(--space-4);
@@ -82,18 +82,6 @@ const heading = statute.title?.trim() || title || "Statut";
     font-weight: var(--weight-display);
   }
   .statute__close-form { margin: 0; flex: 0 0 auto; }
-  .statute__close {
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--color-text-faint);
-    font-size: 22px;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .statute__close:hover { color: var(--color-accent); }
 
   /* The only thing that scrolls. `tabindex=0` in the markup is what makes it
      keyboard-scrollable — a scroll container that is not focusable cannot be
@@ -142,8 +130,10 @@ const heading = statute.title?.trim() || title || "Statut";
   .statute__body :global(li) { margin-bottom: var(--space-2); }
   .statute__body :global(ol ol) { margin-top: var(--space-2); }
 
+  /* No `flex-wrap` on the head, at any width: wrapping moved the × onto a line
+     of its own under a long title. The title wraps inside its own box instead
+     (`.dialog-title` in tokens.css) and the × keeps the top-right corner. */
   @media (max-width: 600px) {
-    .statute__head { flex-wrap: wrap; }
     .statute__title { font-size: var(--text-base); }
   }
 

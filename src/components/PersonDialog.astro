@@ -16,12 +16,12 @@
 <dialog class="person" data-person-dialog aria-labelledby="person-name">
   <form method="dialog" class="person__close-form">
     {/* `method="dialog"` closes without a line of JavaScript. */}
-    <button class="person__close" aria-label="Zamknij">×</button>
+    <button class="person__close dialog-close" aria-label="Zamknij">×</button>
   </form>
 
   <div class="person__head">
     <div class="person__avatar" data-avatar></div>
-    <h2 class="person__name" id="person-name" data-name></h2>
+    <h2 class="person__name dialog-title" id="person-name" data-name></h2>
   </div>
 
   <div class="person__section">
