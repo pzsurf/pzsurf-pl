@@ -29,7 +29,7 @@ const address = primaryAddress(org);
       <p>
         Pliki cookies to małe pliki zapisywane w&nbsp;Twojej przeglądarce. Ta strona
         używa ich <strong>tylko za&nbsp;Twoją zgodą</strong> i&nbsp;tylko do&nbsp;statystyk
-        odwiedzin (Google Analytics). Bez zgody Google Analytics nie jest w&nbsp;ogóle
+        korzystania ze&nbsp;strony (Google Analytics). Bez zgody Google Analytics nie jest w&nbsp;ogóle
         wczytywane.
       </p>
 
@@ -67,8 +67,12 @@ const address = primaryAddress(org);
           {org.email && <>, e-mail: <a href={`mailto:${org.email}`}>{org.email}</a></>}.
         </li>
         <li>
-          Cel: statystyki odwiedzin strony, na&nbsp;przykład które strony są czytane
-          i&nbsp;skąd przychodzą odwiedzający. Nie tworzymy profili reklamowych,
+          Cel: statystyki korzystania ze&nbsp;strony. Google Analytics zapisuje, które
+          strony są czytane i&nbsp;jak długo, skąd przychodzą odwiedzający, jak daleko
+          przewijają stronę, kliknięcia w&nbsp;linki do&nbsp;innych stron i&nbsp;pobrania
+          plików (np. dokumentów PDF), a&nbsp;także rodzaj urządzenia i&nbsp;przeglądarki
+          oraz przybliżoną lokalizację (miasto lub kraj, ustalane z&nbsp;adresu IP).
+          Nie tworzymy profili reklamowych,
           a&nbsp;sygnały Google do&nbsp;reklam i&nbsp;personalizacji są wyłączone.
         </li>
         <li>
