@@ -1,5 +1,7 @@
 ---
 import "../styles/tokens.css";
+import "../styles/a11y.css";
+import A11yPanel from "../components/A11yPanel.astro";
 
 interface Props {
   /** The browser tab, and the default for the share title. */
@@ -46,8 +48,24 @@ const shareImage = new URL(image ?? "/hero-poster.jpg", Astro.site);
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={shareImage} />
     <meta name="twitter:card" content="summary_large_image" />
+
+    {/* The reader's accessibility settings (A11yPanel), applied BEFORE the
+        first paint so a reader who needs high contrast never sees the page
+        flash in the default colours. Inline and tiny for that reason; the key
+        list mirrors lib/a11y.ts. */}
+    <script is:inline>
+      try {
+        var s = JSON.parse(localStorage.getItem("pzsurf-a11y") || "{}");
+        for (var k of ["text", "contrast", "links", "spacing", "motion", "images", "font"]) {
+          if (typeof s[k] === "string") document.documentElement.dataset["a11y" + k[0].toUpperCase() + k.slice(1)] = s[k];
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <slot />
+    {/* Last in the document, so it is the last tab stop: it never stands
+        between a keyboard and the content. */}
+    <A11yPanel />
   </body>
 </html>

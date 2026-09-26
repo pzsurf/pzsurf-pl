@@ -46,9 +46,6 @@ const [teams, org, bodies, statute, documents, resolutions, partners, events, af
 const annSlugs = announcementSlugs(announcements);
 const annHref = (id: string) => `/ogloszenia/${annSlugs.get(id)}/`;
 const recentAnnouncements = announcements.slice(0, CAROUSEL_SHOWN);
-// Exactly one <main> on the page, and on the FIRST section that renders. With
-// announcements it is theirs; with none, Kadra keeps it as before.
-const KadraTag = announcements.length > 0 ? "section" : "main";
 
 // The clubs, schools and associations the federation licenses, in reading
 // order. One dialog id per organisation, derived from the slug the API already
@@ -200,12 +197,15 @@ const orderedBodies = orderBodies(bodies);
       that dialog, so crawlers and link previews see the whole set rather than
       the ten on screen.
 
-      This carries <main> when it renders, so the page's primary content starts
-      where the reading does. With nothing announced the section is not drawn at
-      all — the same rule every other section here follows — and Kadra takes
-      <main> back rather than the page having none. ── */}
+      With nothing announced the section is not drawn at all — the same rule
+      every other section here follows. ── */}
+  {/* ONE <main> around every section, from the news to the documents, so a
+      screen reader's "jump to main" lands on the content and none of it sits
+      outside a landmark. The header and hero come before it, partners and
+      footer after. */}
+  <main>
   {announcements.length > 0 && (
-    <main class="page" id="ogloszenia">
+    <section class="page" id="ogloszenia">
       <div class="section__head">
         <h2 class="section__title">Ogłoszenia</h2>
       </div>
@@ -223,10 +223,10 @@ const orderedBodies = orderBodies(bodies);
                        countText={counted(announcements.length, ["ogłoszenie", "ogłoszenia", "ogłoszeń"])} />
         )}
       </Carousel>
-    </main>
+    </section>
   )}
 
-  <KadraTag class="page" id="kadra">
+  <section class="page" id="kadra">
     <div class="section__head">
       <h2 class="section__title">Kadra Narodowa {year}</h2>
     </div>
@@ -248,7 +248,7 @@ const orderedBodies = orderBodies(bodies);
         </li>
       ))}
     </ul>
-  </KadraTag>
+  </section>
 
   {/* ── Wydarzenia ────────────────────────────────────────────────────────
       The federation's calendar: what is coming, then what has happened, the
@@ -384,6 +384,8 @@ const orderedBodies = orderBodies(bodies);
       </ul>
     </section>
   )}
+
+  </main>
 
   {/* ── Partnerzy ─────────────────────────────────────────────────────────
       NOT a section and NOT in the menu. Partners are an acknowledgement, not

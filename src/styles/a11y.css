@@ -1,0 +1,119 @@
+/*
+ * The reader's own adjustments, set from the "Ułatwienia dostępu" panel
+ * (A11yPanel.astro) as data-a11y-* attributes on <html>, remembered per
+ * browser, and applied by an inline script in <head> before the first paint.
+ *
+ * These are NOT what makes the site accessible: the page meets WCAG 2.2 AA on
+ * its own (contrast, keyboard, focus, text alternatives, a skip link, pause
+ * controls). They are the extra comfort settings official Polish sites offer,
+ * for a reader who wants larger type, stronger contrast or stiller pages than
+ * their browser gives them.
+ *
+ * `!important` is deliberate here and nowhere else: a setting the READER chose
+ * has to win over every component's own styles, which Astro scopes at a higher
+ * specificity than any global rule could reach.
+ */
+
+/* ── Większy tekst: two steps up. Components size text through the --text-*
+   tokens, so raising the tokens scales the page's type without scaling its
+   layout the way browser zoom does. */
+:root[data-a11y-text="1"] {
+  --text-xs: 14px; --text-sm: 17px; --text-base: 18px;
+  --text-lg: 23px; --text-xl: 30px; --text-2xl: 40px;
+}
+:root[data-a11y-text="2"] {
+  --text-xs: 16px; --text-sm: 20px; --text-base: 21px;
+  --text-lg: 26px; --text-xl: 34px; --text-2xl: 44px;
+}
+
+/* ── Wysoki kontrast: black on white, black rules, a deep red accent (9.9:1),
+   no shadows, no paper grain. The dark bands stay dark with pure white type. */
+:root[data-a11y-contrast="on"] {
+  --color-bg: #ffffff;
+  --color-bg-raised: #ffffff;
+  --color-text: #000000;
+  --color-text-muted: #000000;
+  --color-text-faint: #1a1a1a;
+  --color-border: #000000;
+  --color-border-strong: #000000;
+  --color-accent: #9a0000;
+  --color-accent-strong: #6b0000;
+  --color-accent-muted: #9a0000;
+  --color-accent-muted-strong: #6b0000;
+  --color-on-accent-muted: #ffffff;
+  --palette-paper: #ffffff;
+  --shadow-paper: none;
+  --shadow-paper-lift: none;
+}
+:root[data-a11y-contrast="on"] body { background-image: none !important; }
+:root[data-a11y-contrast="on"] .on-dark {
+  --color-text-muted: #ffffff;
+  --color-text-faint: #ffffff;
+  --color-border: #ffffff;
+  --color-border-strong: #ffffff;
+}
+/* Over the hero footage: make the scrim nearly opaque so the type sits on
+   black rather than on moving water. */
+:root[data-a11y-contrast="on"] .hero__scrim { background: rgba(0, 0, 0, 0.85) !important; }
+
+/* ── Podświetl linki: every link underlined; links in running text on a
+   yellow ground; whole-card links outlined, since a card is too big to
+   underline meaningfully. */
+:root[data-a11y-links="on"] a {
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 3px !important;
+}
+:root[data-a11y-links="on"] :is(p, li, dd, td, footer) a {
+  background: #ffe45c !important;
+  color: #000000 !important;
+}
+:root[data-a11y-links="on"] a:has(img, .ann__media, .event__media, .doccard__action) {
+  outline: 3px solid #e0a800 !important;
+  outline-offset: 2px !important;
+}
+
+/* ── Odstępy w tekście: exactly the values WCAG 1.4.12 (Text Spacing) tests
+   with. The page is built to take them without clipping or overlap. */
+:root[data-a11y-spacing="on"] body * {
+  line-height: 1.5 !important;
+  letter-spacing: 0.12em !important;
+  word-spacing: 0.16em !important;
+}
+:root[data-a11y-spacing="on"] p { margin-bottom: 2em !important; }
+
+/* ── Zatrzymaj animacje: nothing moves. The hero video and the partners strip
+   are also stopped by their own scripts (they listen for the change); this
+   stops everything CSS drives, and shows the About timeline fully drawn. */
+:root[data-a11y-motion="off"] *,
+:root[data-a11y-motion="off"] *::before,
+:root[data-a11y-motion="off"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+:root[data-a11y-motion="off"] .timeline__card,
+:root[data-a11y-motion="off"] .timeline__dot { opacity: 1 !important; transform: none !important; }
+:root[data-a11y-motion="off"] .timeline__progress { transform: scaleY(1) !important; }
+:root[data-a11y-motion="off"] .hero__video { display: none !important; }
+/* In the video's place, its poster still, as the system "reduce motion"
+   setting already gets (Hero.astro). */
+:root[data-a11y-motion="off"] .hero { background: #000 url("/hero-poster.jpg") center / cover no-repeat !important; }
+:root[data-a11y-motion="off"] .hero__pause { display: none !important; }
+
+/* ── Ukryj obrazy: photographs, crests and the video go; the space they held
+   stays, so nothing jumps. The federation's logotype is kept: it IS the
+   site's name, and hiding it would leave the header without one. */
+:root[data-a11y-images="off"] img:not(.masthead__brand img),
+:root[data-a11y-images="off"] video {
+  visibility: hidden !important;
+}
+
+/* ── Czytelna czcionka: one plain, open sans for everything, headings
+   included (Verdana and its kin were drawn for legibility on screens), and no
+   italics. */
+:root[data-a11y-font="on"] {
+  --font-body: Verdana, Tahoma, "DejaVu Sans", "Noto Sans", sans-serif;
+  --font-display: var(--font-body);
+}
+:root[data-a11y-font="on"] :is(em, i, cite) { font-style: normal !important; }

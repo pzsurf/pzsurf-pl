@@ -1,0 +1,76 @@
+---
+// Informacje w tekście łatwym do czytania (ETR): what the federation is and
+// does, in the short sentences and plain words an easy-to-read text uses —
+// one of the forms a Polish public body publishes about itself (ustawa
+// o zapewnianiu dostępności osobom ze szczególnymi potrzebami, art. 6),
+// alongside the accessibility statement.
+//
+// Only facts the site already states elsewhere (lib/about.ts and the
+// federation's record on the platform). Keep the style when editing: one
+// thought per sentence, no abbreviations without an explanation, no
+// parentheses, no numbers written as words.
+import TextPage from "../layouts/TextPage.astro";
+import { getOrganisation, primaryAddress } from "../lib/api";
+
+const org = await getOrganisation();
+const address = primaryAddress(org);
+---
+<TextPage
+  title="Tekst łatwy do czytania"
+  description={`Informacje o ${org.name} w tekście łatwym do czytania.`}
+  org={org}
+>
+  <h1>Informacje o&nbsp;Polskim Związku Surfingu w&nbsp;tekście łatwym do&nbsp;czytania</h1>
+
+  <h2>Co to jest surfing?</h2>
+  <p>Surfing to sport na&nbsp;wodzie.</p>
+  <p>Osoba stoi na&nbsp;desce i&nbsp;płynie na&nbsp;fali.</p>
+  <p>Są różne rodzaje surfingu. Na przykład:</p>
+  <ul>
+    <li>surfing na&nbsp;krótkiej desce,</li>
+    <li>longboard, czyli surfing na&nbsp;długiej desce,</li>
+    <li>SUP, czyli pływanie na&nbsp;desce z&nbsp;wiosłem,</li>
+    <li>bodysurfing, czyli pływanie na&nbsp;fali bez deski.</li>
+  </ul>
+
+  <h2>Kim jesteśmy?</h2>
+  <p>Jesteśmy Polskim Związkiem Surfingu.</p>
+  <p>Do Związku należą kluby sportowe, zawodnicy i&nbsp;organizacje.</p>
+  <p>Wszyscy lubią surfing i&nbsp;chcą go rozwijać w&nbsp;Polsce.</p>
+  <p>Związek należy do&nbsp;Międzynarodowej Federacji Surfingu.</p>
+  <p>W&nbsp;tej federacji są związki surfingu z&nbsp;wielu krajów świata.</p>
+
+  <h2>Czym się zajmujemy?</h2>
+  <ul>
+    <li>Rozwijamy surfing w&nbsp;Polsce.</li>
+    <li>Organizujemy Mistrzostwa Polski w&nbsp;surfingu.</li>
+    <li>Prowadzimy Kadrę Narodową. To najlepsi zawodnicy z&nbsp;Polski.</li>
+    <li>Zawodnicy Kadry Narodowej reprezentują Polskę na&nbsp;zawodach za&nbsp;granicą.</li>
+  </ul>
+
+  <h2>Co jest na&nbsp;tej stronie?</h2>
+  <ul>
+    <li>Ogłoszenia, czyli nowe informacje od&nbsp;Związku.</li>
+    <li>Kadra Narodowa, czyli najlepsi zawodnicy.</li>
+    <li>Wydarzenia, czyli zawody i&nbsp;inne spotkania.</li>
+    <li>Kluby i&nbsp;organizacje, które należą do&nbsp;Związku.</li>
+    <li>Osoby, które kierują Związkiem.</li>
+    <li>Dokumenty Związku, na&nbsp;przykład statut. Statut to najważniejsze zasady Związku.</li>
+    <li>Dane do&nbsp;kontaktu na&nbsp;dole strony.</li>
+  </ul>
+
+  <h2>Jak się z&nbsp;nami skontaktować?</h2>
+  {org.email && (
+    <p>Możesz napisać e-mail na&nbsp;adres: <a href={`mailto:${org.email}`}>{org.email}</a></p>
+  )}
+  {org.phone && <p>Możesz zadzwonić pod numer: {org.phone}</p>}
+  {address && <p>Możesz napisać list na&nbsp;adres: {address}</p>}
+
+  <h2>Jak korzystać z&nbsp;tej strony?</h2>
+  <p>W&nbsp;lewym dolnym rogu strony jest okrągły przycisk z&nbsp;ludzikiem.</p>
+  <p>Ten przycisk to „Ułatwienia dostępu”.</p>
+  <p>Możesz tam na&nbsp;przykład powiększyć litery albo zatrzymać ruchome elementy.</p>
+  <p>
+    Więcej informacji jest w&nbsp;<a href="/deklaracja-dostepnosci/">deklaracji dostępności</a>.
+  </p>
+</TextPage>
