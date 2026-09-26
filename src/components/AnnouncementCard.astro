@@ -12,8 +12,10 @@
 // you whether you have read it already. That is the one deliberate difference
 // from EventCard, whose date leads in the accent colour.
 //
-// It opens in a NEW TAB, at the federation's request: a reader working through
-// the carousel keeps their place on the front page.
+// It opens in the SAME TAB (the federation's choice, September 2026; it used to
+// be a new tab). The place on the front page is
+// kept by going BACK to it: the back arrow on the notice's page is
+// `history.back()` (BackButton).
 import type { PublicAnnouncement } from "../lib/api";
 
 interface Props {
@@ -28,7 +30,7 @@ const { announcement, href } = Astro.props;
 // the string avoids a timezone shifting the date by one.
 const day = (announcement.published_at ?? "").slice(0, 10);
 ---
-<a class="ann" href={href} target="_blank" rel="noopener noreferrer">
+<a class="ann" href={href}>
   <span class="ann__media">
     {announcement.featured_image_url
       ? <img src={announcement.featured_image_url} alt="" loading="lazy"
@@ -122,3 +124,4 @@ const day = (announcement.published_at ?? "").slice(0, 10);
     font-size: var(--text-xs);
   }
 </style>
+

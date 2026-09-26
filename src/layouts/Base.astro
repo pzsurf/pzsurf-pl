@@ -74,5 +74,41 @@ const shareImage = new URL(image ?? "/hero-poster.jpg", Astro.site);
     {/* Last in the document, so it is the last tab stop: it never stands
         between a keyboard and the content. */}
     <A11yPanel />
+
+    <script>
+      // BACK INTO AN OPEN DIALOG. Every page of this site opens in the same tab,
+      // and some are reached from inside a dialog (an uchwała from the Uchwały
+      // list, a notice from "wszystkie ogłoszenia", the accessibility statement
+      // from the a11y panel). The back arrow (BackButton) is `history.back()`,
+      // and where the browser restores the page from its back/forward cache
+      // the dialog is still open. Where it reloads the page instead, it would
+      // come back closed — so the dialog's id is written into this history
+      // entry on the way out and reopened on the way back.
+      const KEY = "pzsurfDialog";
+
+      document.addEventListener("click", (e) => {
+        const link = (e.target as Element | null)?.closest?.("a[href]");
+        const dialog = link?.closest("dialog[open][id]");
+        if (!(link instanceof HTMLAnchorElement) || !dialog) return;
+        if (link.target || link.origin !== location.origin) return;
+        history.replaceState({ ...history.state, [KEY]: dialog.id }, "");
+      });
+
+      // Closed by hand after coming back: forget it, or the next "back" onto
+      // this entry would open it again.
+      document.addEventListener("close", (e) => {
+        if (history.state?.[KEY] !== (e.target as Element).id) return;
+        const { [KEY]: _, ...rest } = history.state;
+        history.replaceState(rest, "");
+      }, true);
+
+      window.addEventListener("pageshow", (e) => {
+        const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+        if (e.persisted || nav?.type !== "back_forward") return;   // cache restored it, or not a "back"
+        const id = history.state?.[KEY];
+        const dialog = id ? document.getElementById(id) : null;
+        if (dialog instanceof HTMLDialogElement && !dialog.open) dialog.showModal();
+      });
+    </script>
   </body>
 </html>

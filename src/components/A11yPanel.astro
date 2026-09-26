@@ -49,7 +49,7 @@ const TILES: Tile[] = [
   </svg>
 </button>
 
-<dialog class="a11y" data-a11y-dialog aria-labelledby="a11y-title">
+<dialog class="a11y" id="a11y-panel" data-a11y-dialog aria-labelledby="a11y-title">
   <div class="a11y__head">
     <h2 class="a11y__title" id="a11y-title">Ułatwienia dostępu</h2>
     <form method="dialog" class="a11y__close-form">
@@ -72,8 +72,8 @@ const TILES: Tile[] = [
   <div class="a11y__foot">
     <button type="button" class="a11y__reset" data-a11y-reset>Przywróć domyślne</button>
     <span class="a11y__links">
-      <a class="a11y__link" href="/deklaracja-dostepnosci/" target="_blank" rel="noopener">Deklaracja dostępności<span class="visually-hidden"> (otwiera się w nowej karcie)</span></a>
-      <a class="a11y__link" href="/tekst-latwy-do-czytania/" target="_blank" rel="noopener">Tekst łatwy do czytania<span class="visually-hidden"> (otwiera się w nowej karcie)</span></a>
+      <a class="a11y__link" href="/deklaracja-dostepnosci/">Deklaracja dostępności</a>
+      <a class="a11y__link" href="/tekst-latwy-do-czytania/">Tekst łatwy do czytania</a>
     </span>
   </div>
 </dialog>
@@ -266,5 +266,10 @@ const TILES: Tile[] = [
     dialog.addEventListener("click", (e) => {
       if (e.target === dialog) dialog.close();
     });
+    // Opened by something other than the opener too — the layout reopens it
+    // on "back" from the accessibility statement (Base.astro) — so the
+    // buttons are brought up to date on every opening, not only on a click.
+    new MutationObserver(() => { if (dialog.open) sync(); })
+      .observe(dialog, { attributes: true, attributeFilter: ["open"] });
   }
 </script>

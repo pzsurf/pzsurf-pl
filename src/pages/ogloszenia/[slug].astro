@@ -10,12 +10,12 @@
 // link keeps working with no JavaScript and the text is in the markup for
 // crawlers and link previews.
 //
-// NO WAY BACK on the page, deliberately — the same rule as an uchwała's. A
-// "← Ogłoszenia" link would not go back; it would navigate onto the front page
-// a reader may never have been on. The browser's own back button is theirs, and
-// the footer still links onward.
+// A BACK ARROW in the top-left corner (BackButton), since the cards stopped
+// opening a new tab (September 2026): it takes the reader back to the front
+// page exactly as they left it, as the browser's own back button would.
 import Base from "../../layouts/Base.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
+import BackButton from "../../components/BackButton.astro";
 import type { PublicAnnouncement } from "../../lib/api";
 import { announcementSlugs, getAnnouncements, getOrganisation } from "../../lib/api";
 import { renderIntro } from "../../lib/intro";
@@ -66,6 +66,8 @@ const description = plain.length > 180
   description={description}
   image={announcement.featured_image_url ?? undefined}
 >
+  <BackButton />
+
   <main class="page ogloszenie">
     <article class="ogloszenie__doc">
       {day && <time class="ogloszenie__when" datetime={day}>{day}</time>}
@@ -167,3 +169,4 @@ const description = plain.length > 180
     font-size: var(--text-sm);
   }
 </style>
+

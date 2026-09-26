@@ -140,6 +140,9 @@ const shelves = [
           eyebrow: r.resolution_number,
           footnote: [r.meeting_title, dayOf(r.adopted_on)].filter(Boolean).join(" · "),
           href: `/uchwaly/${resSlugs.get(r.id)}/`,
+          // Same tab, as every page of this site: the back arrow on the
+          // uchwała returns here with this list open again.
+          sameTab: true,
         })),
       }]
     : []),
@@ -482,9 +485,10 @@ const orderedBodies = orderBodies(bodies);
         title: a.title,
         eyebrow: (a.published_at ?? "").slice(0, 10),
         footnote: null,
-        /* A new tab, like the carousel's cards (AnnouncementCard) and the
-           uchwały: a reader working through the list keeps their place. */
+        /* Same tab, like the carousel's cards (AnnouncementCard): the back
+           arrow on the notice returns here with this list open again. */
         href: annHref(a.id),
+        sameTab: true,
         thumb: a.featured_image_url ?? null,
       }))}
     />
