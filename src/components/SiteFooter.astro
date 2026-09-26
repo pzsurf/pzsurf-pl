@@ -46,13 +46,15 @@ const account = org.bank_account ?? null;
       )}
       {/* Said plainly rather than buried: this page is generated from the
           federation's own record on the platform, so the two cannot disagree. */}
+      {/* A list, not links strung together with "·": Astro's HTML
+          compression drops the spaces around such separators, and on a phone
+          the row ran together into one tiny tap target. */}
+      <ul class="foot__links" aria-label="Informacje o stronie">
+        <li><a href="/deklaracja-dostepnosci/" target="_blank" rel="noopener">Deklaracja dostępności<span class="visually-hidden"> (otwiera się w nowej karcie)</span></a></li>
+        <li><a href="/tekst-latwy-do-czytania/" target="_blank" rel="noopener">Tekst łatwy do czytania<span class="visually-hidden"> (otwiera się w nowej karcie)</span></a></li>
+        <li><a href="/pliki-cookies/">Pliki cookies</a></li>
+      </ul>
       <p class="foot__line foot__credit">
-        <a href="/deklaracja-dostepnosci/" target="_blank" rel="noopener">Deklaracja dostępności<span class="visually-hidden"> (otwiera się w nowej karcie)</span></a>
-        ·
-        <a href="/tekst-latwy-do-czytania/" target="_blank" rel="noopener">Tekst łatwy do czytania<span class="visually-hidden"> (otwiera się w nowej karcie)</span></a>
-        ·
-        <a href="/pliki-cookies/">Pliki cookies</a>
-        ·
         Dane z platformy <a href="https://surfpoland.com">surfpoland.com</a>
       </p>
     </div>
@@ -89,7 +91,27 @@ const account = org.bank_account ?? null;
   /* The round button itself is the global .person-social; `.foot a` above
      outranks its muted colour, so it is restated here. Hover still wins. */
   .foot__socials a { color: var(--color-text-muted); }
+  .foot__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+  /* Each link a comfortable tap target, not just the height of its text. */
+  .foot__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    color: var(--color-text-muted);
+  }
+  .foot__links a:hover { color: var(--color-accent); }
   .foot__credit { margin-top: var(--space-2); color: var(--color-text-faint); font-size: var(--text-xs); }
+  @media (max-width: 560px) {
+    .foot__links { flex-direction: column; gap: 0; }
+  }
 
   @media (max-width: 560px) {
     .foot__right, .foot__socials { text-align: left; justify-content: flex-start; }

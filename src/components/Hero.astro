@@ -409,4 +409,19 @@ const { title, lede, intro = null } = Astro.props;
        indicator itself is information about the page and must not vanish. */
     .hero__scroll-mouse::after { animation: none; opacity: 1; }
   }
+
+  /* Over moving footage, the muted 72% white of the rest of the dark bands was
+     hard to read wherever the water turns to foam. Near-white, with a soft
+     shadow that only shows against light patches. */
+  .hero__lede,
+  .hero__intro {
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55);
+  }
+
+  /* On a phone the scroll hint goes: swiping IS scrolling there, and the hint
+     shared one crowded strip with the pause and accessibility buttons. */
+  @media (max-width: 600px) {
+    .hero__scroll { display: none; }
+  }
 </style>

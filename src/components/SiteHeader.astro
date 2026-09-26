@@ -245,8 +245,9 @@ const links = [
 
   @media (max-width: 560px) {
     .masthead { padding: var(--space-2) var(--space-3); }
-    /* Smaller, but not so small that the two lines under PZS turn to mush. */
-    .masthead__brand img { height: 34px; }
+    /* Smaller than on a desktop, but 34px turned the two lines under PZS to
+       mush on a phone; 40 keeps them legible. */
+    .masthead__brand img { height: 40px; }
   }
 </style>
 
