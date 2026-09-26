@@ -91,8 +91,38 @@ const address = primaryAddress(org);
       </ul>
     </>
   ) : (
-    <p>Ta strona nie używa plików cookies ani narzędzi analitycznych.</p>
+    <p>Ta strona nie używa plików cookies.</p>
   )}
+
+  {/* Server-side counting (surfpoland infra/platform/pzsurf_pl_traffic.tf):
+      no consent needed, since nothing is read from the device, but GDPR's
+      legitimate interest requires saying it plainly. Keep the numbers here
+      in step with that file. */}
+  <h2>Statystyki bez plików cookies</h2>
+  <p>
+    Niezależnie od&nbsp;powyższego serwer strony, jak każdy serwer, zapisuje
+    podstawowe dane o&nbsp;każdym żądaniu: adres IP, datę, adres otwartej strony,
+    stronę, z&nbsp;której przyszedłeś, i&nbsp;nazwę przeglądarki. Nic nie jest przy
+    tym zapisywane na&nbsp;Twoim urządzeniu ani z&nbsp;niego odczytywane.
+  </p>
+  <ul>
+    <li>
+      Cel: bezpieczeństwo strony i&nbsp;liczenie odwiedzin wszystkich osób,
+      także tych, które nie zgodziły się na&nbsp;pliki cookies.
+    </li>
+    <li>Podstawa prawna: nasz prawnie uzasadniony interes (art.&nbsp;6 ust.&nbsp;1 lit.&nbsp;f RODO).</li>
+    <li>
+      Dane są przechowywane na&nbsp;serwerach Google Cloud w&nbsp;Warszawie i&nbsp;usuwane
+      po&nbsp;30&nbsp;dniach. Dłużej przechowujemy tylko zbiorcze liczby odwiedzin,
+      z&nbsp;których nie da się ustalić, kim jesteś.
+    </li>
+    <li>
+      Administratorem danych jest {org.name}. Możesz wnieść sprzeciw wobec tego
+      przetwarzania (art.&nbsp;21 RODO){org.email
+        ? <>, pisząc na&nbsp;adres <a href={`mailto:${org.email}`}>{org.email}</a></>
+        : null}, a&nbsp;także skargę do&nbsp;Prezesa Urzędu Ochrony Danych Osobowych.
+    </li>
+  </ul>
 
   <h2>Inne dane zapisywane w&nbsp;przeglądarce</h2>
   <p>
