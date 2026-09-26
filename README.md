@@ -134,34 +134,79 @@ How consent works, in short:
    *Reports → Realtime* shows you within a minute. Then on `/pliki-cookies/`
    choose *Nie zgadzam się*: the `_ga` cookies disappear.
 
+### Visits without consent: server counts
+
+GA only sees readers who accept. For the true totals, the platform repo counts
+the requests Firebase Hosting itself receives: no script, no cookie, nothing
+read from the device, so no consent is needed (GDPR still applies, hence the
+section on `/pliki-cookies/`). All of it is in
+`surfpoland/infra/platform/pzsurf_pl_traffic.tf`, read its header first:
+
+```
+Firebase Hosting ─> Cloud Logging ─> BigQuery pzsurf_pl_weblogs   raw, with IPs, 30 days
+                                      └─ nightly ─> pzsurf_pl_stats   counts only, kept
+```
+
+`pzsurf_pl_stats` has two tables, both by day in Warsaw time:
+
+| Table | Columns | Note |
+|---|---|---|
+| `daily_pages` | day, path, referrer, country, device, views | sum `views` along any column |
+| `daily_totals` | day, views, visitors | visitors = distinct IP + browser that day; **never sum across days** |
+
+A *view* is a successful GET of a page (not an image, script or 404) that is
+not from a bot, crawler, link-preview fetcher or script. Expect these numbers
+to sit **above** GA's: everyone is counted, not only those who consented.
+
+**Setting it up** (the owner; the agent identity is read-only):
+
+1. **Apply the Terraform** in `surfpoland/infra/platform` (`terraform plan`,
+   review, `terraform apply`). It creates both datasets, the log sink, the
+   `pzsurf-traffic-stats` service account and the nightly scheduled query.
+2. **Link the logs** (no Terraform resource exists for this): Firebase
+   console → *Project settings → Integrations → Cloud Logging → Link*, select
+   **only the `pzsurf-pl` site**. Requests start arriving within ~30 minutes;
+   the sink then creates the table in `pzsurf_pl_weblogs` by itself.
+3. **Check the next morning:** BigQuery → `pzsurf_pl_stats.daily_totals` has
+   rows. Or run the query now: BigQuery → *Scheduled queries → pzsurf.pl
+   daily traffic stats → Run transfer now*. If a run fails with a permission
+   error about the service account, grant the BigQuery Data Transfer service
+   agent (`service-908529586504@gcp-sa-bigquerydatatransfer.iam.gserviceaccount.com`)
+   *Service Account Token Creator* on `pzsurf-traffic-stats`.
+
+Only traffic that reaches Firebase is counted: while `pzsurf.pl` still points
+at the old WordPress site, that means visits to `pzsurf-pl.web.app` only.
+
 ### The dashboard
 
-GA4's built-in reports cover most of what the federation needs:
+One **Looker Studio** report (<https://lookerstudio.google.com>, free, the
+federation's Google account) can show both sources side by side: the server
+counts for "how many", GA for "what did they do".
 
-- *Reports → Realtime*: who is on the site now. Useful on competition days
-  and right after an announcement is shared.
-- *Reports → Engagement → Pages and screens*: which pages are read. Each
-  ogłoszenie and uchwała has its own address, so each is its own row.
-- *Reports → Acquisition → Traffic acquisition*: where visitors come from
-  (Facebook, Instagram, search, direct).
-- *Reports → Engagement → Events*, event `file_download`: which documents are
-  downloaded; `click` with an outbound link shows visits sent on to partners.
+1. *Create → Report*, add data: **BigQuery → pzsurf-platform →
+   pzsurf_pl_stats → daily_totals**. Add a second data source the same way for
+   **daily_pages**, and a third: **Google Analytics → the pzsurf.pl property**.
+2. Build the first page:
 
-For one page the board can open, build it in **Looker Studio**
-(<https://lookerstudio.google.com>, free, same Google account): *Create →
-Report → Google Analytics* → the pzsurf.pl property. A useful first page:
+| Chart | Source | Dimension | Metric |
+|---|---|---|---|
+| Scorecards "Odwiedziny" | daily_totals | — | SUM views; AVG visitors per day |
+| Time series | daily_totals | day | views, visitors |
+| Table "Najczęściej czytane" | daily_pages | path | SUM views |
+| Pie "Skąd przychodzą" | daily_pages | referrer | SUM views (filter out `(wewnętrzne)`) |
+| Pie "Urządzenia" | daily_pages | device | SUM views |
+| Geo map | daily_pages | country | SUM views |
+| Scorecard "Zgoda na GA" | GA + daily_totals (blend on date) | — | GA Views ÷ server views: the share of consenting readers |
 
-| Chart | Dimension | Metric |
-|---|---|---|
-| Scorecards | — | Active users, Views, Average engagement time |
-| Time series | Date | Active users |
-| Table | Page title | Views, Average engagement time |
-| Pie | Session source / medium | Sessions |
-| Table (filter: Event name = `file_download`) | File name | Event count |
-| Geo map | Region | Active users |
+3. On a second page, GA's detail: engagement time, `file_download` events
+   (which PDFs are downloaded) and outbound clicks, which only GA can see.
+4. Add a date control (*Last 28 days*) and *Share* the report with the board
+   (view access). A viewer does not need access to BigQuery or GA: Looker
+   Studio reads with the owner's credentials by default.
 
-Set the date control to *Last 28 days*, then *Share* it with the board (view
-access). Reports only ever show aggregated, consented data.
+GA's own reports (*Reports → Realtime*, *Engagement → Pages and screens*,
+*Acquisition → Traffic acquisition*) stay useful for a quick look, but only
+ever show the readers who consented.
 
 ## Deploying
 
