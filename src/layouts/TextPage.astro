@@ -1,0 +1,64 @@
+---
+// A page that is only text to read: the accessibility statement and the
+// easy-to-read page. The same sheet-on-paper look as an uchwała or an
+// ogłoszenie, with the reading styles for plain headings, paragraphs and
+// lists that those pages do not need.
+import Base from "./Base.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import type { Organisation } from "../lib/api";
+
+interface Props {
+  title: string;
+  description: string;
+  org: Organisation;
+}
+const { title, description, org } = Astro.props;
+---
+<Base title={`${title} — ${org.name}`} description={description}>
+  <main class="page textpage">
+    <article class="textpage__doc">
+      <slot />
+    </article>
+  </main>
+
+  <SiteFooter org={org} />
+</Base>
+
+<style>
+  .textpage {
+    /* A measure, not the page width: this is a text to read. */
+    max-width: 72ch;
+    padding-block: var(--space-6);
+  }
+  .textpage__doc {
+    padding: var(--space-5) var(--space-4);
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+  .textpage__doc :global(h1) {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
+    font-weight: var(--weight-display);
+  }
+  .textpage__doc :global(h2) {
+    margin: var(--space-5) 0 var(--space-2);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-display);
+  }
+  .textpage__doc :global(h3) {
+    margin: var(--space-3) 0 var(--space-1);
+    font-size: var(--text-base);
+    font-weight: var(--weight-display);
+  }
+  .textpage__doc :global(p) { margin: 0 0 var(--space-2); }
+  .textpage__doc :global(ul) { margin: 0 0 var(--space-2); padding-left: 1.25em; }
+  .textpage__doc :global(li) { margin-bottom: var(--space-1); }
+  .textpage__doc :global(a) { color: var(--color-accent); }
+  .textpage__doc :global(a:hover) { color: var(--color-accent-strong); }
+</style>

@@ -32,6 +32,12 @@ const { partners } = Astro.props;
       ))}
     </ul>
   </div>
+  {/* WCAG 2.2.2: the strip moves by itself, and pausing while a pointer or the
+      keyboard is over it does not help somebody reading it on a phone. So a
+      real switch, shown only while there is movement to stop. */}
+  <button type="button" class="partners__pause" data-partners-pause hidden>
+    Zatrzymaj przewijanie
+  </button>
 </section>
 
 <style>
@@ -98,9 +104,27 @@ const { partners } = Astro.props;
     .partners__viewport { justify-content: center; }
     .partners__track { justify-content: center; }
   }
+  .partners__pause {
+    display: block;
+    min-height: 32px;
+    margin: var(--space-2) auto 0;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius);
+    background: var(--color-bg-raised);
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: var(--text-xs);
+    cursor: pointer;
+  }
+  .partners__pause[hidden] { display: none; }
+  .partners__pause:hover { color: var(--color-accent); }
+  .partners__pause:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 </style>
 
 <script>
+  import { A11Y_EVENT, motionStopped } from "../lib/a11y";
+
   const STEP_MS = 2000;
 
   const viewport = document.querySelector<HTMLElement>("[data-partners-viewport]");
@@ -116,6 +140,8 @@ const { partners } = Astro.props;
     let offset = 0;
     let setWidth = 0;   // one full set, including the gap that follows it
     let paused = false;
+    let userPaused = false;   // the reader's own switch, below
+    const pauseButton = document.querySelector<HTMLButtonElement>("[data-partners-pause]");
 
     const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
 
@@ -125,7 +151,7 @@ const { partners } = Astro.props;
     }
 
     function step() {
-      if (paused || !setWidth) return;
+      if (paused || userPaused || !setWidth) return;
       const gap = gapPx();
       const first = track!.children[0] as HTMLElement;
       offset += first.offsetWidth + gap;
@@ -166,7 +192,8 @@ const { partners } = Astro.props;
       const fits = natural <= viewport!.clientWidth + 1;
 
       viewport!.classList.toggle("partners__viewport--static", fits);
-      if (fits || reduced.matches) return;
+      if (pauseButton) pauseButton.hidden = fits || motionStopped();
+      if (fits || motionStopped()) return;
 
       setWidth = natural + gap;
 
@@ -210,6 +237,12 @@ const { partners } = Astro.props;
       resizeTimer = setTimeout(layout, 150);
     });
     reduced.addEventListener("change", layout);
+    document.addEventListener(A11Y_EVENT, layout);   // "Zatrzymaj animacje"
+
+    pauseButton?.addEventListener("click", () => {
+      userPaused = !userPaused;
+      pauseButton.textContent = userPaused ? "Wznów przewijanie" : "Zatrzymaj przewijanie";
+    });
 
     // Logos decide the width, so measure after they have loaded — before that
     // the track is narrower than it will be and a strip that overflows looks

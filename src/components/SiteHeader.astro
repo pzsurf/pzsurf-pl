@@ -37,6 +37,9 @@ const links = [
     keyboard reaches the toggle first and then what it revealed. In the wide
     layout the button is display:none and the row reads brand | nav as written. */}
 <header class="masthead on-dark" data-masthead>
+  {/* WCAG 2.4.1 (Bypass Blocks): the first tab stop on the page jumps past the
+      menu. Invisible until focused (styles in tokens.css, .skip-link). */}
+  <a class="skip-link" href="#tresc">Przejdź do treści</a>
   {/* The federation's own horizontal logotype — shield, PZS and the full name
       are all INSIDE the image, so there is no HTML wordmark beside it to keep
       in step, and no risk of the two disagreeing at a breakpoint.

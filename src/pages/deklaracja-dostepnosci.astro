@@ -1,0 +1,164 @@
+---
+// Deklaracja dostępności: the accessibility statement every Polish public
+// body's site publishes (ustawa z dnia 4 kwietnia 2019 r. o dostępności
+// cyfrowej, art. 10), linked from the footer and the "Ułatwienia dostępu"
+// panel on every page.
+//
+// Follows the structure of the official template, INCLUDING its element ids
+// (a11y-podmiot, a11y-status, a11y-kontakt, ...): the ministry's monitoring
+// reads statements by those ids, so they are not decoration — keep them.
+//
+// Keep it true. When something on the site stops being accessible, or starts
+// being accessible, change the list below and move UPDATED to that day.
+import TextPage from "../layouts/TextPage.astro";
+import { getOrganisation, primaryAddress } from "../lib/api";
+
+/** The site went public with its first release, v0.1.0. */
+const PUBLISHED = "2026-09-13";
+/** The last change that mattered to accessibility. */
+const UPDATED = "2026-09-26";
+/** When this statement was drawn up, from the self-assessment below. */
+const PREPARED = "2026-09-26";
+
+const org = await getOrganisation();
+const address = primaryAddress(org);
+const site = new URL("/", Astro.site);
+---
+<TextPage
+  title="Deklaracja dostępności"
+  description={`Deklaracja dostępności strony internetowej ${org.name}.`}
+  org={org}
+>
+  <h1>Deklaracja dostępności</h1>
+
+  <p id="a11y-wstep">
+    <span id="a11y-podmiot">{org.name}</span> zobowiązuje się zapewnić dostępność
+    swojej strony internetowej zgodnie z&nbsp;ustawą z&nbsp;dnia 4&nbsp;kwietnia
+    2019&nbsp;r. o&nbsp;dostępności cyfrowej stron internetowych i&nbsp;aplikacji
+    mobilnych podmiotów publicznych. Deklaracja dostępności dotyczy strony
+    internetowej <a id="a11y-url" href={site.href}>{site.host}</a>.
+  </p>
+
+  <ul>
+    <li>Data publikacji strony internetowej: <time id="a11y-data-publikacja" datetime={PUBLISHED}>{PUBLISHED}</time>.</li>
+    <li>Data ostatniej istotnej aktualizacji: <time id="a11y-data-aktualizacja" datetime={UPDATED}>{UPDATED}</time>.</li>
+  </ul>
+
+  <h2>Stan dostępności cyfrowej</h2>
+  <p id="a11y-status">
+    Strona internetowa jest <strong>częściowo zgodna</strong> z&nbsp;ustawą
+    o&nbsp;dostępności cyfrowej stron internetowych i&nbsp;aplikacji mobilnych
+    podmiotów publicznych z&nbsp;powodu niezgodności wymienionych poniżej.
+    Stronę projektujemy zgodnie z&nbsp;wytycznymi WCAG&nbsp;2.2 na&nbsp;poziomie AA.
+  </p>
+
+  <h3>Treści niedostępne</h3>
+  <ul>
+    <li>
+      Dokumenty do pobrania (statut, regulaminy i&nbsp;inne pliki PDF) są
+      publikowane w&nbsp;postaci otrzymanej od&nbsp;autorów i&nbsp;mogą nie być
+      w&nbsp;pełni dostępne, na&nbsp;przykład mogą nie mieć oznaczonych nagłówków
+      lub opisów tekstowych grafik. Statut jest dostępny także jako tekst na&nbsp;stronie.
+    </li>
+    <li>
+      Treść ogłoszeń, wydarzeń i&nbsp;zdjęcia przygotowują różni autorzy na&nbsp;platformie
+      surfpoland.com. Zdjęcia w&nbsp;ogłoszeniach nie mają opisów alternatywnych
+      &ndash; ich treść przekazują tytuł i&nbsp;tekst ogłoszenia.
+    </li>
+    <li>
+      Linki do&nbsp;serwisów społecznościowych i&nbsp;stron partnerów prowadzą do&nbsp;serwisów,
+      za&nbsp;których dostępność Związek nie odpowiada.
+    </li>
+  </ul>
+
+  <h2>Przygotowanie deklaracji dostępności</h2>
+  <ul>
+    <li>Deklarację sporządzono dnia: <time id="a11y-data-sporzadzenie" datetime={PREPARED}>{PREPARED}</time>.</li>
+    <li>
+      Deklarację sporządzono na podstawie samooceny przeprowadzonej przez podmiot
+      publiczny, z&nbsp;użyciem automatycznego testu axe-core (reguły WCAG&nbsp;2.2 A
+      i&nbsp;AA) oraz ręcznego sprawdzenia obsługi klawiaturą.
+    </li>
+  </ul>
+
+  <h2>Ułatwienia na stronie</h2>
+  <ul>
+    <li>
+      Przycisk <strong>„Ułatwienia dostępu”</strong> w&nbsp;lewym dolnym rogu każdej
+      strony pozwala powiększyć tekst, włączyć wysoki kontrast, podświetlić linki,
+      zwiększyć odstępy w&nbsp;tekście, zatrzymać animacje, ukryć obrazy i&nbsp;włączyć
+      czytelną czcionkę. Wybór jest zapamiętywany w&nbsp;przeglądarce.
+    </li>
+    <li>
+      Pierwszy element strony głównej to link <strong>„Przejdź do treści”</strong>,
+      widoczny po naciśnięciu klawisza Tab.
+    </li>
+    <li>Film w&nbsp;tle i&nbsp;przewijany pasek partnerów można zatrzymać przyciskami.</li>
+    <li>
+      Stronę można powiększać narzędziami przeglądarki (Ctrl&nbsp;+ „+”, Ctrl&nbsp;+ „&minus;”)
+      bez utraty treści.
+    </li>
+    <li>
+      Strona uwzględnia ustawienie systemu „ogranicz ruch” &ndash; wtedy film
+      i&nbsp;animacje są zatrzymane.
+    </li>
+    <li>
+      Informacje o&nbsp;Związku są dostępne także w&nbsp;<a href="/tekst-latwy-do-czytania/">tekście
+      łatwym do&nbsp;czytania</a>.
+    </li>
+  </ul>
+
+  <h2 id="a11y-kontakt">Informacje zwrotne i&nbsp;dane kontaktowe</h2>
+  <p>
+    W&nbsp;przypadku problemów z&nbsp;dostępnością strony internetowej prosimy
+    o&nbsp;kontakt.
+    {org.email && <>Adres poczty elektronicznej: <a id="a11y-email" href={`mailto:${org.email}`}>{org.email}</a>. </>}
+    {org.phone && <>Telefon: <span id="a11y-telefon">{org.phone}</span>. </>}
+    Tą samą drogą można składać wnioski o&nbsp;udostępnienie informacji
+    niedostępnej oraz składać żądania zapewnienia dostępności cyfrowej.
+  </p>
+
+  <h2 id="a11y-procedura">Procedura wnioskowo-skargowa</h2>
+  <p>
+    Każdy ma prawo zażądać zapewnienia dostępności cyfrowej strony internetowej
+    lub jej elementu. Można też zażądać udostępnienia informacji za&nbsp;pomocą
+    alternatywnego sposobu dostępu, na&nbsp;przykład przez odczytanie niedostępnego
+    dokumentu lub opisanie zawartości filmu bez audiodeskrypcji.
+  </p>
+  <p>Żądanie powinno zawierać:</p>
+  <ul>
+    <li>dane kontaktowe osoby zgłaszającej żądanie,</li>
+    <li>wskazanie strony internetowej lub elementu strony, którego dotyczy żądanie,</li>
+    <li>sposób kontaktu,</li>
+    <li>jeżeli osoba żąda udostępnienia informacji za&nbsp;pomocą alternatywnego
+      sposobu dostępu &ndash; także wskazanie dogodnego dla niej sposobu
+      przedstawienia tej informacji.</li>
+  </ul>
+  <p>
+    Związek zrealizuje żądanie niezwłocznie, nie później niż w&nbsp;ciągu 7&nbsp;dni
+    od&nbsp;dnia jego wystąpienia. Jeżeli dotrzymanie tego terminu nie będzie
+    możliwe, niezwłocznie poinformujemy o&nbsp;tym, kiedy realizacja żądania będzie
+    możliwa &ndash; ten termin nie może być dłuższy niż 2&nbsp;miesiące od&nbsp;dnia
+    wystąpienia z&nbsp;żądaniem. Jeżeli zapewnienie dostępności cyfrowej nie będzie
+    możliwe, Związek może zaproponować alternatywny sposób dostępu do&nbsp;informacji.
+  </p>
+  <p>
+    W&nbsp;przypadku odmowy realizacji żądania, niedotrzymania terminu lub
+    odmowy skorzystania z&nbsp;alternatywnego sposobu dostępu można złożyć skargę
+    na&nbsp;brak zapewnienia dostępności cyfrowej. Po&nbsp;wyczerpaniu tej procedury
+    można złożyć wniosek do&nbsp;<a href="https://bip.brpo.gov.pl/">Rzecznika Praw
+    Obywatelskich</a>.
+  </p>
+
+  <h2 id="a11y-architektura">Dostępność architektoniczna</h2>
+  <p>
+    {address ? <>Adres Związku: {address}. </> : null}
+    Informacje o&nbsp;dostępności architektonicznej siedziby oraz możliwości
+    załatwienia sprawy w&nbsp;inny sposób (listownie, e-mailowo, telefonicznie)
+    można uzyskać, kontaktując się ze&nbsp;Związkiem pod&nbsp;danymi podanymi
+    powyżej.
+  </p>
+
+  <h2 id="a11y-aplikacje">Aplikacje mobilne</h2>
+  <p>{org.name} nie udostępnia aplikacji mobilnych.</p>
+</TextPage>

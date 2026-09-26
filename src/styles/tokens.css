@@ -33,8 +33,14 @@
   --palette-black:        #000000;  /* full-bleed feature sections */
   --palette-near-black:   #1a1a1a;  /* panels inside those sections */
   --palette-slate:        #3a4f66;  /* body text on light — not grey, blue */
-  --palette-slate-soft:   #6b7d92;
-  --palette-slate-faint:  #9aa7b6;
+  /* Soft and faint are TEXT colours, so both must read 4.5:1 (WCAG 1.4.3) on
+     every paper this page uses, down to the sunken band (#ece6dc). Measured
+     September 2026: the old #6b7d92 managed 4.08:1 and #9aa7b6 only 2.17:1,
+     failing on dates, counts and contact rows site-wide. At 4.5:1 on the
+     darkest paper, "faint" cannot stay visibly fainter than "soft" — the two
+     are a step apart now, and size does the rest of the ranking. */
+  --palette-slate-soft:   #586779;  /* 5.60:1 on a sheet, 4.66:1 sunken */
+  --palette-slate-faint:  #59697b;  /* 5.45:1 on a sheet, 4.53:1 sunken */
   --palette-white:        #ffffff;
   /* PAPER, since September 2026 (the federation asked for a subtler, paper-
      like page). The red and the slate above are the theme and did not move;
@@ -62,8 +68,13 @@
   --color-text-faint:     var(--palette-slate-faint);
   --color-border:         var(--palette-line);
   --color-border-strong:  var(--palette-line-strong);
-  --color-accent:         var(--palette-red);
-  --color-accent-strong:  var(--palette-red-strong);
+  /* The accent is mostly TEXT (links, dates, titles on hover), and the bright
+     red reads only 4.06:1 on paper — under AA. So the role points at the
+     strong red (5.80:1 on a sheet, 4.83:1 sunken), and hover goes one step
+     deeper. The bright red stays in the palette for the mark and large shapes,
+     where 3:1 is the bar. */
+  --color-accent:         var(--palette-red-strong);
+  --color-accent-strong:  #9e1c10;
   --color-on-accent:      var(--palette-white);
   /* For a filled control that should carry the colour without shouting. */
   --color-accent-muted:        var(--palette-red-muted);
@@ -133,6 +144,11 @@
   --color-text-faint: rgba(255, 255, 255, 0.5);
   --color-border:     rgba(255, 255, 255, 0.16);
   --color-border-strong: rgba(255, 255, 255, 0.24);
+  /* The accent darkened for paper (above) reads only 3.5:1 on black and 2.9:1
+     on the near-black panels, and the brand red itself 4.1:1 on the panels —
+     so on dark it goes LIGHTER instead: 6.8:1 on black, 5.65:1 on near-black. */
+  --color-accent:        #ff5a4a;
+  --color-accent-strong: #ff8a7f;
   background: var(--color-bg);
   color: var(--color-text);
 }
@@ -179,6 +195,24 @@ body {
 
 h1, h2, h3 { margin: 0; font-family: var(--font-display); }
 img { max-width: 100%; }
+
+/* The skip link (SiteHeader): off-screen until it has focus, then a plain,
+   unmissable tab over the top-left of the page. Off-screen rather than
+   display:none, which would take it out of the tab order entirely. */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -100px;
+  z-index: 100;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: var(--color-bg-raised);
+  color: var(--color-text);
+  font-weight: var(--weight-subhead);
+  text-decoration: underline;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.skip-link:focus { top: 8px; outline: 3px solid var(--color-accent); outline-offset: 2px; }
 
 .page {
   max-width: var(--page-max);
