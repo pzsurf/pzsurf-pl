@@ -56,6 +56,11 @@ jobs:
       # response stops the release instead of publishing a blank site over a
       # good one.
       - name: Build
+        # The GA4 measurement id, a repository VARIABLE (not a secret: it is
+        # public in every page that loads analytics). Unset means no analytics
+        # and no cookie banner — see README → Analytics.
+        env:
+          PUBLIC_GA_ID: ${{ vars.PUBLIC_GA_ID }}
         run: npm run build
 
       # Belt and braces on that promise. If the federation's own name is not in
