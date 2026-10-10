@@ -1,7 +1,7 @@
 /**
  * The surfpoland public read API.
  *
- * Contract: https://api.surfpoland.com/public-v0.md — read it before changing
+ * Contract: https://api.shoresidehub.com/public-v0.md — read it before changing
  * anything here. Two properties of that contract shape this file:
  *
  *   - It is v0 and DELIBERATELY UNSTABLE. Fields may be renamed or removed
@@ -21,7 +21,7 @@
  */
 
 export const API_BASE =
-  process.env.PZSURF_API_BASE ?? "https://api.surfpoland.com/api/v0/public";
+  process.env.PZSURF_API_BASE ?? "https://api.shoresidehub.com/api/v0/public";
 
 /** The federation's own slug. Permanent: renaming writes an alias and 301s. */
 export const ORG_SLUG = "polski-zwiazek-surfingu";

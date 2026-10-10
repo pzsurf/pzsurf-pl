@@ -24,8 +24,8 @@ metadata already in the markup. The current build ships **zero JavaScript**.
 
 ## Where the content comes from
 
-Everything is `https://api.surfpoland.com/api/v0/public` — contract at
-[`/public-v0.md`](https://api.surfpoland.com/public-v0.md). There is no
+Everything is `https://api.shoresidehub.com/api/v0/public` — contract at
+[`/public-v0.md`](https://api.shoresidehub.com/public-v0.md). There is no
 database, no CMS and no server here: `astro build` calls the API, writes HTML,
 and that HTML is the website.
 

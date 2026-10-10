@@ -51,7 +51,7 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # The build CALLS api.surfpoland.com. A failure here is a real failure:
+      # The build CALLS api.shoresidehub.com. A failure here is a real failure:
       # src/lib/api.ts throws rather than emitting an empty page, so a bad
       # response stops the release instead of publishing a blank site over a
       # good one.
