@@ -136,80 +136,21 @@ How consent works, in short:
 
 ### Visits without consent: server counts
 
-GA only sees readers who accept. For the true totals, the platform repo counts
-the requests Firebase Hosting itself receives: no script, no cookie, nothing
-read from the device, so no consent is needed (GDPR still applies, hence the
-section on `/pliki-cookies/`). All of it is in
-`surfpoland/infra/platform/pzsurf_pl_traffic.tf`, read its header first:
-
-```
-Firebase Hosting ─> Cloud Logging ─> BigQuery pzsurf_pl_weblogs   raw, with IPs, 30 days
-                                      └─ nightly ─> pzsurf_pl_stats   counts only, kept
-```
-
-`pzsurf_pl_stats` has two tables, both by day in Warsaw time:
-
-| Table | Columns | Note |
-|---|---|---|
-| `daily_pages` | day, path, referrer, country, device, views | sum `views` along any column |
-| `daily_totals` | day, views, visitors | visitors = distinct IP + browser that day; **never sum across days** |
-
-A *view* is a successful GET of a page (not an image, script or 404) that is
-not from a bot, crawler, link-preview fetcher or script. Expect these numbers
-to sit **above** GA's: everyone is counted, not only those who consented.
-
-**Setting it up** (the owner; the agent identity is read-only):
-
-1. **Apply the Terraform** in `surfpoland/infra/platform` (`terraform plan`,
-   review, `terraform apply`). It creates both datasets, the log sink, the
-   `pzsurf-traffic-stats` service account and the nightly scheduled query.
-2. **Link the logs** (no Terraform resource exists for this): Firebase
-   console → *Project settings → Integrations → Cloud Logging → Link*, select
-   **only the `pzsurf-pl` site**. Requests start arriving within ~30 minutes;
-   the sink then creates the table in `pzsurf_pl_weblogs` by itself.
-3. **Check the next morning:** BigQuery → `pzsurf_pl_stats.daily_totals` has
-   rows. Or run the query now: BigQuery → *Scheduled queries → pzsurf.pl
-   daily traffic stats → Run transfer now*. If a run fails with a permission
-   error about the service account, grant the BigQuery Data Transfer service
-   agent (`service-908529586504@gcp-sa-bigquerydatatransfer.iam.gserviceaccount.com`)
-   *Service Account Token Creator* on `pzsurf-traffic-stats`.
-
-Only traffic that reaches Firebase is counted: while `pzsurf.pl` still points
-at the old WordPress site, that means visits to `pzsurf-pl.web.app` only.
-
-### The dashboard
-
-One **Looker Studio** report (<https://lookerstudio.google.com>, free, the
-federation's Google account) can show both sources side by side: the server
-counts for "how many", GA for "what did they do".
-
-1. *Create → Report*, add data: **BigQuery → pzsurf-platform →
-   pzsurf_pl_stats → daily_totals**. Add a second data source the same way for
-   **daily_pages**, and a third: **Google Analytics → the pzsurf.pl property**.
-2. Build the first page:
-
-| Chart | Source | Dimension | Metric |
-|---|---|---|---|
-| Scorecards "Odwiedziny" | daily_totals | — | SUM views; AVG visitors per day |
-| Time series | daily_totals | day | views, visitors |
-| Table "Najczęściej czytane" | daily_pages | path | SUM views |
-| Pie "Skąd przychodzą" | daily_pages | referrer | SUM views (filter out `(wewnętrzne)`) |
-| Pie "Urządzenia" | daily_pages | device | SUM views |
-| Geo map | daily_pages | country | SUM views |
-| Scorecard "Zgoda na GA" | GA + daily_totals (blend on date) | — | GA Views ÷ server views: the share of consenting readers |
-
-3. On a second page, GA's detail: engagement time, `file_download` events
-   (which PDFs are downloaded) and outbound clicks, which only GA can see.
-4. Add a date control (*Last 28 days*) and *Share* the report with the board
-   (view access). A viewer does not need access to BigQuery or GA: Looker
-   Studio reads with the owner's credentials by default.
-
-GA's own reports (*Reports → Realtime*, *Engagement → Pages and screens*,
-*Acquisition → Traffic acquisition*) stay useful for a quick look, but only
-ever show the readers who consented.
+**Removed on 2026-10-10.** The cookieless server-side counts (Firebase Hosting
+logs → BigQuery, nightly totals) lived in the platform's old Google Cloud
+project and went with it. Only Google Analytics remains, and it sees only the
+readers who consent. Recreating the counts in this site's own project
+(`pzsurf-web`) would need a billing account for Cloud Logging and BigQuery.
 
 ## Deploying
 
-Firebase Hosting site `pzsurf-pl` in the `pzsurf-platform` project, eventually
-serving `pzsurf.pl`. `dist/` is plain static files, so the platform repo's
-`deploy_hosting.py` works against it unchanged.
+Firebase Hosting, default site of the federation's own Google Cloud project
+**`pzsurf-web`** (pzsurf.pl organisation): <https://pzsurf-web.web.app>,
+eventually serving `pzsurf.pl`. The project belongs to PZSurf, not to the
+Shoreside platform. This site only reads the platform's public API, and the
+platform hosts nothing of ours. `infra/setup-gcp.sh` sets the project up from
+nothing (Hosting, the `site-deployer` service account, a Workload Identity pool
+that trusts this repository only) and prints the two repository secrets the
+deploy workflow reads. No billing account: Hosting on Firebase's free plan is
+enough. `dist/` is plain static files, so the vendored `deploy_hosting.py`
+works against it unchanged.
