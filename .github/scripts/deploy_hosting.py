@@ -27,7 +27,7 @@ dispatch all failed on GitHub's side, so the only way to ship was locally.
 
     npm ci && npx astro build
     ACCESS_TOKEN="$(gcloud auth print-access-token)" \
-      HOSTING_QUOTA_PROJECT=pzsurf-platform python3 .github/scripts/deploy_hosting.py
+      HOSTING_QUOTA_PROJECT=pzsurf-web python3 .github/scripts/deploy_hosting.py
 
 A WIF-minted token belongs to a service account and carries its own billing
 project; a token from `gcloud auth print-access-token` belongs to a PERSON, and

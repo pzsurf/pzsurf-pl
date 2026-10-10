@@ -90,9 +90,11 @@ jobs:
 
       - name: Smoke test
         run: |
+          # The site named in firebase.json, so the check follows the deploy.
+          site=$(python3 -c 'import json; print(json.load(open("firebase.json"))["hosting"]["site"])')
           for i in 1 2 3 4 5; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://pzsurf-pl.web.app/ || true)
-            [ "$code" = "200" ] && { echo "pzsurf-pl.web.app -> 200"; exit 0; }
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://$site.web.app/" || true)
+            [ "$code" = "200" ] && { echo "$site.web.app -> 200"; exit 0; }
             echo "attempt $i: $code"; sleep 5
           done
           echo "::error::site did not return 200 after release"; exit 1
@@ -102,4 +104,5 @@ jobs:
           echo "### Deployed ${{ inputs.version || inputs.ref }}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- ref: \`${{ inputs.ref }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- https://pzsurf-pl.web.app/" >> "$GITHUB_STEP_SUMMARY"
+          site=$(python3 -c 'import json; print(json.load(open("firebase.json"))["hosting"]["site"])')
+          echo "- https://$site.web.app/" >> "$GITHUB_STEP_SUMMARY"
