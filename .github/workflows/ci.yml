@@ -33,7 +33,7 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Calls the live api.surfpoland.com, exactly as the release build does.
+      # Calls the live api.shoresidehub.com, exactly as the release build does.
       # A failure here is real: src/lib/api.ts throws rather than emitting an
       # empty page.
       - name: Build
