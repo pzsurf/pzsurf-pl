@@ -69,7 +69,7 @@ export interface TeamMember {
   socials: PersonSocial[];
 }
 
-export interface NationalTeam {
+export interface Team {
   year: number;
   discipline: string;
   /** "Junior", "Senior", or null when the discipline fields a single squad. */
@@ -92,9 +92,11 @@ export interface NationalTeam {
  */
 const withSocials = (m: TeamMember): TeamMember => ({ ...m, socials: m.socials ?? [] });
 
-export async function getNationalTeams(): Promise<NationalTeam[]> {
-  const { data } = await fetchJson<NationalTeam[]>(
-    `/orgs/${ORG_SLUG}/national-teams`,
+/** PZSurf's teams — the national squads are simply the federation's own teams
+ *  on the platform, read like any organisation's (`/orgs/{slug}/teams`). */
+export async function getTeams(): Promise<Team[]> {
+  const { data } = await fetchJson<Team[]>(
+    `/orgs/${ORG_SLUG}/teams`,
   );
   return data.map((t) => ({ ...t, members: t.members.map(withSocials) }));
 }
@@ -164,12 +166,12 @@ export async function getOrganisationDetail(slug: string): Promise<Organisation>
 }
 
 /** Latest season present in the data — never a hardcoded year. */
-export const latestYear = (teams: NationalTeam[]): number | null =>
+export const latestYear = (teams: Team[]): number | null =>
   teams.length ? Math.max(...teams.map((t) => t.year)) : null;
 
 /** Squad label: the discipline, plus the squad name when there is more than
  *  one for that discipline ("Shortboard Junior" / "Shortboard Senior"). */
-export function teamTitle(team: NationalTeam): string {
+export function teamTitle(team: Team): string {
   const discipline = DISCIPLINE_PL[team.discipline] ?? team.discipline;
   return team.name ? `${discipline} ${team.name}` : discipline;
 }
@@ -234,7 +236,7 @@ export interface Assignment {
  * the day the API returns one without any change to this page.
  */
 export function assignmentsByPerson(
-  teams: NationalTeam[],
+  teams: Team[],
 ): Map<string, Assignment[]> {
   const out = new Map<string, Assignment[]>();
   for (const team of teams) {

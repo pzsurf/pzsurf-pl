@@ -17,10 +17,10 @@ import AnnouncementCard from "../components/AnnouncementCard.astro";
 import Carousel from "../components/Carousel.astro";
 import ShowAllCard from "../components/ShowAllCard.astro";
 import { counted } from "../lib/plural";
-import type { NationalTeam, PublicOrgEvent } from "../lib/api";
+import type { Team, PublicOrgEvent } from "../lib/api";
 import {
   CAROUSEL_SHOWN, announcementSlugs, getAffiliates, getAnnouncements,
-  getBodies, getNationalTeams,
+  getBodies, getTeams,
   bodyTypeLabel, documentsOfType, eventDates, eventTypeLabel, getDocuments,
   getEvents, getOrganisation,
   getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
@@ -34,7 +34,7 @@ import { renderIntro } from "../lib/intro";
 const [teams, org, bodies, statute, documents, resolutions, partners, events, affiliates,
        announcements] =
   await Promise.all([
-    getNationalTeams(), getOrganisation(), getBodies(), getStatute(),
+    getTeams(), getOrganisation(), getBodies(), getStatute(),
     getDocuments(), getResolutions(), getPartners(), getEvents(), getAffiliates(),
     getAnnouncements(),
   ]);
@@ -120,7 +120,7 @@ const groupId = (prefix: string, label: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-const divisionId = (team: NationalTeam) => groupId("kadra", teamTitle(team));
+const divisionId = (team: Team) => groupId("kadra", teamTitle(team));
 
 // Every shelf in Dokumenty, as one list: a card and a dialog each, whatever the
 // rows point at. Uchwały are a shelf like the others now — each one has a page
