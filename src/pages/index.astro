@@ -140,6 +140,9 @@ const shelves = [
           eyebrow: r.resolution_number,
           footnote: [r.meeting_title, dayOf(r.adopted_on)].filter(Boolean).join(" · "),
           href: `/uchwaly/${resSlugs.get(r.id)}/`,
+          // A section per year of adoption. The API returns them newest
+          // first, so each year is already one run of rows.
+          group: r.adopted_on?.slice(0, 4) ?? "Bez daty",
           // Same tab, as every page of this site: the back arrow on the
           // uchwała returns here with this list open again.
           sameTab: true,

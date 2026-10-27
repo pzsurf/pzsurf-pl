@@ -44,6 +44,11 @@ interface Props {
     /** What the placeholder tile says when `thumb` is null, e.g. an event's
      *  type, matching its carousel card. Unset: the announcements' megaphone. */
     thumbLabel?: string;
+    /** The section this row falls under, e.g. the year an uchwała was
+     *  adopted. A heading is drawn wherever it changes from the row before, so
+     *  rows must already arrive in their sections' order. Unset on every row:
+     *  one plain list, as every shelf was before. */
+    group?: string | null;
   }[];
   /** Draw the eyebrow as an IDENTIFIER in the accent colour rather than as
    *  faint small print. True for uchwały, whose eyebrow is the number they are
@@ -109,7 +114,16 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
 
   <ul class="shelf-dialog__list"
       data-shelf-batch={batched ? batchSize : undefined}>
-    {rows.map((row) => (
+    {rows.map((row, i) => (<>
+      {/* A section heading, first in its run of rows. A list item of its own
+          rather than a wrapper round the rows, so the batching script below
+          still sees one flat list of rows and only has to hide a heading
+          whose rows are not shown yet. */}
+      {row.group && row.group !== rows[i - 1]?.group && (
+        <li class="shelf-dialog__section" data-shelf-section>
+          <h3 class="shelf-dialog__section-title">{row.group}</h3>
+        </li>
+      )}
       <li data-shelf-row>
         {/* The same row twice, as the element its destination deserves: an
             anchor where there is an address, a button where the subject only
@@ -174,7 +188,7 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
           </a>
         )}
       </li>
-    ))}
+    </>))}
     {/* Watched by the script: when it scrolls into view, the next rows are
         shown. Hidden until then, so without JavaScript it is never drawn. */}
     {batched && <li class="shelf-dialog__more" data-shelf-more aria-hidden="true" hidden />}
@@ -335,6 +349,41 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
     .docrow__thumb { width: 72px; height: 40px; }
   }
 
+  /* A section heading: the year in the display serif, then a rule running to
+     the edge, so the eye finds where one year ends without reading a date.
+     STICKY, so a reader deep in a long year still sees which one it is. It
+     sticks inside the list, which is the scroller, and carries the sheet's
+     own background so rows slide under it rather than through it. */
+  .shelf-dialog__section {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) 0 var(--space-1);
+    background: var(--color-bg-raised);
+  }
+  /* No gap above the first year: the list's own top margin already does it. */
+  .shelf-dialog__section:not(:first-child) { margin-top: var(--space-3); }
+  .shelf-dialog__section::after {
+    content: "";
+    flex: 1 1 auto;
+    height: 1px;
+    /* Strong at the year, fading out: a divider that belongs to its heading
+       rather than a full-width line that competes with the rows' borders. */
+    background: linear-gradient(to right, var(--color-border-strong), transparent);
+  }
+  .shelf-dialog__section-title {
+    margin: 0;
+    color: var(--color-accent-strong);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-display);
+    line-height: var(--leading-lg);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
   /* The end-of-list marker the script watches. A few pixels, not zero: an
      element with no height can be skipped over by a fast scroll. */
   .shelf-dialog__more { height: 4px; flex: none; }
@@ -378,12 +427,19 @@ const CHEVRON_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none
     const more = list.querySelector<HTMLElement>("[data-shelf-more]");
     if (!dialog || !more) continue;
     const rows = [...list.querySelectorAll<HTMLElement>("[data-shelf-row]")];
+    const sections = [...list.querySelectorAll<HTMLElement>("[data-shelf-section]")];
     const batch = Number(list.dataset.shelfBatch);
     let shown = 0;
 
     const reveal = (count: number) => {
       shown = Math.min(count, rows.length);
       rows.forEach((row, i) => { row.hidden = i >= shown; });
+      // A heading goes with the first row of its section: no orphaned year
+      // at the bottom of a list whose rows have not loaded yet.
+      for (const section of sections) {
+        const first = section.nextElementSibling as HTMLElement | null;
+        section.hidden = !first || first.hidden;
+      }
       more.hidden = shown >= rows.length;
     };
     // The LIST is the scroller (the head stays put above it), so it is the
