@@ -3,6 +3,14 @@
 // federation's existing site uses. It sits OVER the hero (position: absolute)
 // rather than above it, so the video runs to the top of the window.
 //
+// STICKY, but not with `position: sticky`: that is bounded by the parent, and
+// the parent here is the hero's wrapper, so it would scroll away with the
+// video. Instead the script pins it (`is-stuck`, position: fixed) once its
+// own starting place has scrolled out of view, and lets go when it comes
+// back. Both states are out of flow, so the swap moves nothing on the page,
+// and a cookie banner above the hero keeps the header below it at the top.
+// Without JavaScript it simply stays where it starts, as it always did.
+//
 // Only real destinations appear here. The source site's menu has six sections
 // this one has not built yet; inventing links that 404 would look complete and
 // behave worse than an honest short menu.
@@ -36,6 +44,9 @@ const links = [
 {/* DOM order is brand, button, nav — the button BEFORE the menu it opens, so a
     keyboard reaches the toggle first and then what it revealed. In the wide
     layout the button is display:none and the row reads brand | nav as written. */}
+{/* Where the masthead starts. While this is on screen the masthead stays put
+    over the hero; once it has scrolled away, the masthead is pinned. */}
+<div class="masthead-anchor" data-masthead-anchor aria-hidden="true"></div>
 <header class="masthead on-dark" data-masthead>
   {/* WCAG 2.4.1 (Bypass Blocks): the first tab stop on the page jumps past the
       menu. Invisible until focused (styles in tokens.css, .skip-link). */}
@@ -87,6 +98,49 @@ const links = [
        its own because the hero behind it is already dark. */
     background: transparent;
   }
+
+  /* Absolute, a pixel tall, at the top of the hero's wrapper: watched, never
+     seen, and out of flow so it moves nothing. */
+  .masthead-anchor {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    pointer-events: none;
+  }
+
+  /* ── Pinned ───────────────────────────────────────────────────────────────
+     Fixed to the top of the window, a little tighter than over the hero, on a
+     black band: once the footage has gone the header sits over the paper page,
+     where light-on-transparent type would vanish. Black because the logotype
+     is the federation's red-on-dark asset (see the note on the <img>) and the
+     band is `on-dark` already. */
+  .masthead.is-stuck {
+    position: fixed;
+    z-index: 40;
+    padding-block: var(--space-2);
+  }
+  /* The band runs the full width of the window while the row keeps the
+     page's measure: a pseudo-element bled out from the centred box. Only
+     while pinned — fixed boxes do not count toward the page's scroll width,
+     but the absolute one over the hero would, and 100vw includes the
+     scrollbar. */
+  .masthead.is-stuck::before {
+    content: "";
+    position: absolute;
+    inset: 0 calc(50% - 50vw);
+    z-index: -1;
+    background: rgba(0, 0, 0, 0.92);
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.28);
+    animation: masthead-in 0.2s ease-out;
+  }
+  .masthead.is-stuck .masthead__brand img { height: 40px; }
+  @keyframes masthead-in {
+    from { opacity: 0; }
+  }
+  /* A pinned header covers the top of whatever a menu link jumps to; this
+     lands the section's heading just below it instead. */
+  :global(html) { scroll-padding-top: 72px; }
+
   .masthead__brand {
     display: flex;
     align-items: center;
@@ -241,6 +295,7 @@ const links = [
     .masthead__bars,
     .masthead__bars::before,
     .masthead__bars::after { transition: none; }
+    .masthead.is-stuck::before { animation: none; }
   }
 
   @media (max-width: 560px) {
@@ -320,5 +375,15 @@ const links = [
     // by its contents, so folding cannot change what is being observed and this
     // cannot feed itself.
     new ResizeObserver(sync).observe(root);
+  }
+
+  // Pinning. Watches the anchor at the masthead's starting place rather than
+  // listening to every scroll event: one callback when it leaves the window,
+  // one when it returns.
+  const anchor = document.querySelector<HTMLElement>("[data-masthead-anchor]");
+  if (root && anchor) {
+    new IntersectionObserver(([entry]) => {
+      root.classList.toggle("is-stuck", !entry.isIntersecting);
+    }).observe(anchor);
   }
 </script>
