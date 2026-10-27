@@ -7,9 +7,12 @@
  *      surfpoland platform's --palette-primary / --palette-primary-strong. The
  *      federation's site and its platform already agree; this file records that
  *      rather than inventing a third opinion.
- *   2. pzsurf.pl loads NO webfont — it renders on the system stack. That is a
- *      real decision with real benefits (instant first paint, no request, full
- *      Polish diacritic coverage) and it is kept.
+ *   2. pzsurf.pl loaded NO webfont — it rendered on the system stack. That
+ *      was traded away on purpose: a book serif and whatever sans the device
+ *      had said nothing about the federation. Two faces are now self-hosted
+ *      (see "type" below), Latin and Latin Extended only, so every Polish
+ *      diacritic is drawn by the face itself rather than patched in from a
+ *      fallback.
  *
  * What is deliberately NOT copied is the source's drift: the live site uses
  * five corner radii (2, 3, 4, 5 and 10px) because it grew inside a page
@@ -89,21 +92,33 @@
   --shadow-paper-lift: 0 2px 3px rgba(71, 56, 33, 0.06), 0 10px 24px rgba(71, 56, 33, 0.10);
 
   /* ---- type ------------------------------------------------------------- */
-  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-               "Helvetica Neue", Arial, sans-serif;
-  /* Headings in a book face, for the paper feel, and still NO webfont: each
-     name below ships with an operating system (Iowan Old Style on Apple,
-     Palatino Linotype on Windows, Noto Serif / Liberation Serif on Linux and
-     Android), so the no-download decision above holds. Body text stays sans. */
-  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-                  Charter, Georgia, "Noto Serif", "Liberation Serif", serif;
+  /* Two faces, both self-hosted from @fontsource-variable (imported and
+     preloaded in layouts/Base.astro) — never from Google's servers, which
+     would hand every visitor's IP address to a third party before consent.
+     Both are OFL and cover Latin Extended-A: Ą Ć Ę Ł Ń Ó Ś Ź Ż.
+
+     Inter for reading: built for screens, and it keeps the dense parts of
+     this site — long uchwała titles, KRS and NIP, dates — calm. The system
+     stack stays behind it for the moment before it arrives. */
+  --font-body: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI",
+               Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Archivo for headings: a grotesque drawn for headlines, sturdy and
+     even-stroked like the shield in the mark, so the page and the crest speak
+     with one voice. Its width axis is what makes it a sports face — see
+     `--stretch-display`. */
+  --font-display: "Archivo Variable", "Inter Variable", -apple-system,
+                  BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  /* Headings set a little WIDE: the open, forward stance of kit lettering.
+     Only h1–h3 take it (see below); a button or a label in an expanded face
+     would just look stretched. Inert on any fallback, which has one width. */
+  --stretch-display: 112%;
 
   /* Measured from the source: headings 700, subheads 600, buttons 500,
      body 400, and a body line-height near 1.65 that the site reads well at. */
   --weight-body:     400;
   --weight-button:   500;
   --weight-subhead:  600;
-  --weight-display:  600;  /* 700 in a serif reads as shouting */
+  --weight-display:  700;
 
   --text-xs:      12px;   --leading-xs:   1.5;
   --text-sm:      15px;   --leading-sm:   1.65;
@@ -193,7 +208,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 { margin: 0; font-family: var(--font-display); }
+h1, h2, h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--stretch-display);
+}
 img { max-width: 100%; }
 
 /* Read by a screen reader, not shown: e.g. "(otwiera się w nowej karcie)" on

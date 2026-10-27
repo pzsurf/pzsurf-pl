@@ -1,4 +1,14 @@
 ---
+// The two faces, self-hosted: Astro copies the files into the build, so no
+// request ever leaves this site for a font. Archivo with its WIDTH axis (it
+// carries weight too), Inter with weight. Each file covers one script and is
+// fetched only when the page uses a letter from it.
+import "@fontsource-variable/archivo/wdth.css";
+import "@fontsource-variable/inter/wght.css";
+// The basic-Latin file of each, preloaded below: every page needs both at
+// once, and without a hint the browser finds them only after the CSS.
+import archivoLatin from "@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url";
+import interLatin from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import "../styles/tokens.css";
 import "../styles/a11y.css";
 import A11yPanel from "../components/A11yPanel.astro";
@@ -30,6 +40,10 @@ const shareImage = new URL(image ?? "/hero-poster.jpg", Astro.site);
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {/* `crossorigin` even for this site's own files: fonts are always fetched
+        in CORS mode, and a preload without it is downloaded twice. */}
+    <link rel="preload" href={archivoLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin />
 
     {/* The federation's mark, copied into this repo rather than linked from
         surfpoland.com: a site that cannot render without another site's assets
