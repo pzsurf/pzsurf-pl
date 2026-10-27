@@ -30,8 +30,8 @@ const account = org.bank_account ?? null;
       )}
     </div>
 
-    {/* Three groups, each one thing: contact (left), then the social icons,
-        the site's own links, and where the data comes from. On a phone they
+    {/* Groups, each one thing: contact (left), then the social icons and the
+        site's own links. On a phone they
         stack in one LEFT-aligned column split by hairlines — the GOV.UK and
         gov.pl footer — and on a desktop they are the right-hand column. */}
     <div class="foot__right">
@@ -71,12 +71,6 @@ const account = org.bank_account ?? null;
           <li><a href="/pliki-cookies/">Pliki cookies</a></li>
         </ul>
       </div>
-
-      {/* Said plainly rather than buried: this page is generated from the
-          federation's own record on the platform, so the two cannot disagree. */}
-      <p class="foot__line foot__credit">
-        Dane z platformy <a href="https://shoresidehub.com">shoresidehub.com</a>
-      </p>
     </div>
   </div>
 </footer>
@@ -168,7 +162,6 @@ const account = org.bank_account ?? null;
     color: var(--color-text-muted);
   }
   .foot__links a:hover { color: var(--color-accent); }
-  .foot__credit { color: var(--color-text-faint); font-size: var(--text-xs); }
 
   /* PHONE AND TABLET: one left-aligned column, the way GOV.UK and gov.pl
      stack theirs — every group starts at the same edge as the address above
@@ -188,6 +181,6 @@ const account = org.bank_account ?? null;
     .foot__right > :first-child { padding-top: 0; }
     .foot__group { align-items: flex-start; }
     .foot__links { flex-direction: column; justify-content: flex-start; }
-    .foot__credit { padding-bottom: 0; }
+    .foot__right > :last-child { padding-bottom: 0; }
   }
 </style>
