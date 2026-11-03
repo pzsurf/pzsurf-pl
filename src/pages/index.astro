@@ -24,7 +24,7 @@ import {
   bodyTypeLabel, documentsOfType, eventDates, eventTypeLabel, getDocuments,
   getEvents, getOrganisation,
   getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
-  orderAffiliates, orderBodies, orderEvents, resolutionSlugs, roleLabel,
+  orderAffiliates, orderBodies, orderEvents, resolutionSlugs, roleLabel, titledName,
   teamTitle,
 } from "../lib/api";
 import { renderIntro } from "../lib/intro";
@@ -431,7 +431,8 @@ const orderedBodies = orderBodies(bodies);
       meta={[bodyTypeLabel(body.body_type)]}
       description={body.description}
       people={body.members.map((m) => ({
-        name: m.display_name,
+        // With the title the federation recorded: "dr Jan Kowalski".
+        name: titledName(m),
         image: m.image_url,
         // "Członek" under two names in every three is noise: it is the default
         // and says nothing about the person. A role that DISTINGUISHES somebody

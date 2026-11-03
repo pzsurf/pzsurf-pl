@@ -57,6 +57,10 @@ export interface TeamMember {
    *  abbreviated surname, and unknown date of birth counts as minor. Never
    *  expand or re-join these; the abbreviation IS the privacy control. */
   display_name: string;
+  /** Printed BEFORE the name ("dr" + "Jan Kowalski"), already abbreviated in
+   *  Polish by the API, or as the federation typed it; null for none. Never
+   *  part of display_name, which stays the name for initials and matching. */
+  title?: string | null;
   /** Null unless that person consented to publication of their image. The
    *  name publishes under public-task, the photograph only under consent. */
   image_url: string | null;
@@ -68,6 +72,10 @@ export interface TeamMember {
    *  anybody who withdrew publication consent — the API decides, not the page. */
   socials: PersonSocial[];
 }
+
+/** "dr Jan Kowalski": the title, when there is one, then the name as sent. */
+export const titledName = (m: Pick<TeamMember, "display_name" | "title">): string =>
+  m.title ? `${m.title} ${m.display_name}` : m.display_name;
 
 export interface Team {
   year: number;
