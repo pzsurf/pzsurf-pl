@@ -278,16 +278,13 @@ export async function getBodies(): Promise<GovernanceBody[]> {
 }
 
 /**
- * Bodies first, committees after, each group alphabetical.
- *
- * The federation's board is the one body a visitor is looking for, so it leads
- * whatever its name sorts to; the rest are komisje and their order is arbitrary,
- * which is exactly when alphabetical is the honest choice.
+ * The bodies in the order the API sends them: the order the federation
+ * arranged in Shoreside's console, and — for bodies it has not arranged — the
+ * board first, then by name (contract §2.5). Members inside each body arrive in
+ * the federation's order too. This page used to re-sort the bodies itself; it
+ * must not any more, or the federation's arrangement would be undone here.
  */
-export const orderBodies = (bodies: GovernanceBody[]): GovernanceBody[] =>
-  [...bodies].sort((a, b) =>
-    (a.body_type === "BOARD" ? 0 : 1) - (b.body_type === "BOARD" ? 0 : 1) ||
-    a.name.localeCompare(b.name, "pl"));
+export const orderBodies = (bodies: GovernanceBody[]): GovernanceBody[] => [...bodies];
 
 /** Polish for the body kinds the API returns as codes. */
 const BODY_TYPE_PL: Record<string, string> = {
@@ -297,12 +294,16 @@ const BODY_TYPE_PL: Record<string, string> = {
 };
 export const bodyTypeLabel = (t: string): string => BODY_TYPE_PL[t] ?? t;
 
-/** Polish for the governance roles the API returns as codes. */
+/** Polish for the governance roles the API returns as codes. A role the
+ *  federation typed in its own words ("Skarbnik") is not a code and is shown
+ *  exactly as written (contract §2.5). */
 const ROLE_PL: Record<string, string> = {
   PRESIDENT: "Prezes",
   CHAIR: "Przewodniczący",
   VICE_CHAIR: "Wiceprzewodniczący",
   MEMBER: "Członek",
+  COORDINATOR: "Koordynator",
+  SECRETARY: "Sekretarz",
   ATHLETE: "Zawodnik",
 };
 export const roleLabel = (role: string): string => ROLE_PL[role] ?? role;
