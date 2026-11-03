@@ -391,14 +391,14 @@ export interface PublicAffiliate {
 }
 
 /**
- * The organisations affiliated with the federation.
+ * The organisations affiliated with the federation: those holding an ACTIVE
+ * affiliation with it right now (the contract's `affiliates`, §2.3), the same
+ * set its page on shoresidehub.com shows.
  *
- * ⚠️ This is the contract's `affiliates` — the organisations the federation
- * LICENSES, i.e. those holding an active qualification it issued. The platform
- * also has an `affiliations` table, a separate paid relationship shown on
- * surfpoland.com under the same word. The two sets coincide today and may not
- * always; this page reads the one the public contract publishes, which is the
- * only source it has.
+ * Until 2026-11-03 the contract counted active qualifications the federation
+ * had ISSUED instead; those went away with CLUB and SCHOOL, and "Zrzeszeni"
+ * vanished from this page because the list was empty. `qualifications` on each
+ * row is still what it holds from the federation, and is usually empty.
  */
 export async function getAffiliates(): Promise<PublicAffiliate[]> {
   const { data } = await fetchJson<PublicAffiliate[]>(`/orgs/${ORG_SLUG}/affiliates`);
