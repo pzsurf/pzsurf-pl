@@ -69,10 +69,22 @@ jobs:
 
       # The toggle's promise: OFF ships nothing of the member area, ON ships
       # its pages. Same variable as the build, so the two cannot disagree.
+      #
+      # This file runs from main, but builds `inputs.ref` — for publish.yml the
+      # last RELEASED tag, which can predate the script. Such a tag also
+      # predates the member area itself, so there is nothing to check: skip,
+      # don't fail. (Failing here stopped every scheduled refresh of v0.3.5.)
       - name: The member area matches its toggle
         env:
           PUBLIC_MEMBER_AREA: ${{ vars.PUBLIC_MEMBER_AREA }}
-        run: .github/scripts/check-member-area.sh
+        run: |
+          if [ -f .github/scripts/check-member-area.sh ]; then
+            bash .github/scripts/check-member-area.sh
+          elif [ -d src/member ]; then
+            echo "::error::src/member exists but its check script does not"; exit 1
+          else
+            echo "::notice::${{ inputs.ref }} predates the member area; nothing to check"
+          fi
 
       # Belt and braces on that promise. If the federation's own name is not in
       # the output, something rendered empty and must not be released — a
