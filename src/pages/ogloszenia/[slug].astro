@@ -59,7 +59,7 @@ const plain = (announcement.body_md ?? "")
   .trim();
 const description = plain.length > 180
   ? `${plain.slice(0, 180).replace(/\s+\S*$/, "")}…`
-  : plain || `Ogłoszenie ${org.name}${day ? ` — ${day}` : ""}.`;
+  : plain || `Aktualność ${org.name}${day ? ` — ${day}` : ""}.`;
 ---
 <Base
   title={`${announcement.title} — ${org.name}`}
@@ -83,7 +83,7 @@ const description = plain.length > 180
 
       {body
         ? <div class="ogloszenie__body" set:html={body.html} />
-        : <p class="ogloszenie__empty">Treść tego ogłoszenia nie została opublikowana.</p>}
+        : <p class="ogloszenie__empty">Treść tej aktualności nie została opublikowana.</p>}
     </article>
   </main>
 

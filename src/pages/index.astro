@@ -81,13 +81,14 @@ const intro = org.intro_md?.trim() ? renderIntro(org.intro_md) : null;
 // copies of the same markup: they differ only by label and filter, and the
 // third copy was already one too many.
 //
-// `Inne` sits LAST because OTHER is the fallback rather than a peer — the same
-// reason it sorts last in the admin's type picker. Anything uncategorised is
-// still worth publishing; it is just not what somebody came looking for.
+// `Regulaminy` (type OTHER) sits LAST because OTHER is the fallback rather than
+// a peer — the same reason it sorts last in the admin's type picker. The
+// federation names that shelf Regulaminy (November 2026); anything else left
+// uncategorised lands there too.
 const docShelves = [
-  { label: "Transparentność", docs: documentsOfType(documents, "TRANSPARENCY") },
-  { label: "Formularze", docs: documentsOfType(documents, "FORM") },
-  { label: "Inne", docs: documentsOfType(documents, "OTHER") },
+  { label: "Dokumenty finansowe", docs: documentsOfType(documents, "TRANSPARENCY") },
+  { label: "Wzory podań", docs: documentsOfType(documents, "FORM") },
+  { label: "Regulaminy", docs: documentsOfType(documents, "OTHER") },
 ].filter((shelf) => shelf.docs.length > 0);
 
 // A date reads better than a timestamp on a card, and the API already sends
@@ -213,20 +214,20 @@ const orderedBodies = orderBodies(bodies);
   {announcements.length > 0 && (
     <section class="page" id="ogloszenia">
       <div class="section__head">
-        <h2 class="section__title">Ogłoszenia</h2>
+        <h2 class="section__title">Aktualności</h2>
       </div>
 
       {/* "See all" is the LAST CARD, reached by scrolling to the end of the row,
           not a button in the head (the federation's choice, September 2026).
           Only when there IS more behind it: a door onto the room you are
           standing in is worse than no door. */}
-      <Carousel label="Ogłoszenia">
+      <Carousel label="Aktualności">
         {recentAnnouncements.map((a) => (
           <AnnouncementCard announcement={a} href={annHref(a.id)} />
         ))}
         {announcements.length > recentAnnouncements.length && (
-          <ShowAllCard dialogId="ogloszenia-wszystkie" label="Wszystkie ogłoszenia"
-                       countText={counted(announcements.length, ["ogłoszenie", "ogłoszenia", "ogłoszeń"])} />
+          <ShowAllCard dialogId="ogloszenia-wszystkie" label="Wszystkie aktualności"
+                       countText={counted(announcements.length, ["aktualność", "aktualności", "aktualności"])} />
         )}
       </Carousel>
     </section>
@@ -315,7 +316,7 @@ const orderedBodies = orderBodies(bodies);
   {members.length > 0 && (
     <section class="page" id="zrzeszeni">
       <div class="section__head">
-        <h2 class="section__title">Zrzeszeni</h2>
+        <h2 class="section__title">Członkowie</h2>
       </div>
 
       <ul class="orgs">
@@ -479,9 +480,9 @@ const orderedBodies = orderBodies(bodies);
   {announcements.length > recentAnnouncements.length && (
     <ShelfDialog
       id="ogloszenia-wszystkie"
-      title="Ogłoszenia"
+      title="Aktualności"
       count={announcements.length}
-      countForms={["ogłoszenie", "ogłoszenia", "ogłoszeń"]}
+      countForms={["aktualność", "aktualności", "aktualności"]}
       batchSize={CAROUSEL_SHOWN}
       thumbnails
       rows={announcements.map((a) => ({
