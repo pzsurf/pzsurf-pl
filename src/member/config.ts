@@ -18,6 +18,7 @@ export const FIREBASE_CONFIG = {
   appId: env.PUBLIC_FIREBASE_APP_ID?.trim() || "1:1053650959179:web:4e5d09f11e955bad0806ce",
 };
 
-/** The custom header every state-changing member call carries. A cross-site
- *  form cannot send it, and a cross-origin script needs a CORS preflight to. */
-export const CSRF_HEADER = { "x-pzsurf-member": "1" };
+/** The custom header every state-changing member call carries (Shoreside's
+ *  docs/api/member-v0.md §1). A cross-site form cannot send it, and a
+ *  cross-origin script needs a CORS preflight to. */
+export const CSRF_HEADER = { "x-shoreside-member": "1" };

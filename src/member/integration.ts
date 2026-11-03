@@ -11,8 +11,6 @@ const ROUTES: { pattern: string; entrypoint: string }[] = [
   // Placeholder until slice 3 builds the account pages. It exists so an ON
   // build has something at /konto/ for the deploy check to find.
   { pattern: "/konto", entrypoint: "./src/member/pages/konto/index.astro" },
-  // THROWAWAY: the slice 1 cookie spike. Removed with its page.
-  { pattern: "/konto/spike", entrypoint: "./src/member/pages/konto/spike.astro" },
 ];
 
 export default function memberArea(on: boolean): AstroIntegration {
