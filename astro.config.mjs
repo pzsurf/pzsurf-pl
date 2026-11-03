@@ -1,13 +1,5 @@
 // @ts-check
 import { defineConfig } from "astro/config";
-import { loadEnv } from "vite";
-import { isOn } from "./src/lib/features.ts";
-import memberArea from "./src/member/integration.ts";
-
-// The config runs before Astro loads .env for the pages, so read it here the
-// same way (and the same rule: src/lib/features.ts).
-const env = loadEnv(process.env.NODE_ENV ?? "production", process.cwd(), "PUBLIC_");
-const MEMBER_AREA = isOn(process.env.PUBLIC_MEMBER_AREA ?? env.PUBLIC_MEMBER_AREA);
 
 // STATIC output, deliberately. Every page is real HTML written at build time
 // from the public API, because the link previews this site will live or die by
@@ -22,8 +14,6 @@ export default defineConfig({
   output: "static",
   build: { format: "directory" },
   devToolbar: { enabled: false },
-  // The member area's pages exist only when the toggle is on (README → Member area).
-  integrations: [memberArea(MEMBER_AREA)],
   // Poll for changes when surfpoland's dev-start.sh says the checkout is on a
   // mount that sends no file-change events (a 9p share from a VM host): without
   // it an edit never re-renders. Off everywhere else; polling costs CPU.

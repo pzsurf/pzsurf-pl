@@ -23,16 +23,8 @@ concurrency:
 
 jobs:
   build:
-    name: Build (member area ${{ matrix.member_area == 'true' && 'on' || 'off' }})
+    name: Build
     runs-on: ubuntu-latest
-    # Both sides of the PUBLIC_MEMBER_AREA toggle, so a leak into the OFF build
-    # (what the live site normally ships) fails here, before any release.
-    strategy:
-      fail-fast: false
-      matrix:
-        member_area: ["", "true"]
-    env:
-      PUBLIC_MEMBER_AREA: ${{ matrix.member_area }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
@@ -54,9 +46,6 @@ jobs:
             || { echo "::error::built page has no roster"; exit 1; }
           grep -q 'property="og:title"' dist/index.html \
             || { echo "::error::built page has no og:title"; exit 1; }
-
-      - name: The member area matches its toggle
-        run: .github/scripts/check-member-area.sh
 
       - name: Summary
         run: |
