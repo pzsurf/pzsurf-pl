@@ -59,9 +59,20 @@ jobs:
         # The GA4 measurement id, a repository VARIABLE (not a secret: it is
         # public in every page that loads analytics). Unset means no analytics
         # and no cookie banner — see README → Analytics.
+        #
+        # PUBLIC_MEMBER_AREA, also a repository VARIABLE: the member area is in
+        # the build only when it is exactly "true" — see README → Member area.
         env:
           PUBLIC_GA_ID: ${{ vars.PUBLIC_GA_ID }}
+          PUBLIC_MEMBER_AREA: ${{ vars.PUBLIC_MEMBER_AREA }}
         run: npm run build
+
+      # The toggle's promise: OFF ships nothing of the member area, ON ships
+      # its pages. Same variable as the build, so the two cannot disagree.
+      - name: The member area matches its toggle
+        env:
+          PUBLIC_MEMBER_AREA: ${{ vars.PUBLIC_MEMBER_AREA }}
+        run: .github/scripts/check-member-area.sh
 
       # Belt and braces on that promise. If the federation's own name is not in
       # the output, something rendered empty and must not be released — a

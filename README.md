@@ -142,6 +142,58 @@ project and went with it. Only Google Analytics remains, and it sees only the
 readers who consent. Recreating the counts in this site's own project
 (`pzsurf-web`) would need a billing account for Cloud Logging and BigQuery.
 
+## Member area
+
+Sign-in, membership purchase and account pages, served by the platform's member
+API (`/api/v0/member` at `api.pzsurf.pl`). **Work in progress and OFF** until
+the federation switches it on.
+
+The switch is the build variable `PUBLIC_MEMBER_AREA`: only the exact value
+`true` turns it on. It is read in `src/lib/features.ts` (and by
+`astro.config.mjs`, with the same rule). The pages live in `src/member/pages/`,
+not `src/pages/`, and `src/member/integration.ts` adds them to the build only
+when the toggle is on, so an OFF build is the site as if the feature did not
+exist. `.github/scripts/check-member-area.sh` proves that after every build, in
+CI and in every release:
+
+- **OFF:** fails if `dist/konto`, `dist/dolacz`, `api.pzsurf.pl` or
+  `firebaseapp` (the Firebase SDK's config) appear anywhere in `dist/`.
+- **ON:** fails if `dist/konto/index.html` is missing.
+
+CI builds both sides on every push. Locally: `PUBLIC_MEMBER_AREA=true npm run
+build`, or set it in `.env`.
+
+This toggle hides the pages; it is **not** a security control. The platform
+keeps its own switch (the site's API client is inactive until go-live), so the
+member API refuses pzsurf.pl whatever this site ships.
+
+### Switching it on or off
+
+GitHub → pzsurf/pzsurf-pl → *Settings → Secrets and variables → Actions →
+Variables*: set `PUBLIC_MEMBER_AREA` to `true` (on) or empty (off), then run
+**Refresh published site** (`publish.yml`). No code change and no release: the
+next build of the released tag picks it up, and so does every scheduled
+refresh after it.
+
+### If it goes wrong on the live site
+
+In order, fastest first. Do 1 and 2 together.
+
+1. **Roll the site back.** Firebase console → project `pzsurf-web` → Hosting →
+   *Release history* → the release before → *Rollback*. Seconds, no build.
+2. **Turn the variable off and run Refresh published site.** Without this,
+   step 1 lasts at most six hours: the scheduled refresh rebuilds with the
+   variable as it is and puts the feature back. The refresh ships a clean OFF
+   build, which the check above proves before it goes out.
+3. **Switch it off on the platform** (owner of the platform): deactivate the
+   site's API client, and the member API refuses pzsurf.pl immediately,
+   whatever pages are live.
+4. **DNS, last resort:** delete the `api.pzsurf.pl` records at the DNS provider.
+   The name falls back to the domain's wildcard record, and nothing on
+   pzsurf.pl can reach the member API.
+
+Public pages never call the member API, so none of this touches them.
+
 ## Deploying
 
 Firebase Hosting, default site of the federation's own Google Cloud project
