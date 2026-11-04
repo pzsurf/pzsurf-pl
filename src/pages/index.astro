@@ -24,7 +24,7 @@ import {
   getBodies, getTeams,
   bodyTypeLabel, eventDates, eventTypeLabel, getDocuments,
   getEvents, getOrganisation,
-  bodyEntries, getMeetings, getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
+  bodyEntries, socialLinks, getMeetings, getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
   meetingMinutes,
   orderAffiliates, orderBodies, orderEvents, resolutionSlugs, roleLabel, titledName,
   teamTitle,
@@ -225,6 +225,7 @@ const groupFaces = (group: { bodies: (typeof orderedBodies)[number][] }) => {
       title="Polski Związek Surfingu"
       lede="Krajowa federacja surfingu — kadra narodowa, zawody i kluby zrzeszone w całej Polsce."
       intro={intro}
+      socials={socialLinks(org)}
     />
   </div>
 

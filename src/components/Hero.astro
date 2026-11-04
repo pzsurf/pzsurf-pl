@@ -1,5 +1,6 @@
 ---
 import type { RenderedIntro } from "../lib/intro";
+import SocialIcon from "./SocialIcon.astro";
 
 interface Props {
   title: string;
@@ -7,8 +8,11 @@ interface Props {
   /** The federation's introduction from the platform. When present it takes the
    *  place of the title and the lede. */
   intro?: RenderedIntro | null;
+  /** The federation's profiles, the same ones the footer links (socialLinks):
+   *  a row of icons under the name. None, no row. */
+  socials?: { label: string; url: string }[];
 }
-const { title, lede, intro = null } = Astro.props;
+const { title, lede, intro = null, socials = [] } = Astro.props;
 
 // The federation's name is ALWAYS the h1 (the federation's choice, September
 // 2026) — it used to give way to the introduction's own `# ` heading. That
@@ -66,6 +70,18 @@ const introHtml = intro?.html.replace(
     {/* The page keeps exactly one h1, and it is the federation's name. The
         introduction's HTML is safe for set:html — see lib/intro.ts. */}
     <h1 class="hero__title" id="hero-title">{title}</h1>
+    {/* The federation's socials, under its name — the footer's round icons,
+        on the video. The label is the accessible name, as in the footer. */}
+    {socials.length > 0 && (
+      <p class="hero__socials">
+        {socials.map((s) => (
+          <a class="person-social hero__social" href={s.url} target="_blank" rel="noopener noreferrer"
+             aria-label={s.label} title={s.label}>
+            <SocialIcon platform={s.label} />
+          </a>
+        ))}
+      </p>
+    )}
     {subtitleHtml && <p class="hero__subtitle" set:html={subtitleHtml} />}
     {intro
       ? <div class="hero__intro" set:html={introHtml} />
@@ -317,6 +333,26 @@ const introHtml = intro?.html.replace(
     color: var(--color-text-muted);
     font-size: var(--text-base);
     line-height: var(--leading-base);
+  }
+  /* The footer's round icons, made for the video behind them: a translucent
+     dark disc with a light ring, so they read on any frame. */
+  .hero__socials {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 var(--space-1);
+  }
+  .hero__social {
+    background: rgba(0, 0, 0, 0.35);
+    border-color: rgba(255, 255, 255, 0.45);
+    color: var(--palette-white);
+    backdrop-filter: blur(2px);
+  }
+  .hero__social:hover {
+    background: rgba(0, 0, 0, 0.55);
+    border-color: var(--palette-white);
+    color: var(--palette-white);
   }
   .hero__subtitle {
     max-width: 30ch;
