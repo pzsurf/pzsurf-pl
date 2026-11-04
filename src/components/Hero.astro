@@ -139,17 +139,34 @@ const introHtml = intro?.html.replace(
     // Paused by the reader with this button; kept separate from "motion
     // stopped" so turning the panel's setting off again does not override it.
     let userPaused = false;
+    // The browser refused to start it on its own — iOS in Low Power Mode does,
+    // whatever `autoplay muted playsinline` say. Then the poster shows and the
+    // corner button must offer PLAY: a tap is a user gesture, which iOS allows.
+    let blocked = false;
+    const label = () => {
+      const paused = userPaused || blocked;
+      // The label says what the button will DO; no aria-pressed as well, or a
+      // screen reader would announce "Odtwórz wideo, pressed".
+      toggle.dataset.paused = String(paused);
+      toggle.setAttribute("aria-label", paused ? "Odtwórz wideo w tle" : "Zatrzymaj wideo w tle");
+    };
     const apply = () => {
       const stopped = motionStopped();
       toggle.hidden = stopped;     // no footage to control: the poster stands in
       if (stopped || userPaused) video.pause();
-      else void video.play().catch(() => {});
-      // The label says what the button will DO; no aria-pressed as well, or a
-      // screen reader would announce "Odtwórz wideo, pressed".
-      toggle.dataset.paused = String(userPaused);
-      toggle.setAttribute("aria-label", userPaused ? "Odtwórz wideo w tle" : "Zatrzymaj wideo w tle");
+      else {
+        video.play()
+          .then(() => { blocked = false; label(); })
+          .catch(() => { blocked = true; label(); });
+      }
+      label();
     };
-    toggle.addEventListener("click", () => { userPaused = !userPaused; apply(); });
+    toggle.addEventListener("click", () => {
+      // A refused autoplay reads as paused, so the first tap means "play".
+      if (blocked) { blocked = false; userPaused = false; }
+      else userPaused = !userPaused;
+      apply();
+    });
     document.addEventListener(A11Y_EVENT, apply);
     matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", apply);
     apply();
@@ -246,6 +263,19 @@ const introHtml = intro?.html.replace(
     width: 100%;
     height: 100%;
     object-fit: cover;
+    pointer-events: none;
+  }
+  /* Safari's own play button. iOS draws it in the middle of a video whose
+     autoplay it refused (Low Power Mode, or autoplay switched off) even with
+     no `controls` attribute — showing through the scrim, behind the wording.
+     The footage is decoration and the corner button is the control for it,
+     so the native one is removed; the poster stands in until it plays. */
+  .hero__video::-webkit-media-controls,
+  .hero__video::-webkit-media-controls-start-playback-button,
+  .hero__video::-webkit-media-controls-overlay-play-button {
+    display: none !important;
+    -webkit-appearance: none;
+    appearance: none;
   }
   /* Carries the text contrast, so the wording stays legible over whatever
      frame of the footage happens to be showing. */
