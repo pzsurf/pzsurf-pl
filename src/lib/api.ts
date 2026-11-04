@@ -278,6 +278,10 @@ export interface GovernanceBody {
   image_url?: string | null;
   member_count: number;
   members: TeamMember[];
+  /** The group the federation presents it in ("Komisje zadaniowe"), or
+   *  null/absent at the top level (contract §2.5, §4.6). Absent until the
+   *  Shoreside release that adds it, so every body reads as top level. */
+  group?: { key: string; name: string } | null;
 }
 
 export async function getBodies(): Promise<GovernanceBody[]> {
@@ -293,6 +297,29 @@ export async function getBodies(): Promise<GovernanceBody[]> {
  * must not any more, or the federation's arrangement would be undone here.
  */
 export const orderBodies = (bodies: GovernanceBody[]): GovernanceBody[] => [...bodies];
+
+/** What "Zarząd i komisje" shows: a body, or a group of bodies the federation
+ *  presents together — one card that opens a list of them. */
+export type BodyEntry =
+  | { kind: "body"; body: GovernanceBody }
+  | { kind: "group"; key: string; name: string; bodies: GovernanceBody[] };
+
+/**
+ * The bodies as cards. The API sends a group's bodies one after another, where
+ * the group stands (contract §2.5), so a run of bodies with the same
+ * `group.key` becomes one entry at the place of its first body. Everything else
+ * stays a body of its own, in the order it came.
+ */
+export function bodyEntries(bodies: GovernanceBody[]): BodyEntry[] {
+  const out: BodyEntry[] = [];
+  for (const body of bodies) {
+    const last = out[out.length - 1];
+    if (!body.group) out.push({ kind: "body", body });
+    else if (last?.kind === "group" && last.key === body.group.key) last.bodies.push(body);
+    else out.push({ kind: "group", key: body.group.key, name: body.group.name, bodies: [body] });
+  }
+  return out;
+}
 
 /** Polish for the body kinds the API returns as codes. */
 const BODY_TYPE_PL: Record<string, string> = {

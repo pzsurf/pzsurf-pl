@@ -5,6 +5,7 @@ import SiteFooter from "../components/SiteFooter.astro";
 import Hero from "../components/Hero.astro";
 import GroupCard from "../components/GroupCard.astro";
 import GroupDialog from "../components/GroupDialog.astro";
+import BodyGroupDialog from "../components/BodyGroupDialog.astro";
 import ShelfDialog from "../components/ShelfDialog.astro";
 import StatuteDialog from "../components/StatuteDialog.astro";
 import AboutDialog from "../components/AboutDialog.astro";
@@ -23,7 +24,7 @@ import {
   getBodies, getTeams,
   bodyTypeLabel, eventDates, eventTypeLabel, getDocuments,
   getEvents, getOrganisation,
-  getMeetings, getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
+  bodyEntries, getMeetings, getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
   meetingMinutes,
   orderAffiliates, orderBodies, orderEvents, resolutionSlugs, roleLabel, titledName,
   teamTitle,
@@ -188,6 +189,29 @@ const facesOf = (members: { display_name: string; image_url: string | null }[]) 
 // The federation's board and its committees. Board first — it is the body a
 // visitor is looking for — then the komisje alphabetically.
 const orderedBodies = orderBodies(bodies);
+// As cards: each body on its own, except the ones the federation groups
+// ("Komisje zadaniowe"), which are one card opening a list of them.
+const bodyCards = bodyEntries(orderedBodies);
+const bodyDialogId = (entry: (typeof bodyCards)[number]) =>
+  entry.kind === "group" ? groupId("organy", entry.name) : groupId("organ", entry.body.name);
+// A body's people as its roster shows them.
+const bodyPeople = (body: (typeof orderedBodies)[number]) => body.members.map((m) => ({
+  // With the title the federation recorded: "dr Jan Kowalski".
+  name: titledName(m),
+  image: m.image_url,
+  // "Członek" under two names in every three is noise: it is the default
+  // and says nothing about the person. A role that DISTINGUISHES somebody
+  // — Prezes, Przewodniczący, Wiceprzewodniczący — is the part worth
+  // printing, so only the plain MEMBER code is dropped. Matched on the
+  // CODE, never the label: the label is wording and may change.
+  subtitle: m.role === "MEMBER" ? "" : roleLabel(m.role),
+}));
+// A group's card shows the faces of everyone in it, each person once.
+const groupFaces = (group: { bodies: (typeof orderedBodies)[number][] }) => {
+  const seen = new Set<string>();
+  return group.bodies.flatMap((b) => b.members)
+    .filter((m) => !seen.has(m.display_name) && seen.add(m.display_name));
+};
 ---
 <Base
   title="Polski Związek Surfingu"
@@ -357,14 +381,23 @@ const orderedBodies = orderBodies(bodies);
           membership, so one without a description still has something to show —
           which is why the old "no description, no button" rule is gone. */}
       <ul class="groups">
-        {orderedBodies.map((body) => (
+        {bodyCards.map((entry) => (
           <li>
-            <GroupCard
-              dialogId={groupId("organ", body.name)}
-              title={body.name}
-              count={body.member_count}
-              faces={facesOf(body.members)}
-            />
+            {entry.kind === "group" ? (
+              <GroupCard
+                dialogId={bodyDialogId(entry)}
+                title={entry.name}
+                count={groupFaces(entry).length}
+                faces={facesOf(groupFaces(entry))}
+              />
+            ) : (
+              <GroupCard
+                dialogId={bodyDialogId(entry)}
+                title={entry.body.name}
+                count={entry.body.member_count}
+                faces={facesOf(entry.body.members)}
+              />
+            )}
           </li>
         ))}
       </ul>
@@ -444,24 +477,26 @@ const orderedBodies = orderBodies(bodies);
       }))}
     />
   ))}
-  {orderedBodies.map((body) => (
-    <GroupDialog
-      id={groupId("organ", body.name)}
-      title={body.name}
-      count={body.member_count}
-      meta={[bodyTypeLabel(body.body_type)]}
-      description={body.description}
-      people={body.members.map((m) => ({
-        // With the title the federation recorded: "dr Jan Kowalski".
-        name: titledName(m),
-        image: m.image_url,
-        // "Członek" under two names in every three is noise: it is the default
-        // and says nothing about the person. A role that DISTINGUISHES somebody
-        // — Prezes, Przewodniczący, Wiceprzewodniczący — is the part worth
-        // printing, so only the plain MEMBER code is dropped. Matched on the
-        // CODE, never the label: the label is wording and may change.
-        subtitle: m.role === "MEMBER" ? "" : roleLabel(m.role),
+  {bodyCards.map((entry) => entry.kind === "group" ? (
+    <BodyGroupDialog
+      id={bodyDialogId(entry)}
+      title={entry.name}
+      bodies={entry.bodies.map((body) => ({
+        name: body.name,
+        meta: [bodyTypeLabel(body.body_type)],
+        count: body.member_count,
+        description: body.description,
+        people: bodyPeople(body),
       }))}
+    />
+  ) : (
+    <GroupDialog
+      id={bodyDialogId(entry)}
+      title={entry.body.name}
+      count={entry.body.member_count}
+      meta={[bodyTypeLabel(entry.body.body_type)]}
+      description={entry.body.description}
+      people={bodyPeople(entry.body)}
     />
   ))}
 
