@@ -632,6 +632,48 @@ export async function getResolutions(): Promise<PublicResolution[]> {
   return out;
 }
 
+// ── Protokoły ───────────────────────────────────────────────────────────────
+
+/** A meeting's protokół: the minutes document attached to that meeting. */
+export interface PublicMeetingMinutes {
+  title: string;
+  doc_date: string | null;
+  file_url: string;
+  file_name: string | null;
+}
+
+/** A meeting as the public API cards it, with its minutes (contract §4.10). */
+export interface PublicMeeting {
+  id: string;
+  title: string;
+  starts_at: string | null;
+  status: string;
+  /** Optional: an API older than this field sends none. */
+  minutes?: PublicMeetingMinutes[];
+}
+
+/**
+ * The federation's meetings, newest first, every page of them. Minutes stay
+ * connected to their meeting in Shoreside, and are read through it here.
+ * Paged for the same reason `getResolutions` is.
+ */
+export async function getMeetings(): Promise<PublicMeeting[]> {
+  const first = await fetchJson<PublicMeeting[]>(`/orgs/${ORG_SLUG}/meetings?limit=100`);
+  const out = [...(first.data ?? [])];
+  const total = (first.meta as { total?: number } | undefined)?.total ?? out.length;
+  while (out.length < total) {
+    const page = await fetchJson<PublicMeeting[]>(
+      `/orgs/${ORG_SLUG}/meetings?limit=100&offset=${out.length}`);
+    if (!page.data?.length) break;   // never loop on an endpoint that stops moving
+    out.push(...page.data);
+  }
+  return out;
+}
+
+/** Every protokół, newest meeting first, each with the meeting it records. */
+export const meetingMinutes = (meetings: PublicMeeting[]) =>
+  meetings.flatMap((m) => (m.minutes ?? []).map((doc) => ({ meeting: m, doc })));
+
 /** Documents of one type, in the order the API returned them. */
 export const documentsOfType = (docs: PublicDocument[], type: string): PublicDocument[] =>
   docs.filter((d) => d.doc_type === type);

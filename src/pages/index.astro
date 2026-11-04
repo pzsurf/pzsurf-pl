@@ -23,7 +23,8 @@ import {
   getBodies, getTeams,
   bodyTypeLabel, eventDates, eventTypeLabel, getDocuments,
   getEvents, getOrganisation,
-  getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
+  getMeetings, getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
+  meetingMinutes,
   orderAffiliates, orderBodies, orderEvents, resolutionSlugs, roleLabel, titledName,
   teamTitle,
 } from "../lib/api";
@@ -32,11 +33,11 @@ import { renderIntro } from "../lib/intro";
 // Both calls run at BUILD time, so no visitor ever waits on Cloud Run and the
 // single always-on container serves nobody's page views.
 const [teams, org, bodies, statute, documents, resolutions, partners, events, affiliates,
-       announcements] =
+       announcements, meetings] =
   await Promise.all([
     getTeams(), getOrganisation(), getBodies(), getStatute(),
     getDocuments(), getResolutions(), getPartners(), getEvents(), getAffiliates(),
-    getAnnouncements(),
+    getAnnouncements(), getMeetings(),
   ]);
 
 // What the federation has announced, newest first as the API sends them. The
@@ -79,6 +80,8 @@ const intro = org.intro_md?.trim() ? renderIntro(org.intro_md) : null;
 // Regulaminy, Rejestr umów… — and each document says which it sits on.
 // Only shelves with documents appear. See `documentShelves`.
 const docShelves = documentShelves(documents);
+// Every protokół, read through the meeting it records (the Protokoły shelf).
+const minutes = meetingMinutes(meetings);
 
 // A date reads better than a timestamp on a card, and the API already sends
 // only the date part.
@@ -86,7 +89,7 @@ const dayOf = (iso: string | null) => (iso ?? "").slice(0, 10) || null;
 
 // Whether the Dokumenty section exists at all — the nav entry follows it, so
 // the menu never points at an anchor that is not on the page.
-const hasDocuments = resolutions.length > 0 || docShelves.length > 0;
+const hasDocuments = resolutions.length > 0 || minutes.length > 0 || docShelves.length > 0;
 const year = latestYear(teams);
 
 // Current season only. Older squads become their own page once the API returns
@@ -136,6 +139,24 @@ const shelves = [
           // Same tab, as every page of this site: the back arrow on the
           // uchwała returns here with this list open again.
           sameTab: true,
+        })),
+      }]
+    : []),
+  // The meetings' minutes, built the way Uchwały is: a section per year, the
+  // meeting's date as the eyebrow, its name as the title. Read through the
+  // meetings they record (Shoreside keeps them connected), and a row opens the
+  // protokół itself — it is a file, not a page of this site.
+  ...(minutes.length > 0
+    ? [{
+        id: "dokumenty-protokoly",
+        label: "Protokoły",
+        accentEyebrow: false,
+        rows: minutes.map(({ meeting, doc }) => ({
+          title: meeting.title,
+          eyebrow: dayOf(meeting.starts_at) ?? dayOf(doc.doc_date),
+          footnote: doc.title !== meeting.title ? doc.title : doc.file_name,
+          href: doc.file_url,
+          group: (meeting.starts_at ?? doc.doc_date)?.slice(0, 4) ?? "Bez daty",
         })),
       }]
     : []),
