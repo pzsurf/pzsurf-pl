@@ -73,6 +73,14 @@ export interface TeamMember {
   socials: PersonSocial[];
 }
 
+/** A seat on a governance body: a roster person plus the seat's published
+ *  contact address — typed per seat by the federation in Shoreside, never a
+ *  private profile address (contract §4.6). Absent until the Shoreside
+ *  release that adds it. */
+export interface BodyMember extends TeamMember {
+  contact_email?: string | null;
+}
+
 /** "dr Jan Kowalski": the title, when there is one, then the name as sent. */
 export const titledName = (m: Pick<TeamMember, "display_name" | "title">): string =>
   m.title ? `${m.title} ${m.display_name}` : m.display_name;
@@ -277,7 +285,7 @@ export interface GovernanceBody {
    *  (this page builds against the live API, which lags the repo). */
   image_url?: string | null;
   member_count: number;
-  members: TeamMember[];
+  members: BodyMember[];
   /** The group the federation presents it in ("Komisje zadaniowe"), or
    *  null/absent at the top level (contract §2.5, §4.6). Absent until the
    *  Shoreside release that adds it, so every body reads as top level. */

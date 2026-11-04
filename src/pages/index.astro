@@ -194,8 +194,20 @@ const orderedBodies = orderBodies(bodies);
 const bodyCards = bodyEntries(orderedBodies);
 const bodyDialogId = (entry: (typeof bodyCards)[number]) =>
   entry.kind === "group" ? groupId("organy", entry.name) : groupId("organ", entry.body.name);
-// A body's people as its roster shows them.
-const bodyPeople = (body: (typeof orderedBodies)[number]) => body.members.map((m) => ({
+// A body's people as its roster shows them, each opening their own view in
+// the body's dialog (`viewPrefix` + their place on the body).
+const personKey = (m: { display_name: string; title?: string | null }) => titledName(m);
+// Who sits where: a person's OTHER bodies, for their profile. Matched on the
+// published name — the API has no person id, by design (§4.5).
+const bodiesOf = new Map<string, string[]>();
+for (const b of orderedBodies) {
+  for (const m of b.members) {
+    const k = personKey(m);
+    bodiesOf.set(k, [...(bodiesOf.get(k) ?? []), b.name]);
+  }
+}
+const personView = (viewPrefix: string, i: number) => `${viewPrefix}-osoba-${i + 1}`;
+const bodyPeople = (body: (typeof orderedBodies)[number], viewPrefix: string) => body.members.map((m, i) => ({
   // With the title the federation recorded: "dr Jan Kowalski".
   name: titledName(m),
   image: m.image_url,
@@ -205,6 +217,19 @@ const bodyPeople = (body: (typeof orderedBodies)[number]) => body.members.map((m
   // printing, so only the plain MEMBER code is dropped. Matched on the
   // CODE, never the label: the label is wording and may change.
   subtitle: m.role === "MEMBER" ? "" : roleLabel(m.role),
+  view: personView(viewPrefix, i),
+  email: m.contact_email ?? null,
+}));
+const bodyProfiles = (body: (typeof orderedBodies)[number], viewPrefix: string) => body.members.map((m, i) => ({
+  view: personView(viewPrefix, i),
+  name: titledName(m),
+  image: m.image_url,
+  // On the profile the role is always named, MEMBER included.
+  role: roleLabel(m.role),
+  body: body.name,
+  email: m.contact_email ?? null,
+  socials: m.socials.map((s) => ({ label: s.platform, url: s.url })),
+  also: (bodiesOf.get(personKey(m)) ?? []).filter((name) => name !== body.name),
 }));
 // A group's card shows the faces of everyone in it, each person once.
 const groupFaces = (group: { bodies: (typeof orderedBodies)[number][] }) => {
@@ -482,12 +507,14 @@ const groupFaces = (group: { bodies: (typeof orderedBodies)[number][] }) => {
     <BodyGroupDialog
       id={bodyDialogId(entry)}
       title={entry.name}
-      bodies={entry.bodies.map((body) => ({
+      bodies={entry.bodies.map((body, i) => ({
         name: body.name,
         meta: [bodyTypeLabel(body.body_type)],
         count: body.member_count,
         description: body.description,
-        people: bodyPeople(body),
+        // The same id BodyGroupDialog gives this body's view.
+        people: bodyPeople(body, `${bodyDialogId(entry)}-organ-${i + 1}`),
+        profiles: bodyProfiles(body, `${bodyDialogId(entry)}-organ-${i + 1}`),
       }))}
     />
   ) : (
@@ -497,7 +524,8 @@ const groupFaces = (group: { bodies: (typeof orderedBodies)[number][] }) => {
       count={entry.body.member_count}
       meta={[bodyTypeLabel(entry.body.body_type)]}
       description={entry.body.description}
-      people={bodyPeople(entry.body)}
+      people={bodyPeople(entry.body, bodyDialogId(entry))}
+      profiles={bodyProfiles(entry.body, bodyDialogId(entry))}
     />
   ))}
 

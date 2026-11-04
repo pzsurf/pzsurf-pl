@@ -11,6 +11,7 @@
 // honest way for it to fail (each body is still in the page source).
 
 import Roster from "./Roster.astro";
+import PersonView, { type PersonProfile } from "./PersonView.astro";
 import { counted, headcount } from "../lib/plural";
 
 interface Props {
@@ -23,7 +24,9 @@ interface Props {
     meta: string[];
     count: number;
     description?: string | null;
-    people: { name: string; image: string | null; subtitle: string }[];
+    people: { name: string; image: string | null; subtitle: string; view?: string; email?: string | null }[];
+    /** Its members as profiles, opened from their tiles (back to this body). */
+    profiles?: PersonProfile[];
   }[];
 }
 const { id, title, bodies } = Astro.props;
@@ -42,7 +45,7 @@ const BACK_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" s
   class="person body-group"
   id={id}
   data-group-dialog
-  data-body-group
+  data-views
   aria-labelledby={`${id}-title`}
 >
   <form method="dialog" class="person__close-form">
@@ -51,12 +54,12 @@ const BACK_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" s
 
   {/* The list: one row per body. A BUTTON, not a link — a body has no page of
       its own to go to; it is shown here, in this dialog. */}
-  <section class="body-group__view" data-view="list">
+  <section class="body-group__view" data-view={`${id}-list`}>
     <div class="person__head">
       <h2 class="person__name dialog-title" id={`${id}-title`}>{title}</h2>
       <p class="body-group__meta">{counted(bodies.length, ["organ", "organy", "organów"])}</p>
     </div>
-    <ul class="body-group__list">
+    <ul class="body-group__list" data-view-scroll>
       {bodies.map((b, i) => (
         <li>
           <button type="button" class="body-row" data-show-view={viewId(i)}>
@@ -74,7 +77,7 @@ const BACK_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" s
   {/* A view per body: its name, kind and headcount, then its roster. */}
   {bodies.map((b, i) => (
     <section class="body-group__view" data-view={viewId(i)} aria-labelledby={`${viewId(i)}-title`} hidden>
-      <button type="button" class="dialog-close body-group__back" data-show-view="list"
+      <button type="button" class="dialog-close body-group__back" data-show-view={`${id}-list`}
               aria-label="Wstecz" set:html={BACK_ICON} />
       <div class="person__head">
         <h2 class="person__name dialog-title" id={`${viewId(i)}-title`}>{b.name}</h2>
@@ -87,11 +90,12 @@ const BACK_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" s
           ))}
         </p>
       </div>
-      <div class="body-group__scroll">
+      <div class="body-group__scroll" data-view-scroll>
         <Roster description={b.description} people={b.people} />
       </div>
     </section>
   ))}
+  {bodies.flatMap((b, i) => (b.profiles ?? []).map((p) => <PersonView profile={p} back={viewId(i)} />))}
 </dialog>
 
 <style>
@@ -204,31 +208,8 @@ const BACK_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" s
 </style>
 
 <script>
-  // Which view a group's dialog shows. Opening and closing are GroupDialog's
-  // shared script (`data-open-group` / `data-group-dialog`); this only swaps
-  // the list for a body and back, and starts every opening on the list.
-  for (const dialog of document.querySelectorAll<HTMLDialogElement>("[data-body-group]")) {
-    const views = [...dialog.querySelectorAll<HTMLElement>("[data-view]")];
-    const show = (name: string, focus?: HTMLElement | null) => {
-      for (const v of views) v.hidden = v.dataset.view !== name;
-      const shown = views.find((v) => v.dataset.view === name);
-      // Back at the top of whatever is now showing.
-      shown?.querySelector<HTMLElement>(".body-group__scroll, .body-group__list")?.scrollTo(0, 0);
-      (focus ?? shown?.querySelector<HTMLElement>("button"))?.focus();
-    };
-    for (const btn of dialog.querySelectorAll<HTMLButtonElement>("[data-show-view]")) {
-      btn.addEventListener("click", () => {
-        const target = btn.dataset.showView!;
-        // Going back puts focus on the row that was opened, where the reader was.
-        const from = btn.closest<HTMLElement>("[data-view]")?.dataset.view;
-        show(target, target === "list"
-          ? dialog.querySelector<HTMLElement>(`[data-show-view="${from}"]`)
-          : null);
-      });
-    }
-    // Every opening starts on the list, whatever was showing when it closed.
-    dialog.addEventListener("close", () => {
-      for (const v of views) v.hidden = v.dataset.view !== "list";
-    });
-  }
+  // Which view shows: the list, a body, a person (lib/dialogViews.ts).
+  // Opening and closing are GroupDialog's shared script.
+  import { bindDialogViews } from "../lib/dialogViews";
+  bindDialogViews();
 </script>

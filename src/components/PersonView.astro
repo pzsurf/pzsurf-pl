@@ -1,0 +1,150 @@
+---
+// One person's page INSIDE a body's dialog: opened from their tile in the
+// roster, with a back arrow (top-left) to the roster and the dialog's own ×.
+//
+// Only what the public API already publishes about a seat: the photograph
+// (consent-gated by the API), title and name, the role on this body, the other
+// bodies they sit on, the accounts they published themselves, and the seat's
+// contact address — which the federation typed for that seat on purpose; it
+// is never a private profile address (contract §4.6).
+import SocialIcon from "./SocialIcon.astro";
+
+export interface PersonProfile {
+  /** The view's id; the roster tile opens it. */
+  view: string;
+  name: string;
+  image: string | null;
+  /** The role on this body, in Polish. */
+  role: string;
+  body: string;
+  email?: string | null;
+  socials: { label: string; url: string }[];
+  /** The OTHER bodies this person sits on, by name. */
+  also: string[];
+}
+
+interface Props {
+  profile: PersonProfile;
+  /** The view the back arrow returns to (the roster it was opened from). */
+  back: string;
+}
+const { profile: p, back } = Astro.props;
+
+// Where a long address may break: after the "@" and after each dot, so it
+// wraps as "…olimpijskiego@" / "pzsurf.pl" rather than mid-word. The parts are
+// text, so nothing in the address is ever read as markup.
+const emailParts = (email: string): string[] => email.split(/(?<=[@.])/);
+
+const initials = (name: string) =>
+  name.split(/\s+/).map((x) => x[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+
+const BACK_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M19 12H5M11 18l-6-6 6-6" /></svg>`;
+const MAIL_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>`;
+---
+<section class="person-view" data-view={p.view} aria-labelledby={`${p.view}-title`} hidden>
+  <button type="button" class="dialog-close person-view__back" data-show-view={back}
+          aria-label="Wstecz" set:html={BACK_ICON} />
+  <div class="person-view__scroll" data-view-scroll>
+    <div class="person__head">
+      <div class="person__avatar">
+        {p.image
+          ? <img src={p.image} alt="" loading="lazy" width="132" height="176" />
+          : <span aria-hidden="true">{initials(p.name)}</span>}
+      </div>
+      <h2 class="person__name dialog-title" id={`${p.view}-title`}>{p.name}</h2>
+      <p class="person-view__role">{p.role} · {p.body}</p>
+    </div>
+
+    {p.email && (
+      <a class="person-view__email" href={`mailto:${p.email}`}>
+        <span class="person-view__email-icon" set:html={MAIL_ICON} />
+        {/* A long address WRAPS at any character rather than widening the
+            dialog: the full address stays readable and copyable. */}
+        <span class="person-view__email-text">
+          {emailParts(p.email).map((part, i) => <>{i > 0 && <wbr />}{part}</>)}
+        </span>
+      </a>
+    )}
+
+    {p.also.length > 0 && (
+      <div class="person-view__section">
+        <h3 class="person-view__section-title">Zasiada także w</h3>
+        <ul class="person-view__also">
+          {p.also.map((name) => <li>{name}</li>)}
+        </ul>
+      </div>
+    )}
+
+    {p.socials.length > 0 && (
+      <p class="person-view__socials">
+        {p.socials.map((s) => (
+          <a class="person-social" href={s.url} target="_blank" rel="noopener noreferrer"
+             aria-label={s.label} title={s.label}>
+            <SocialIcon platform={s.label} />
+          </a>
+        ))}
+      </p>
+    )}
+  </div>
+</section>
+
+<style>
+  .person-view:not([hidden]) { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+  .person-view__scroll { overflow-y: auto; flex: 1 1 auto; padding-bottom: var(--space-2); }
+  .person-view__back {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+    z-index: 2;
+    cursor: pointer;
+  }
+  .person-view__role {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text-faint);
+    font-size: var(--text-xs);
+  }
+  /* The address as a row you can tap: an envelope, then the address, which
+     breaks anywhere so "przewodniczacy.komisji.sportowej@pzsurf.pl" fits a
+     phone without pushing the dialog sideways. */
+  .person-view__email {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    max-width: 420px;
+    margin: var(--space-4) auto 0;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: var(--text-sm);
+  }
+  .person-view__email:hover { color: var(--color-accent); border-color: var(--color-accent); }
+  .person-view__email:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  .person-view__email-icon { display: inline-flex; flex: none; color: var(--color-text-muted); }
+  /* Breaks at the <wbr>s first; `anywhere` only for a single part too long
+     for the line on its own. */
+  .person-view__email-text { min-width: 0; overflow-wrap: anywhere; }
+  .person-view__section { max-width: 420px; margin: var(--space-4) auto 0; text-align: center; }
+  .person-view__section-title {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-subhead);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-faint);
+  }
+  .person-view__also { margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
+  .person-view__also li + li { margin-top: 2px; }
+  .person-view__socials {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    margin: var(--space-4) 0 0;
+  }
+</style>

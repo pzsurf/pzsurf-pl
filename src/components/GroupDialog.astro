@@ -22,6 +22,7 @@
 // where it is doing work.
 
 import Roster from "./Roster.astro";
+import PersonView, { type PersonProfile } from "./PersonView.astro";
 import { headcount } from "../lib/plural";
 
 interface Props {
@@ -33,9 +34,14 @@ interface Props {
   meta?: string[];
   /** A body's remit, as the API sends it: plain text with newlines. */
   description?: string | null;
-  people: { name: string; image: string | null; subtitle: string }[];
+  people: { name: string; image: string | null; subtitle: string; view?: string; email?: string | null }[];
+  /** A body's members as profiles, each opened from its tile in this dialog
+   *  (back arrow to the roster). Unset for a squad: its people open nothing. */
+  profiles?: PersonProfile[];
 }
-const { id, title, count, meta = [], description = null, people } = Astro.props;
+const { id, title, count, meta = [], description = null, people, profiles = [] } = Astro.props;
+const withViews = profiles.length > 0;
+const mainView = `${id}-main`;
 
 const metaParts = [...meta, headcount(count)];
 ---
@@ -43,6 +49,7 @@ const metaParts = [...meta, headcount(count)];
   class="person group-dialog"
   id={id}
   data-group-dialog
+  data-views={withViews ? "" : undefined}
   aria-labelledby={`${id}-title`}
 >
   <form method="dialog" class="person__close-form">
@@ -50,6 +57,7 @@ const metaParts = [...meta, headcount(count)];
     <button class="person__close dialog-close" aria-label="Zamknij">×</button>
   </form>
 
+  <section class="group-dialog__view" data-view={mainView}>
   <div class="person__head">
     <h2 class="person__name dialog-title" id={`${id}-title`}>{title}</h2>
     <p class="group-dialog__meta">
@@ -62,9 +70,12 @@ const metaParts = [...meta, headcount(count)];
     </p>
   </div>
 
-  <div class="group-dialog__scroll">
+  <div class="group-dialog__scroll" data-view-scroll>
     <Roster description={description} people={people} />
   </div>
+  </section>
+
+  {profiles.map((p) => <PersonView profile={p} back={mainView} />)}
 </dialog>
 
 <style>
@@ -89,6 +100,7 @@ const metaParts = [...meta, headcount(count)];
   }
   /* The name stays put while a long remit and roster scroll under it. */
   .group-dialog .person__head { flex: none; }
+  .group-dialog__view:not([hidden]) { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
   .group-dialog__scroll {
     flex: 1 1 auto;
     overflow-y: auto;
@@ -109,6 +121,9 @@ const metaParts = [...meta, headcount(count)];
 </style>
 
 <script>
+  import { bindDialogViews } from "../lib/dialogViews";
+  bindDialogViews();
+
   // Opening and closing, for every card and dialog on the page — the rosters
   // here and the document shelves in ShelfDialog alike, since both use the same
   // two attributes.
