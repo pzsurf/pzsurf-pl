@@ -89,7 +89,11 @@ const dayOf = (iso: string | null) => (iso ?? "").slice(0, 10) || null;
 
 // Whether the Dokumenty section exists at all — the nav entry follows it, so
 // the menu never points at an anchor that is not on the page.
-const hasDocuments = resolutions.length > 0 || minutes.length > 0 || docShelves.length > 0;
+// The statute counts: it is a document of the federation's like the rest, and
+// Dokumenty is where a visitor looks for it besides the hero's button.
+const hasStatute = Boolean(statute.body_md?.trim());
+const hasDocuments = hasStatute || resolutions.length > 0 || minutes.length > 0
+  || docShelves.length > 0;
 const year = latestYear(teams);
 
 // Current season only. Older squads become their own page once the API returns
@@ -388,6 +392,13 @@ const orderedBodies = orderBodies(bodies);
           the document itself, so it opens in its own tab and the address can be
           shared. */}
       <ul class="groups">
+        {/* The statute first — the document the rest are made under. It opens
+            the same StatuteDialog the hero's Statut button does. */}
+        {hasStatute && (
+          <li>
+            <GroupCard statute title="Statut" faces={[]} />
+          </li>
+        )}
         {shelves.map((shelf) => (
           <li>
             <GroupCard

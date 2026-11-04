@@ -18,15 +18,19 @@
 
 interface Props {
   /** The id of the dialog this card opens. */
-  dialogId: string;
+  dialogId?: string;
+  /** Opens the statute instead (StatuteDialog binds every
+   *  `[data-open-statute]`): one text, not a list, so no `dialogId`. */
+  statute?: boolean;
   /** "Shortboard Junior", "Zarząd", "Komisja Sportowa". */
   title: string;
-  count: number;
+  /** Left out for the statute, which is one document, not a tally. */
+  count?: number;
   /** Up to four of these are drawn as the face stack. Empty for a shelf of
    *  documents, which has no people: that card is its name and its tally. */
   faces: { name: string; image: string | null }[];
 }
-const { dialogId, title, count, faces } = Astro.props;
+const { dialogId, statute = false, title, count, faces } = Astro.props;
 
 // Initials from the display name rather than first/last: those are not public
 // fields — the API sends one already-formatted string and nothing else.
@@ -40,7 +44,8 @@ const rest = faces.length - shown.length;
 <button
   type="button"
   class="group"
-  data-open-group={dialogId}
+  data-open-group={statute ? undefined : dialogId}
+  data-open-statute={statute ? "" : undefined}
   aria-haspopup="dialog"
 >
   {/* Decorative: every one of these faces is named in the dialog this opens, so
@@ -60,7 +65,7 @@ const rest = faces.length - shown.length;
 
   <span class="group__body">
     <span class="group__name">{title}</span>
-    <span class="group__count">{count}</span>
+    {count !== undefined && <span class="group__count">{count}</span>}
   </span>
 </button>
 
