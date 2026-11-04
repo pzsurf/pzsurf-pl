@@ -19,9 +19,9 @@ import ShowAllCard from "../components/ShowAllCard.astro";
 import { counted } from "../lib/plural";
 import type { Team, PublicOrgEvent } from "../lib/api";
 import {
-  CAROUSEL_SHOWN, announcementSlugs, getAffiliates, getAnnouncements,
+  CAROUSEL_SHOWN, announcementSlugs, documentShelves, getAffiliates, getAnnouncements,
   getBodies, getTeams,
-  bodyTypeLabel, documentsOfType, eventDates, eventTypeLabel, getDocuments,
+  bodyTypeLabel, eventDates, eventTypeLabel, getDocuments,
   getEvents, getOrganisation,
   getOrganisationDetail, getPartners, getResolutions, getStatute, latestYear,
   orderAffiliates, orderBodies, orderEvents, resolutionSlugs, roleLabel, titledName,
@@ -74,22 +74,11 @@ const eventDialogId = (ev: PublicOrgEvent) => `wydarzenie-${ev.id}`;
 // below, which stay as the fallback for as long as nobody has written one.
 const intro = org.intro_md?.trim() ? renderIntro(org.intro_md) : null;
 
-// The three shelves. `documentsOfType` matches on the API's own `doc_type`,
-// which ships with surfpoland#33 — until then every document has none and the
-// two document carousels are empty while Uchwały fills from its own endpoint.
-// The document shelves, in the order they are read. Data rather than four
-// copies of the same markup: they differ only by label and filter, and the
-// third copy was already one too many.
-//
-// `Regulaminy` (type OTHER) sits LAST because OTHER is the fallback rather than
-// a peer — the same reason it sorts last in the admin's type picker. The
-// federation names that shelf Regulaminy (November 2026); anything else left
-// uncategorised lands there too.
-const docShelves = [
-  { label: "Dokumenty finansowe", docs: documentsOfType(documents, "TRANSPARENCY") },
-  { label: "Wzory podań", docs: documentsOfType(documents, "FORM") },
-  { label: "Regulaminy", docs: documentsOfType(documents, "OTHER") },
-].filter((shelf) => shelf.docs.length > 0);
+// The document shelves are the federation's own (November 2026): it names,
+// orders and adds them in Shoreside — Dokumenty finansowe, Wzory podań,
+// Regulaminy, Rejestr umów… — and each document says which it sits on.
+// Only shelves with documents appear. See `documentShelves`.
+const docShelves = documentShelves(documents);
 
 // A date reads better than a timestamp on a card, and the API already sends
 // only the date part.

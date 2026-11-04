@@ -509,6 +509,10 @@ export interface PublicDocument {
    *  the repo — the field ships with surfpoland#33. Treat a missing value as
    *  "uncategorised" rather than assuming a shelf. */
   doc_type?: string;
+  /** The shelf, as the federation names and orders its shelves in Shoreside
+   *  (contract §2.7, §4.8): group by `key`, sort by `order`, label `name`.
+   *  Optional for the same reason as `doc_type`, and null for minutes. */
+  group?: { key: string; name: string; order: number; code: string | null } | null;
   doc_date: string | null;
   file_url: string;
   file_name: string | null;
@@ -631,6 +635,35 @@ export async function getResolutions(): Promise<PublicResolution[]> {
 /** Documents of one type, in the order the API returned them. */
 export const documentsOfType = (docs: PublicDocument[], type: string): PublicDocument[] =>
   docs.filter((d) => d.doc_type === type);
+
+/** The basic shelves' names and places, for a document the API sends without a
+ *  `group` (an API older than groups). Shoreside's defaults, so the fallback
+ *  reads the same as the real thing. */
+const BASIC_SHELF: Record<string, { name: string; order: number }> = {
+  TRANSPARENCY: { name: "Dokumenty finansowe", order: 1 },
+  FORM: { name: "Wzory podań", order: 2 },
+  OTHER: { name: "Regulaminy", order: 3 },
+};
+
+/**
+ * The document shelves, as the federation arranged them: one per group that
+ * has documents, in its order, under its name. Minutes are not on a shelf.
+ */
+export function documentShelves(docs: PublicDocument[]): { label: string; docs: PublicDocument[] }[] {
+  const shelves = new Map<string, { label: string; order: number; docs: PublicDocument[] }>();
+  for (const d of docs) {
+    if (d.doc_type === "MEETING_MINUTES") continue;
+    const basic = BASIC_SHELF[d.doc_type ?? ""] ?? BASIC_SHELF.OTHER!;
+    const key = d.group?.key ?? `basic:${d.doc_type ?? "OTHER"}`;
+    const shelf = shelves.get(key)
+      ?? { label: d.group?.name ?? basic.name, order: d.group?.order ?? basic.order, docs: [] };
+    shelf.docs.push(d);
+    shelves.set(key, shelf);
+  }
+  return [...shelves.values()]
+    .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label, "pl"))
+    .map(({ label, docs }) => ({ label, docs }));
+}
 
 // ── Ogłoszenia ──────────────────────────────────────────────────────────────
 
