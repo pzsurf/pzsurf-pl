@@ -14,3 +14,6 @@ export function counted(n: number, [one, few, many]: CountForms): string {
   const isFew = ten >= 2 && ten <= 4 && (hundred < 10 || hundred >= 20);
   return `${n} ${isFew ? few : many}`;
 }
+
+/** "1 osoba", "3 osoby", "8 osób" — a body's or a squad's headcount. */
+export const headcount = (n: number): string => counted(n, ["osoba", "osoby", "osób"]);
