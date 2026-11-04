@@ -16,22 +16,27 @@
 import Base from "../../layouts/Base.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
 import BackButton from "../../components/BackButton.astro";
-import type { PublicResolution } from "../../lib/api";
-import { getOrganisation, getResolutions, resolutionSlugs } from "../../lib/api";
+import type { PublicMeetingMinutes, PublicResolution } from "../../lib/api";
+import {
+  getMeetings, getOrganisation, getResolutions, minutesForResolution, resolutionSlugs,
+} from "../../lib/api";
 
 export async function getStaticPaths() {
-  const resolutions = await getResolutions();
+  const [resolutions, meetings] = await Promise.all([getResolutions(), getMeetings()]);
   // The SAME map the index builds its links from, so a row and its page can
   // never disagree about an address.
   const slugs = resolutionSlugs(resolutions);
   return resolutions.map((resolution) => ({
     params: { slug: slugs.get(resolution.id) },
-    props: { resolution },
+    // The protokół of the meeting that adopted it, when one is filed: the
+    // uchwała is an extract of that record, and a reader checking it wants the
+    // whole minutes it came from.
+    props: { resolution, minutes: minutesForResolution(resolution, meetings) },
   }));
 }
 
-interface Props { resolution: PublicResolution }
-const { resolution } = Astro.props;
+interface Props { resolution: PublicResolution; minutes: PublicMeetingMinutes[] }
+const { resolution, minutes } = Astro.props;
 const org = await getOrganisation();
 
 const day = (resolution.adopted_on ?? "").slice(0, 10) || null;
@@ -57,6 +62,24 @@ const description = excerpt.length > 180
       )}
       <h1 class="uchwala__title">{resolution.title}</h1>
       {meta && <p class="uchwala__meta">{meta}</p>}
+
+      {/* A file, not a page of this site — a new tab, as every protokół on the
+          Dokumenty shelf opens. One meeting normally files one protokół; if
+          it filed more, each is named by its own title. */}
+      {minutes.length > 0 && (
+        <p class="uchwala__source">
+          {minutes.map((doc) => (
+            <a class="uchwala__minutes" href={doc.file_url} target="_blank" rel="noopener noreferrer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              {minutes.length > 1 ? `Protokół: ${doc.title}` : "Protokół z posiedzenia"}
+            </a>
+          ))}
+        </p>
+      )}
 
       {/* `pre-wrap`: the API sends the body as plain text carrying its own line
           breaks, and this shows it as written. Deliberately NOT run through the
@@ -110,6 +133,28 @@ const description = excerpt.length > 180
     margin: var(--space-2) 0 0;
     color: var(--color-text-muted);
     font-size: var(--text-sm);
+  }
+  .uchwala__source {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
+  }
+  .uchwala__minutes {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+  .uchwala__minutes:hover { border-color: var(--color-accent); color: var(--color-accent); }
+  .uchwala__minutes:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
   .uchwala__body {
     margin-top: var(--space-4);

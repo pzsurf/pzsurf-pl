@@ -709,6 +709,31 @@ export async function getMeetings(): Promise<PublicMeeting[]> {
 export const meetingMinutes = (meetings: PublicMeeting[]) =>
   meetings.flatMap((m) => (m.minutes ?? []).map((doc) => ({ meeting: m, doc })));
 
+/**
+ * The protokół (or protokoły) of the meeting that adopted an uchwała.
+ *
+ * Matched on the meeting's TITLE and DATE, because the contract withholds
+ * `meeting_id` from a resolution (§4.8a) and gives `meeting_title` instead.
+ * The date is exact rather than approximate: Shoreside writes `adopted_on` as
+ * the first ten characters of the meeting's `starts_at`, the same string the
+ * meetings endpoint sends, so no time zone can make them disagree.
+ *
+ * Two meetings sharing a title AND a day would make the match ambiguous, and
+ * then this returns nothing rather than guess — linking an uchwała to the wrong
+ * protokół is worse than linking it to none. An empty list is also the answer
+ * for a meeting whose minutes are not filed yet.
+ */
+export function minutesForResolution(
+  resolution: PublicResolution,
+  meetings: PublicMeeting[],
+): PublicMeetingMinutes[] {
+  if (!resolution.adopted_on) return [];
+  const matches = meetings.filter((m) =>
+    m.title === resolution.meeting_title
+    && (m.starts_at ?? "").slice(0, 10) === resolution.adopted_on);
+  return matches.length === 1 ? (matches[0].minutes ?? []) : [];
+}
+
 /** Documents of one type, in the order the API returned them. */
 export const documentsOfType = (docs: PublicDocument[], type: string): PublicDocument[] =>
   docs.filter((d) => d.doc_type === type);
