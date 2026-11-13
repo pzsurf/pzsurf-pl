@@ -14,6 +14,7 @@ import "../styles/a11y.css";
 import A11yPanel from "../components/A11yPanel.astro";
 import ConsentBanner from "../components/ConsentBanner.astro";
 import { GA_ID } from "../lib/analytics";
+import { UMAMI_ID, UMAMI_SCRIPT, UMAMI_DOMAINS } from "../lib/umami";
 
 interface Props {
   /** The browser tab, and the default for the share title. */
@@ -77,6 +78,21 @@ const shareImage = new URL(image ?? "/hero-poster.jpg", Astro.site);
         }
       } catch (e) {}
     </script>
+
+    {/* Cookieless visit counting, for every reader and without the banner:
+        see lib/umami.ts for why each attribute is there. `defer`, so it never
+        holds up the page. */}
+    {UMAMI_ID && (
+      <script
+        is:inline
+        defer
+        src={UMAMI_SCRIPT}
+        data-website-id={UMAMI_ID}
+        data-domains={UMAMI_DOMAINS}
+        data-salt-rotation="daily"
+        data-exclude-search="true"
+      ></script>
+    )}
   </head>
   <body>
     {/* FIRST in the body, before even the skip link, as GOV.UK places it: the

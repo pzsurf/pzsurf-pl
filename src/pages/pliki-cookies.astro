@@ -13,6 +13,7 @@
 import TextPage from "../layouts/TextPage.astro";
 import { getOrganisation, primaryAddress } from "../lib/api";
 import { GA_ID } from "../lib/analytics";
+import { UMAMI_ID } from "../lib/umami";
 
 const org = await getOrganisation();
 const address = primaryAddress(org);
@@ -99,41 +100,43 @@ const address = primaryAddress(org);
     <p>Ta strona nie używa plików cookies.</p>
   )}
 
-  {/* Server-side counting (surfpoland infra/platform/pzsurf_pl_traffic.tf):
-      no consent needed, since nothing is read from the device, but GDPR's
-      legitimate interest requires saying it plainly. Keep the numbers here
-      in step with that file. */}
-  <h2>Statystyki bez plików cookies</h2>
-  <p>
-    Niezależnie od&nbsp;powyższego serwer strony, jak każdy serwer, zapisuje
-    podstawowe dane o&nbsp;każdym żądaniu: adres IP, datę, adres otwartej strony,
-    stronę, z&nbsp;której przyszedłeś, i&nbsp;nazwę przeglądarki. Nic nie jest przy
-    tym zapisywane na&nbsp;Twoim urządzeniu ani z&nbsp;niego odczytywane.
-  </p>
-  <ul>
-    <li>
-      Cel: bezpieczeństwo strony i&nbsp;liczenie odwiedzin wszystkich osób,
-      także tych, które nie zgodziły się na&nbsp;pliki cookies.
-    </li>
-    <li>Podstawa prawna: nasz prawnie uzasadniony interes (art.&nbsp;6 ust.&nbsp;1 lit.&nbsp;f RODO).</li>
-    <li>
-      Dane przetwarza w&nbsp;naszym imieniu Google Ireland Limited, dostawca
-      hostingu strony (Firebase), a&nbsp;mogą one być przekazywane do&nbsp;Google LLC
-      w&nbsp;USA na&nbsp;podstawie Ram ochrony danych UE-USA. Kopia, z&nbsp;której liczymy
-      odwiedziny, jest przechowywana w&nbsp;Warszawie.
-    </li>
-    <li>
-      Wszystkie te dane są usuwane po&nbsp;30&nbsp;dniach. Dłużej przechowujemy tylko
-      zbiorcze liczby odwiedzin,
-      z&nbsp;których nie da się ustalić, kim jesteś.
-    </li>
-    <li>
-      Administratorem danych jest {org.name}. Możesz wnieść sprzeciw wobec tego
-      przetwarzania (art.&nbsp;21 RODO){org.email
-        ? <>, pisząc na&nbsp;adres <a href={`mailto:${org.email}`}>{org.email}</a></>
-        : null}, a&nbsp;także skargę do&nbsp;Prezesa Urzędu Ochrony Danych Osobowych.
-    </li>
-  </ul>
+  {/* Cookieless counting with Umami (lib/umami.ts): no consent needed, since
+      nothing is stored on the device, but GDPR's legitimate interest requires
+      saying it plainly. Keep this in step with the script's attributes. */}
+  {UMAMI_ID && (
+    <>
+      <h2>Statystyki bez plików cookies</h2>
+      <p>
+        Żeby wiedzieć, ile osób odwiedza stronę, także tych, które nie zgodziły się
+        na&nbsp;pliki cookies, liczymy odwiedziny narzędziem Umami. Nie zapisuje ono
+        niczego na&nbsp;Twoim urządzeniu (żadnych plików cookies ani innych danych)
+        i&nbsp;nie przechowuje Twojego adresu IP.
+      </p>
+      <ul>
+        <li>
+          Co jest zapisywane: adres otwartej strony (bez parametrów po&nbsp;znaku „?”),
+          strona, z&nbsp;której przyszedłeś, kraj, rodzaj urządzenia, przeglądarka
+          i&nbsp;system, język oraz rozdzielczość ekranu. Adres IP jest używany tylko
+          w&nbsp;chwili wizyty, do&nbsp;ustalenia kraju i&nbsp;anonimowego identyfikatora,
+          który zmienia się codziennie, więc nie da się powiązać Twoich wizyt
+          z&nbsp;różnych dni ani ustalić, kim jesteś.
+        </li>
+        <li>Cel: zbiorcze statystyki odwiedzin całej strony.</li>
+        <li>Podstawa prawna: nasz prawnie uzasadniony interes (art.&nbsp;6 ust.&nbsp;1 lit.&nbsp;f RODO).</li>
+        <li>
+          Dane przetwarza w&nbsp;naszym imieniu Umami Software, Inc. (USA), na&nbsp;podstawie
+          umowy powierzenia i&nbsp;standardowych klauzul umownych zatwierdzonych przez
+          Komisję Europejską.
+        </li>
+        <li>
+          Administratorem danych jest {org.name}. Możesz wnieść sprzeciw wobec tego
+          przetwarzania (art.&nbsp;21 RODO){org.email
+            ? <>, pisząc na&nbsp;adres <a href={`mailto:${org.email}`}>{org.email}</a></>
+            : null}, a&nbsp;także skargę do&nbsp;Prezesa Urzędu Ochrony Danych Osobowych.
+        </li>
+      </ul>
+    </>
+  )}
 
   <h2>Inne dane zapisywane w&nbsp;przeglądarce</h2>
   <p>

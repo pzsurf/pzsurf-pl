@@ -134,13 +134,27 @@ How consent works, in short:
    *Reports → Realtime* shows you within a minute. Then on `/pliki-cookies/`
    choose *Nie zgadzam się*: the `_ga` cookies disappear.
 
-### Visits without consent: server counts
+### Visits without consent: Umami
 
-**Removed on 2026-10-10.** The cookieless server-side counts (Firebase Hosting
-logs → BigQuery, nightly totals) lived in the platform's old Google Cloud
-project and went with it. Only Google Analytics remains, and it sees only the
-readers who consent. Recreating the counts in this site's own project
-(`pzsurf-web`) would need a billing account for Cloud Logging and BigQuery.
+Google Analytics sees only the readers who accept cookies. **Umami Cloud**
+(free Hobby plan) counts everyone: it stores nothing on the device and keeps no
+IP address, so it runs without the banner. Its total is the real traffic; GA4
+is the detail for the share who consented. Don't add the two together.
+
+- Settings and why: `src/lib/umami.ts`. The visitor hash rotates daily, query
+  strings are dropped, and only the production hosts count. `/pliki-cookies/`
+  describes exactly this; change both together.
+- **Turning it on:** in Umami, *Settings → Websites → Add website* (domain
+  `pzsurf.pl`), copy the **Website ID** (a UUID), and set it as the repository
+  variable `PUBLIC_UMAMI_ID`, like `PUBLIC_GA_ID` above. Locally, put it in
+  `.env`; dev builds still count nothing, because `localhost` is not in the
+  allowed domains.
+- **Sharing with people who don't log in:** *Settings → Websites → (site) →
+  Edit → Share URL → Enable*. Anyone with the link sees the dashboard,
+  read-only.
+- History: until 2026-10-10 these counts came from Firebase Hosting logs in
+  BigQuery, in the platform's old Google Cloud project. They went with that
+  project; recreating them in `pzsurf-web` would need a billing account.
 
 ## Deploying
 

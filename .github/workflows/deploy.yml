@@ -61,6 +61,9 @@ jobs:
         # and no cookie banner — see README → Analytics.
         env:
           PUBLIC_GA_ID: ${{ vars.PUBLIC_GA_ID }}
+          # The Umami website id (cookieless visit counts), also a variable:
+          # public in every page. Unset means no Umami. See README → Analytics.
+          PUBLIC_UMAMI_ID: ${{ vars.PUBLIC_UMAMI_ID }}
         run: npm run build
 
       # Belt and braces on that promise. If the federation's own name is not in
