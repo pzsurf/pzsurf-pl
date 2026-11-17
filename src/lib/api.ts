@@ -382,11 +382,9 @@ export interface Statute {
   title: string;
   body_md: string;
   adopted_on: string | null;
-  /* Provenance, both nullable, and neither is rendered: `source_file_url` is
-   * the signed PDF in GCS when one exists (null for PZSurf — none has been
-   * uploaded) and `source_url` the page it was transcribed from. Kept on the
-   * interface because they are part of the API's shape, not because the dialog
-   * shows them. */
+  /* Provenance, both nullable: `source_file_url` is the signed PDF in GCS when
+   * one exists — StatuteDialog offers it as "Pobierz PDF" — and `source_url`
+   * the page it was transcribed from, which is not rendered. */
   source_file_url: string | null;
   source_url: string | null;
 }

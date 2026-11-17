@@ -2,11 +2,8 @@
  * The federation's introduction — Markdown written in the platform — rendered
  * for the hero.
  *
- * **Why a dependency here, when the statute has none.** lib/markdown.ts is
- * hand-rolled because the statute uses five constructs and nothing else, and it
- * says to take a dependency the day the input stops being that. This input is
- * that day: people write it in an editor, so it has links, images, emphasis and
- * whatever else CommonMark allows. micromark is also the parser the platform's
+ * **Why micromark.** People write this in an editor, so it has links, images,
+ * emphasis and whatever else CommonMark allows. micromark is also the parser the platform's
  * own preview is built on (react-markdown uses it), so the hero shows what the
  * editor showed — a second Markdown dialect here would turn the preview into a
  * guess. It runs at BUILD time only; the site still ships no JavaScript.

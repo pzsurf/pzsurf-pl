@@ -10,34 +10,43 @@ import type { Statute } from "../lib/api";
 interface Props { statute: Statute }
 const { statute } = Astro.props;
 
-const { title, html, unhandled } = renderStatute(statute.body_md);
-
-// Say so out loud rather than shipping a quietly mangled legal document. The
-// converter degrades an unknown construct to plain text, so this is a warning
-// about FIDELITY, not a crash.
-if (unhandled.length) {
-  console.warn(
-    `[statute] ${unhandled.length} line(s) used Markdown this renderer does not ` +
-    `handle and were rendered as plain text:\n  ${unhandled.slice(0, 5).join("\n  ")}`,
-  );
-}
+const { title, html } = renderStatute(statute.body_md);
 
 // The heading, in order of preference: the API's own title, the document's `# `,
 // then the plain word. The live API sends an empty title, which is why the
 // fallback chain is not decorative.
 const heading = statute.title?.trim() || title || "Statut";
+
+// The signed original, when the platform holds one. Only a PDF counts: the
+// button promises a PDF, and `source_url` (a web page the text was transcribed
+// from) is provenance, not a copy of the statute to keep.
+const pdfUrl = statute.source_file_url?.trim() || null;
 ---
 <dialog class="statute" data-statute-dialog aria-labelledby="statute-title">
   <div class="statute__head">
     <h2 class="statute__title dialog-title" id="statute-title">{heading}</h2>
-    <form method="dialog" class="statute__close-form">
-      <button class="statute__close dialog-close" aria-label="Zamknij">×</button>
-    </form>
+    <div class="statute__actions">
+      {/* A link, not a button: it goes somewhere, and middle-click, copy-link
+          and save-as all work on it. New tab, as every document link here does —
+          a cross-origin `download` attribute is ignored by browsers anyway. */}
+      {pdfUrl && (
+        <a class="statute__pdf" href={pdfUrl} target="_blank" rel="noopener noreferrer">
+          <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="14" height="14">
+            <path d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M2.5 13.5h11" fill="none"
+                  stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span class="statute__pdf-label">Pobierz PDF</span>
+        </a>
+      )}
+      <form method="dialog" class="statute__close-form">
+        <button class="statute__close dialog-close" aria-label="Zamknij">×</button>
+      </form>
+    </div>
   </div>
 
-  {/* The rendered statute. `set:html` is safe here because renderStatute
-      escapes every character of the source before applying any formatting —
-      see the note at the top of lib/markdown.ts. */}
+  {/* The rendered statute. `set:html` is safe here because micromark escapes
+      every bit of raw HTML in the source — see the note at the top of
+      lib/markdown.ts. */}
   <div class="statute__body" data-statute-body tabindex="0" set:html={html} />
 </dialog>
 
@@ -70,18 +79,48 @@ const heading = statute.title?.trim() || title || "Statut";
     align-items: flex-start;   /* the × stays in the corner when the title wraps */
     justify-content: space-between;
     gap: var(--space-3);
-    padding: var(--space-4);
+    /* A slim bar, not a band: it stays on screen the whole time the statute is
+       read, so every pixel it takes is a line of text the reader does not get. */
+    padding: 8px var(--space-4);
     border-bottom: 1px solid var(--color-border);
     background: var(--color-bg-raised);
     border-radius: 6px 6px 0 0;
   }
   .statute__title {
     margin: 0;
-    font-size: var(--text-lg);
-    line-height: var(--leading-lg);
+    font-size: 17px;
+    /* The height of the × below, so a one-line title sits centred against it
+       while the bar keeps `flex-start` for a title that wraps. */
+    line-height: 30px;
     font-weight: var(--weight-display);
   }
-  .statute__close-form { margin: 0; flex: 0 0 auto; }
+  .statute__actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .statute__pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 15px;
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .statute__pdf:hover { color: var(--color-accent); border-color: currentColor; }
+  .statute__pdf:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .statute__close-form { margin: 0; }
+  .statute__close { width: 30px; height: 30px; }
 
   /* The only thing that scrolls. `tabindex=0` in the markup is what makes it
      keyboard-scrollable — a scroll container that is not focusable cannot be
@@ -94,9 +133,14 @@ const heading = statute.title?.trim() || title || "Statut";
     /* Stops the scroll chaining to the page behind when you hit the end. */
     overscroll-behavior: contain;
     padding: var(--space-4);
-    font-size: var(--text-sm);
-    line-height: var(--leading-sm);
-    color: var(--color-text-muted);
+    /* From here down: Shoreside's `.statute-doc` (frontend/src/index.css), so
+       the statute reads the same here as in the platform. Keep them in step. */
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--color-text);
+    /* Justified, as a printed statute is; the headings and § markers below set
+       their own `center`, and table cells their own `left`. */
+    text-align: justify;
   }
   .statute__body:focus-visible {
     outline: 2px solid var(--color-accent);
@@ -105,36 +149,97 @@ const heading = statute.title?.trim() || title || "Statut";
 
   /* `:global`, because this content is injected with set:html and carries no
      data-astro-cid — the same scoping trap this codebase has hit four times. */
+  .statute__body > :global(:first-child) { margin-top: 0; }
+  .statute__body > :global(:last-child) { margin-bottom: 0; }
+  .statute__body :global(:where(h1, h2, h3, h4)) {
+    line-height: 1.3;
+    color: var(--color-text);
+  }
+  .statute__body :global(h1) { font-size: 22px; margin: 0 0 20px; text-align: center; }
+  /* Chapters (Rozdział): the one break a reader scans for, so air and a rule. */
   .statute__body :global(h2) {
-    margin: var(--space-5) 0 var(--space-2);
-    color: var(--color-text);
-    font-size: var(--text-base);
-    font-weight: var(--weight-display);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    font-size: 17px;
+    margin: 32px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border);
   }
-  .statute__body :global(h2:first-child) { margin-top: 0; }
-  .statute__body :global(h3) {
-    margin: var(--space-4) 0 var(--space-2);
-    color: var(--color-text);
-    font-size: var(--text-sm);
+  /* Laid out like the printed statute: the chapter, its name under it, and each
+     § centred. The rule moves under the name when there is one, so the two read
+     as one heading. `md-heading-line` comes from lib/markdown.ts. */
+  .statute__body :global(h2),
+  .statute__body :global(.md-heading-line) { text-align: center; }
+  .statute__body :global(h2:has(+ .md-heading-line)) {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 4px;
   }
-  .statute__body :global(p) { margin: 0 0 var(--space-3); }
-  /* `**§1**` is a paragraph of its own in the source and acts as the clause
-     marker, so it gets the weight of a heading without being one. */
-  .statute__body :global(p strong) { color: var(--color-text); }
-  .statute__body :global(ol) {
-    margin: 0 0 var(--space-3);
-    padding-left: var(--space-4);
+  .statute__body :global(h2 + .md-heading-line) {
+    font-weight: 600;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border);
   }
-  .statute__body :global(li) { margin-bottom: var(--space-2); }
-  .statute__body :global(ol ol) { margin-top: var(--space-2); }
+  .statute__body :global(p.md-heading-line) { margin-top: 18px; }
+  .statute__body :global(h2 + p.md-heading-line) { margin-top: 0; }
+  .statute__body :global(h3) { font-size: 15px; margin: 22px 0 8px; }
+  .statute__body :global(h4) { font-size: 14px; margin: 18px 0 6px; }
+  .statute__body :global(p) { margin: 0 0 12px; }
+  .statute__body :global(:where(ul, ol)) { margin: 0 0 12px; padding-left: 24px; }
+  .statute__body :global(li) { margin-bottom: 4px; }
+  /* Nested points (a), b), i)…) sit tighter than the paragraphs around them. */
+  .statute__body :global(li > :where(ul, ol)) { margin: 4px 0 0; }
+  /* A lettered point: its letter is the marker, so no bullet, and a hanging
+     indent so a wrapped line lines up under the text, not the letter. */
+  .statute__body :global(li.md-lettered) {
+    list-style: none;
+    padding-left: 1.6em;
+    text-indent: -1.6em;
+  }
+  .statute__body :global(li.md-lettered > *) { text-indent: 0; }
+  .statute__body :global(blockquote) {
+    margin: 0 0 12px;
+    padding-left: 14px;
+    border-left: 3px solid var(--color-border);
+    color: var(--color-text-muted);
+  }
+  /* A wide table scrolls inside itself rather than pushing the dialog sideways. */
+  .statute__body :global(table) {
+    display: block;
+    overflow-x: auto;
+    width: max-content;
+    max-width: 100%;
+    margin: 0 0 14px;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .statute__body :global(:where(th, td)) {
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+  }
+  .statute__body :global(th) { font-weight: 600; }
+
+  @media (max-width: 640px) {
+    .statute__body { font-size: 14px; }
+    .statute__body :global(h1) { font-size: 19px; }
+    .statute__body :global(h2) { font-size: 16px; }
+  }
 
   /* No `flex-wrap` on the head, at any width: wrapping moved the × onto a line
      of its own under a long title. The title wraps inside its own box instead
      (`.dialog-title` in tokens.css) and the × keeps the top-right corner. */
   @media (max-width: 600px) {
     .statute__title { font-size: var(--text-base); }
+    /* Icon only beside a long title on a phone; the words stay for screen
+       readers (visually hidden, not display:none) and as the accessible name. */
+    .statute__pdf { width: 30px; padding: 0; justify-content: center; }
+    .statute__pdf-label {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
   }
 
   /* ── Print ────────────────────────────────────────────────────────────────
@@ -169,16 +274,14 @@ const heading = statute.title?.trim() || title || "Statut";
       color: #000;
       font-size: 11pt;
     }
-    .statute__body :global(h2),
-    .statute__body :global(h3),
-    .statute__body :global(p strong) { color: #000; }
+    .statute__body :global(:where(h1, h2, h3, h4)) { color: #000; }
     /* A clause should not be split across a page break where it can be helped. */
     .statute__body :global(li),
     .statute__body :global(h2),
     .statute__body :global(h3) { break-inside: avoid; }
     .statute__body :global(h2) { break-after: avoid; }
     /* The close button is not part of the document. */
-    .statute__close-form { display: none; }
+    .statute__actions { display: none; }
     .statute__head { border: 0; padding: 0 0 12pt; }
   }
 </style>

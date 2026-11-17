@@ -38,10 +38,7 @@ const org = await getOrganisation();
 const day = (announcement.published_at ?? "").slice(0, 10) || null;
 
 // The body is Markdown written in the platform's editor, so it gets the
-// editor's own parser — micromark, through the same renderer the hero uses —
-// rather than the hand-rolled converter lib/markdown.ts keeps for the statute.
-// That one is deliberately limited to the five constructs a statute uses; a
-// notice has links, images and whatever else somebody typed.
+// editor's own parser — micromark, through the same renderer the hero uses.
 //
 // `renderIntro` also steps a leading `# ` heading out of the body and any other
 // `h1` down to `h2`, which is what this page needs: the headline below is the
