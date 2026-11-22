@@ -163,6 +163,12 @@ const description = excerpt.length > 180
     font-size: var(--text-base);
     line-height: var(--leading-base);
     white-space: pre-wrap;
+    /* Justified, as a printed uchwała is — and as the statute is. Under
+       pre-wrap each line the text breaks itself ends a paragraph, so a short
+       line (a heading, a "§ 1") stays at the left rather than being stretched
+       across the measure. No hyphenation: a legal text is not broken
+       mid-word, and the statute is not either. */
+    text-align: justify;
   }
   .uchwala__empty {
     margin: var(--space-4) 0 0;
